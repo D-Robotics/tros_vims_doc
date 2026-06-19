@@ -1,5 +1,4 @@
 ---
-layout: default
 title: 相机和底盘外参标定（高精度标定）
 ---
 

@@ -1,5 +1,4 @@
 ---
-layout: default
 title: iRobot Create3底盘配置
 ---
 
@@ -10,7 +9,7 @@ title: iRobot Create3底盘配置
 
 ## 安装双目相机
 
-参考[相机安装和配置手册](./device_camera.md)。
+参考[相机安装和配置手册](./device_camera.html)。
 
 ## RDK安装RDK X5
 
