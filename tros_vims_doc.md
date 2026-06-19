@@ -251,8 +251,8 @@ yq --version
 mkdir /userdata/vims 
 mkdir /userdata/rtabmap 
 cd /userdata/vims 
-wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.5-20260527.tar.gz 
-tar -zxvf /userdata/vims/install-vims-v0.0.5-20260527.tar.gz -C /userdata/vims
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.5.tar.gz 
+tar -zxvf /userdata/vims/install-vims-v0.0.5.tar.gz -C /userdata/vims
 ```
 
 #### 配置相机
@@ -464,12 +464,10 @@ RVIZ上分别打开3D地图和障碍物点云的渲染，如下图：
 | 验证标定参数 | —— | 【相机和底盘外参标定】章节中**使用（验证）标定参数**小节 |
 
 > **注意** 
-
 如未使用套件默认的硬件，如下任意一种情况：
-- 未使用 OriginBot 底盘
-- 未使用 70mm 基线双目相机
-- 未使用 VIO 模式，使用轮式里程计
-
+1. 未使用 OriginBot 底盘
+2. 未使用 70mm 基线双目相机
+3. 未使用 VIO 模式，使用轮式里程计
 请更新以下参数：
 >
 
