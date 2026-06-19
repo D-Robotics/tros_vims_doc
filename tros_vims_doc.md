@@ -6,10 +6,15 @@
 
 移动Solution包含双目深度估计、VSLAM（6DoF位姿估计、重定位、Lifelong实时3D建图）、障碍物识别、导航和避障、以及多种用于开发的工具。
 
-| 移动底盘 | RDK X5 | 双目相机 | = | 极简&低成本硬件 | 纯视觉&Lifelong&实时建图和导航 |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| <img src="images/originbot_controller_install.png" height="130"> | <img src="images/image_004.png" height="130"> | <img src="images/cam_132gswi.png" height="130"> | = | <img src="images/originbot_cam70mm.jpg" height="130"> | <img src="images/mapping.gif" height="130"> |
+**极简&低成本硬件：**
 
+| 移动底盘 | RDK X5 | 双目相机 | → | 组装后 |
+| :---: | :---: | :---: | :---: | :---: |
+| <img src="images/originbot_controller_install.png" height="250"> | <img src="images/image_004.png" height="250"> | <img src="images/cam_132gswi.png" height="250"> | → | <img src="images/originbot_cam70mm.jpg" height="250"> |
+
+**纯视觉 & Lifelong & 实时 3D建图和导航效果：**
+
+<img src="images/mapping.gif" width="900">
 
 ### 1.1 系统框架
 
