@@ -1,8 +1,5 @@
 # 地瓜机器人视觉移动Solution套件手册
 
-* TOC
-{:toc}
-
 ## 1. 功能介绍
 
 地瓜机器人的移动Solution是面向室内移动机器人场景，提供软硬结合、深度优化、低成本、开箱即用的全栈纯视觉移动解决方案，帮助用户建立起移动机器人底层的核心和基础能力，推动智能机器人产品快速落地。
@@ -11,7 +8,7 @@
 
 | 移动底盘 | RDK X5 | 双目相机 | = | 极简&低成本硬件 | 纯视觉&Lifelong&实时建图和导航 |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| <img src="images/originbot_controller_install.png" height="150"> | <img src="images/image_004.png" height="150"> | <img src="images/cam_132gswi.png" height="150"> | = | <img src="images/originbot_cam70mm.jpg" height="150"> | <img src="images/mapping.gif" height="150"> |
+| <img src="images/originbot_controller_install.png" height="130"> | <img src="images/image_004.png" height="130"> | <img src="images/cam_132gswi.png" height="130"> | = | <img src="images/originbot_cam70mm.jpg" height="130"> | <img src="images/mapping.gif" height="130"> |
 
 
 ### 1.1 系统框架
@@ -22,7 +19,7 @@
 
 ### 1.2 双目深度估计
 
-地瓜自研的采用GRU架构的双目深度估计算法，输入为双目图像数据，输出为左视图对应的视差图、深度图和点云，具有较好的数据泛化性和较高的推理效率。算法详细介绍：[点击查看](https://developer.d-robotics.cc/rdk_doc/Robot_development/boxs/spatial/hobot_stereonet)。
+地瓜自研的采用GRU架构的双目深度估计算法，输入为双目图像数据，输出为左视图对应的视差图、深度图和点云，具有较好的数据泛化性和较高的推理效率。算法详细介绍：[双目深度算法](https://developer.d-robotics.cc/tros_doc/boxs/spatial/hobot_stereonet)。
 
 | 双目左图和视差图（室内） | 双目左图和视差图（室外） | 点云 |
 | --- | --- | --- |

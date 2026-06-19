@@ -1,5 +1,6 @@
 ---
 title: iRobot Create3底盘配置
+layout: default
 ---
 
 # iRobot Create3底盘配置

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if page.title %}{{ page.title }} - {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: #24292e;
+      background: #fff;
+    }
+    .container {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      gap: 30px;
+    }
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      border-right: 1px solid #e1e4e8;
+      padding-right: 20px;
+    }
+    .sidebar h3 {
+      font-size: 14px;
+      color: #586069;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e1e4e8;
+    }
+    .sidebar ul { list-style: none; padding-left: 0; }
+    .sidebar li { margin: 4px 0; }
+    .sidebar a {
+      color: #0366d6;
+      text-decoration: none;
+      font-size: 13px;
+      line-height: 1.4;
+      display: block;
+      padding: 2px 0;
+    }
+    .sidebar a:hover { text-decoration: underline; }
+    .sidebar .toc-h2 { font-weight: 600; }
+    .sidebar .toc-h3 { padding-left: 16px; font-weight: 400; color: #586069; }
+    .sidebar .toc-h3 a { color: #586069; }
+    .sidebar .toc-h3 a:hover { color: #0366d6; }
+    .content {
+      flex: 1;
+      min-width: 0;
+      max-width: 900px;
+    }
+    .content h1 { font-size: 28px; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
+    .content h2 { font-size: 22px; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e1e4e8; }
+    .content h3 { font-size: 18px; margin: 20px 0 10px; }
+    .content h4 { font-size: 16px; margin: 16px 0 8px; }
+    .content p { margin: 0 0 12px; }
+    .content ul, .content ol { margin: 0 0 12px; padding-left: 28px; }
+    .content li { margin: 4px 0; }
+    .content code { background: #f6f8fa; padding: 2px 5px; border-radius: 3px; font-size: 85%; }
+    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; }
+    .content pre code { background: none; padding: 0; font-size: 100%; }
+    .content table { border-collapse: collapse; width: 100%; margin: 0 0 12px; }
+    .content th, .content td { border: 1px solid #dfe2e5; padding: 8px 12px; text-align: left; }
+    .content th { background: #f6f8fa; font-weight: 600; }
+    .content img { max-width: 100%; height: auto; }
+    .content blockquote { border-left: 4px solid #dfe2e5; padding: 8px 16px; color: #586069; margin: 0 0 12px; background: #f6f8fa; }
+    .content a { color: #0366d6; text-decoration: none; }
+    .content a:hover { text-decoration: underline; }
+    .inline-toc { display: none; }
+    @media (max-width: 900px) {
+      .container { flex-direction: column; }
+      .sidebar { width: 100%; position: static; max-height: none; border-right: none; border-bottom: 1px solid #e1e4e8; padding-right: 0; padding-bottom: 16px; }
+      .inline-toc { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <aside class="sidebar">
+      <h3>目录</h3>
+      <ul id="toc"></ul>
+    </aside>
+    <main class="content">
+      {{ content }}
+    </main>
+  </div>
+  <script>
+  (function() {
+    var toc = document.getElementById('toc');
+    var content = document.querySelector('.content');
+    var headings = content.querySelectorAll('h2, h3');
+    headings.forEach(function(h) {
+      if (!h.id) h.id = h.textContent.trim().replace(/[^\w\u4e00-\u9fff]+/g, '-').replace(/^-|-$/g, '');
+      var li = document.createElement('li');
+      li.className = h.tagName.toLowerCase() === 'h2' ? 'toc-h2' : 'toc-h3';
+      var a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = h.textContent;
+      li.appendChild(a);
+      toc.appendChild(li);
+    });
+  })();
+  </script>
+</body>
+</html>

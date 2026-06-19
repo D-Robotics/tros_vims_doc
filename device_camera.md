@@ -1,5 +1,6 @@
 ---
 title: 相机安装和配置手册
+layout: default
 ---
 
 # 相机安装和配置手册
