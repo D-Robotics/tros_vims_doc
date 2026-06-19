@@ -18,9 +18,69 @@
 
 ### 1.1 系统框架
 
-整个系统所需的数据源为双目相机提供的双目RGB图像数据，以及IMU数据。
+整个系统只使用双目相机一个传感器，相机驱动已对双目RGB图像和IMU两种数据进行了时间同步。
 
-<img src="images/tros_vims_framework.png" width="900">
+```mermaid
+flowchart TD
+    subgraph SRC[Sensor]
+        cam[stereo cam with IMU]
+    end
+
+    subgraph PERC[Perception System]
+        sde[stereo depth estimation]
+        yolov8_seg[yolov8-seg]
+        proj[projection]
+    end
+
+    subgraph SLAM[SLAM System]
+        front_vio[front end VIO]
+        back_end[back end]
+    end
+
+    subgraph OBS_REC[Obstacle Recognition System]
+        gen_obs_recog[general obs recog]
+        pcl2grid[pcl to grid]
+    end
+
+    subgraph NAV[Nav2 System]
+        nav_params[nav params]
+        bt_params[bt params]
+        nav_frame[navigation framework]
+        planner[planner]
+        controller[controller]
+        collision_mon[collision monitor]
+    end
+
+    %% 输入源分发
+    cam -->|Stereo RGB Images| sde
+    cam -->|RGB Image| yolov8_seg
+    cam -->|Stereo RGB Images| front_vio
+    cam -->|IMU| front_vio
+
+    %% 感知系统内部流向
+    sde -->|depth| proj
+    yolov8_seg -->|instance seg| proj
+
+    %% SLAM系统内部流向
+    front_vio -->|odom| back_end
+
+    %% 障碍物识别系统内部流向
+    gen_obs_recog -->|obstacle pcl| pcl2grid
+
+    %% 导航系统内部流向
+    nav_params --> nav_frame
+    bt_params --> nav_frame
+    nav_frame --> planner
+    planner --> controller
+    controller --> collision_mon
+
+    %% 跨系统数据交互
+    sde -->|pcl| gen_obs_recog
+    proj -->|masked depth| back_end
+    pcl2grid -->|dynamic grid map| nav_frame
+    back_end -->|static grid map| nav_frame
+    back_end -->|pose and tf| nav_frame
+```
 
 ### 1.2 双目深度估计
 
@@ -465,27 +525,26 @@ RVIZ上分别打开3D地图和障碍物点云的渲染，如下图：
 
 ### 7.1 Checklist
 
-运行应用示例前，请先检查是否已经完成必要的配置，并已更新到配置文件：
+运行应用示例前，请先检查是否已经完成必要的基础配置项，并已更新到配置文件：
 
 ```bash
 `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 ```
 
-| 配置项 | 参数 | 配置方法 |
+| 基础配置项 | 参数 | 配置方法 |
 | :---: | :---: | :---: |
 | 相机和底盘外参 | robot_to_camera_x <br> robot_to_camera_y <br> robot_to_camera_z <br> robot_to_camera_roll <br> robot_to_camera_pitch | 【相机和底盘外参标定】章节 |
 | 底盘高度 | rtabmap_Grid_MaxObstacleHeight <br> max_obstacle_height | 【底盘高度标定】章节 |
 | 验证标定参数 | —— | 【相机和底盘外参标定】章节中**使用（验证）标定参数**小节 |
 
-> **注意** 
-如未使用套件默认的硬件，如下任意一种情况：
+> **提示：** 
+如未使用套件默认的硬件，即存在如下任意一种情况，请完成下面表格中的**额外配置项**。
 1. 未使用 OriginBot 底盘
 2. 未使用 70mm 基线双目相机
 3. 未使用 VIO 模式，使用轮式里程计
-请更新以下参数：
 >
 
-| 配置项 | 参数 | 配置方法 |
+| 额外配置项 | 参数 | 配置方法 |
 | :---: | :---: | :---: |
 | 底盘类型 | robot_base | 根据机器人底盘类型选择 |
 | 相机参数 | mipi_rotation | 70mm基线（带IMU）相机设置为0.0，其他相机设置为90.0 |
@@ -493,8 +552,8 @@ RVIZ上分别打开3D地图和障碍物点云的渲染，如下图：
 | 运动类型 | rtabmap_Reg_Force3DoF | vio 模式设置 False，wheel 模式选择 True |
 | 运动类型 | rtabmap_Mem_UseOdomGravity | vio 模式设置 True，wheel 模式选择 False |
 
-> **注意** 
-1. 基于点云的通用障碍物识别算法，默认开启了自适应阈值，即启动时自动计算并更新阈值。 
+> **注意：** 
+1. 基于点云的通用障碍物识别算法，默认开启了自适应阈值（`params.yaml`配置文件中的`en_pcl_filter_min_z_auto_adjust`配置项），即启动时自动计算并更新阈值。 
 2. 启动时要求机器放置在**平整、无反光**地面上，地面上可以存在障碍物，但是机器人正前方[0.3米, 1.0米]范围内至少存在一块15cm*15cm的无障碍物区域。
 >
 
