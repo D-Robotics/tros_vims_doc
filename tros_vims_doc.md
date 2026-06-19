@@ -43,12 +43,7 @@ flowchart TD
     end
 
     subgraph NAV[Nav2 System]
-        nav_params[nav params]
-        bt_params[bt params]
         nav_frame[navigation framework]
-        planner[planner]
-        controller[controller]
-        collision_mon[collision monitor]
     end
 
     %% 输入源分发
@@ -58,6 +53,7 @@ flowchart TD
     cam -->|IMU| front_vio
 
     %% 感知系统内部流向
+    sde -->|pcl| gen_obs_recog
     sde -->|depth| proj
     yolov8_seg -->|instance seg| proj
 
@@ -67,15 +63,7 @@ flowchart TD
     %% 障碍物识别系统内部流向
     gen_obs_recog -->|obstacle pcl| pcl2grid
 
-    %% 导航系统内部流向
-    nav_params --> nav_frame
-    bt_params --> nav_frame
-    nav_frame --> planner
-    planner --> controller
-    controller --> collision_mon
-
     %% 跨系统数据交互
-    sde -->|pcl| gen_obs_recog
     proj -->|masked depth| back_end
     pcl2grid -->|dynamic grid map| nav_frame
     back_end -->|static grid map| nav_frame

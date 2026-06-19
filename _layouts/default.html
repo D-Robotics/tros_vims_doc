@@ -112,6 +112,18 @@
   })();
   </script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({startOnLoad:true,theme:'default'});</script>
+  <script>
+  (function() {
+    // Convert Jekyll-rendered <pre><code class="language-mermaid"> to <pre class="mermaid">
+    document.querySelectorAll('code.language-mermaid').forEach(function(code) {
+      var pre = code.parentElement;
+      var div = document.createElement('pre');
+      div.className = 'mermaid';
+      div.textContent = code.textContent;
+      pre.parentElement.replaceChild(div, pre);
+    });
+    mermaid.initialize({startOnLoad:true, theme:'default'});
+  })();
+  </script>
 </body>
 </html>
