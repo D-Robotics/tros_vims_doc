@@ -1,3 +1,8 @@
+---
+title: FAQ
+layout: default
+---
+
 # FAQ
 
 ## 常用模式配置
@@ -90,7 +95,7 @@ SLAM 3D地图和2D地图之间的关系：3D地图通过卡高度阈值去除地
 导航代价地图和SLAM 2D地图之间的关系：SLAM 2D地图作为导航代价地图中的静态障碍物层，同时叠加障碍物识别算法提取的低矮障碍物，最终的到用于导航和避障的导航代价地图。
 
 | SALM 3D地图 | SALM 2D地图 | 导航代价地图 |
-| --- | --- | --- |
+| :---: | :---: | :---: |
 | <img src="images/image_052.png" height="200"> | <img src="images/image_053.png" height="200"> | <img src="images/image_054.png" height="200"> |
 
 导航代价地图中膨胀层的说明参考https://wiki.ros.org/costmap_2d/hydro/inflation
@@ -120,7 +125,7 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
 统计信息中各字段说明如下：
 
 | 字段 | 说明 |
-| --- | --- |
+| :---: | :---: |
 | resolution | 栅格（cell）分辨率 |
 | width x height | 地图的宽和高 |
 | total cells | 地图中总栅格数 |
@@ -145,7 +150,7 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
 取消本次导航的方法为，在RVIZ的Navigation 2 Panel上，选择Cancel按键（左下图），取消后Feedback的状态显示canceled（右下图）。
 
 | 导航中 | 取消导航后 |
-| --- | --- |
+| :---: | :---: |
 | <img src="images/image_057.png" height="200"> | <img src="images/image_058.png" height="200"> |
 
 ### Q4 脱困
@@ -252,13 +257,13 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 使用键盘控制机器人移动，移动过程中（左下图），rviz上会渲染起点、运行轨迹、轨迹信息。最终机器人回到起点后（右下图），可以看到机器人当前pose和起始pose之间的距离偏差，即回环偏差。从右下图可以看到，机器人移动了26米，耗时6分25秒，回环偏差0.02米。
 
 | 移动过程中 | 回到起点后 |
-| --- | --- |
+| :---: | :---: |
 | <img src="images/image_038.png" height="200"> | <img src="images/image_039.png" height="200"> |
 
 渲染的轨迹信息说明：
 
 | 信息 | 说明 |
-| --- | --- |
+| :---: | :---: |
 | frame id | 轨迹坐标系 |
 | time diff | 机器人从移动开始到结束的时间 |
 | distance | 机器人当前pose和起始pose之间的距离偏差，即回环偏差 |
@@ -301,7 +306,7 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \ 
 自主探索建图涉及到的参数详细说明：
 
 | 参数名 | 含义 | 取值 | 默认值 |
-| --- | --- | --- | --- |
+| :---: | :---: | :---: | :---: |
 | min_frontier_size | 最小边界尺寸阈值，只探索超过阈值的边界 | > 0 | 0.2 |
 | return_to_init | 探索完成后是否回到起点 | true/false | false |
 | retry_limit | 探索完成后再次重新探索的次数 | >= 0 | 1 |

@@ -1,3 +1,8 @@
+---
+title: iRobot Create3底盘配置
+layout: default
+---
+
 # iRobot Create3底盘配置
 
 本文档介绍采用[iRobot Create3机器人底盘](https://iroboteducation.github.io/create3_docs/)涉及到的配置和安装说明：
@@ -5,14 +10,14 @@
 
 ## 安装双目相机
 
-参考[相机安装和配置手册](./device_camera.md)。
+参考[相机安装和配置手册](./device_camera.html)。
 
 ## RDK安装RDK X5
 
 参考配置底盘的USB转网卡功能后，使用网线直连iRobot Create3和RDK X5。安装示意图如下：
 
 | 说明 | 示意图 |
-| --- | --- |
+| :---: | :---: |
 | USB转网卡连接底盘 | <img src="images/image_010.jpg" width="300"> |
 | RDK X5使用网线连接USB转网卡 | <img src="images/image_011.jpg" width="300"> |
 
