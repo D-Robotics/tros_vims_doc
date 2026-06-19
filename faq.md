@@ -1,3 +1,8 @@
+---
+layout: default
+title: FAQ
+---
+
 # FAQ
 
 ## 常用模式配置

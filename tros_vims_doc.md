@@ -1,3 +1,8 @@
+---
+layout: default
+title: 地瓜机器人视觉移动Solution套件手册
+---
+
 # 地瓜机器人视觉移动Solution套件手册
 
 ## 1. 功能介绍

@@ -1,3 +1,8 @@
+---
+layout: default
+title: iRobot Create3底盘配置
+---
+
 # iRobot Create3底盘配置
 
 本文档介绍采用[iRobot Create3机器人底盘](https://iroboteducation.github.io/create3_docs/)涉及到的配置和安装说明：
