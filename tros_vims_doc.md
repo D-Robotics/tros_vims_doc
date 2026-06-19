@@ -1,8 +1,7 @@
----
-title: 地瓜机器人视觉移动Solution套件手册
----
-
 # 地瓜机器人视觉移动Solution套件手册
+
+* TOC
+{:toc}
 
 ## 1. 功能介绍
 
@@ -12,7 +11,7 @@ title: 地瓜机器人视觉移动Solution套件手册
 
 | 移动底盘 | RDK X5 | 双目相机 | = | 极简&低成本硬件 | 纯视觉&Lifelong&实时建图和导航 |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| <img src="images/originbot_controller_install.png" height="200"> | <img src="images/image_004.png" height="200"> | <img src="images/cam_132gswi.png" height="200"> | = | <img src="images/originbot_cam70mm.jpg" height="200"> | <img src="images/mapping.gif" height="200"> |
+| <img src="images/originbot_controller_install.png" height="150"> | <img src="images/image_004.png" height="150"> | <img src="images/cam_132gswi.png" height="150"> | = | <img src="images/originbot_cam70mm.jpg" height="150"> | <img src="images/mapping.gif" height="150"> |
 
 
 ### 1.1 系统框架

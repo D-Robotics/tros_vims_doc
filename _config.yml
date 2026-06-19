@@ -1,2 +1,4 @@
 title: 地瓜机器人视觉移动Solution
 theme: jekyll-theme-primer
+kramdown:
+  toc_levels: 2..3
