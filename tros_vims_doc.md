@@ -247,7 +247,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 
 ### 3.1 RDK X5上安装双目相机
 
-SC132GS双目相机安装在RDK X5上的方法参考手册[4.2. 硬件连接](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5)章节介绍。
+SC132GS双目相机安装在RDK X5上的方法参考手册[4.2. 硬件连接](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&p=RDK+X5#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5)章节介绍。
 
 ### 3.2 底盘上安装 RDK X5
 
@@ -364,11 +364,12 @@ tar -zxvf /userdata/vims/install-vims-v0.0.5.tar.gz -C /userdata/vims
 
 基于**RDK X5 3.5.0**版本系统，使用以下3个安装包更新驱动（拷贝到X5后使用dpkg -i hobot-*安装）。
 
-[hobot-kernel-headers_3.0.4-20260514041655_arm64.deb](https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/deb/hobot-kernel-headers_3.0.4-20260514041655_arm64.deb)
-
-[hobot-boot_3.1.0-20260514041708_arm64.deb](https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/deb/hobot-boot_3.1.0-20260514041708_arm64.deb)
-
-[hobot-dtb_3.0.8-20260514041655_arm64.deb](https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/deb/hobot-dtb_3.0.8-20260514041655_arm64.deb)
+```bash
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/deb/hobot-kernel-headers_3.0.4-20260514041655_arm64.deb
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/deb/hobot-boot_3.1.0-20260514041708_arm64.deb
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/deb/hobot-dtb_3.0.8-20260514041655_arm64.deb
+sudo dpkg -i hobot-kernel-headers_3.0.4-20260514041655_arm64.deb hobot-boot_3.1.0-20260514041708_arm64.deb hobot-dtb_3.0.8-20260514041655_arm64.deb
+```
 
 #### 连接硬件
 
@@ -469,7 +470,7 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 ```bash
 source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash 
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml mipi_rotation=0.0 odom_type=wheel robot_base=originbot stereonet_pub_web=True run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False pcl_process_mode=1 pcl_in_pcl_frame_id=camera_link pcl_out_pcl_frame_id=camera_link pcl_filter_max_x=1.0 pcl_filter_max_y=0.5 pcl_filter_min_y=-0.5 pcl_filter_min_z=-1.0 max_obstacle_height=2.0 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml stereonet_pub_web=True run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False pcl_process_mode=1 pcl_in_pcl_frame_id=camera_link pcl_out_pcl_frame_id=camera_link pcl_filter_max_x=1.0 pcl_filter_max_y=0.5 pcl_filter_min_y=-0.5 pcl_filter_min_z=-1.0 max_obstacle_height=2.0 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 此时PC打开WEB浏览器（chrome/firefox/edge）输入 http://IP:8000（IP为RDK IP地址），能够查看到相机画面。
