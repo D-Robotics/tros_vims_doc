@@ -453,6 +453,7 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
 
 ```bash
 # 打开配置文件
+source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 使用标定结果设置 robot_to_camera_x  robot_to_camera_y
 ```
@@ -494,6 +495,7 @@ RDK终端将会打印如下标定结果信息：
 
 ```bash
 # 打开配置文件
+source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 使用标定结果中的roll和pitch设置 robot_to_camera_roll robot_to_camera_pitch
 # 使用Camera Height（--z）设置robot_to_camera_z
@@ -531,6 +533,7 @@ RVIZ上，将坐标系设置为base_link/base_footprint，勾选PclObstacle。�
 
 ```bash
 # 打开配置文件
+source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 使用标定结果设置 rtabmap_Grid_MaxObstacleHeight max_obstacle_height
 ```
@@ -798,6 +801,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 打开配置文件
 ```bash
+source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 ```
  
