@@ -750,7 +750,7 @@ source /userdata/vims/install/local_setup.bash
 
 ros2 run tf2_ros static_transform_publisher --frame-id base_link --child-frame-id base_footprint --z -0.0 &
 
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml rtabmap_Grid_3D="'true'" rtabmap_Grid_MaxObstacleHeight="'0.75'" run_pcl2grid=False run_nav=False run_explore=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml rtabmap_Grid_3D="'true'" rtabmap_Grid_MaxObstacleHeight="'0.75'" run_pcl2grid=False run_nav=False run_explore=False localization=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 ```
 

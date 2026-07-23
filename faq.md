@@ -185,7 +185,12 @@ cat `ros2 pkg prefix tros_vision_nav --share`/params/navigate_to_pose_w_replanni
 需要录制的基础数据如下：
 
 ```bash
-ros2 bag record \     /rosout \     /map \     /tros_diagnostics \     /global_costmap/costmap \     /local_costmap/costmap \     /global_costmap/tros_layer_pcl/tros_dynamic_obstacle_costmap \     /local_costmap/tros_layer_pcl/tros_dynamic_obstacle_costmap \     /tros_goal_pose \     /tf \     /tf_static \     /local_costmap/published_footprint \     /object_point_cloud \     /StereoNetNode/stereonet_depth/camera_info \     /global_path \     /plan_smoothed \     /received_global_plan \     /transformed_global_plan \     /local_plan \     /cmd_vel \     /cmd_vel_nav \     /tros_observing_markers \     /tf \     /tf_static \     /image_jpeg
+ros2 bag record /rosout /map /tros_diagnostics /global_costmap/costmap /local_costmap/costmap \
+/global_costmap/tros_layer_pcl/tros_dynamic_obstacle_costmap /local_costmap/tros_layer_pcl \
+/tros_dynamic_obstacle_costmap /tros_goal_pose /tf /tf_static /local_costmap/published_footprint \
+/object_point_cloud /StereoNetNode/stereonet_depth/camera_info /global_path /plan_smoothed \
+/received_global_plan /transformed_global_plan /local_plan /cmd_vel /cmd_vel_nav \
+/tros_observing_markers /tf /tf_static /image_jpeg
 ```
 
 如果需要录制深度估计输出的点云，录制时添加/StereoNetNode/stereonet_pointcloud2话题。
@@ -230,7 +235,9 @@ source /userdata/vims/install/local_setup.bash
 mkdir -p /userdata/rtabmap/  
 # 删除地图文件
 rm /userdata/rtabmap/office.db 
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \ run_explore=False run_traj_viz=True run_nav=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+run_explore=False run_traj_viz=True run_nav=False \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 ***配置RVIZ***
@@ -299,7 +306,10 @@ step5: 探索完成。完成探索后，机器人停止。
 source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash
 cp -r `ros2 pkg prefix dnn_node_example`/lib/dnn_node_example/config . 
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \ frontier_search_radius=25.0 frontier_goal_nav_path_dist=50.0 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+frontier_search_radius=25.0 frontier_goal_nav_path_dist=50.0 \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 ### Q3 参数说明
@@ -322,7 +332,8 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \ 
 ```bash
 # 默认使用的配置文件为`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 支持启动时用户使用YAML_CONFIG_FILE环境变量指定配置文件
-YAML_CONFIG_FILE=/userdata/params.yaml bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=/userdata/params.yaml \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 ### 2. 只启动rviz
@@ -334,13 +345,17 @@ ros2 run rviz2 rviz2 -d `ros2 pkg prefix tros_vision_nav`/share/tros_vision_nav/
 ### 3. 只启动导航
 
 ```bash
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \ localization=True log_level_nav=info LAUNCH_FILE="nav.launch.py" bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+localization=True log_level_nav=info LAUNCH_FILE="nav.launch.py" \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 ### 4. 只启动自主探索
 
 ```bash
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml LAUNCH_PACKAGE=tros_frontier_exploration LAUNCH_FILE="explore.launch.py" bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+LAUNCH_PACKAGE=tros_frontier_exploration LAUNCH_FILE="explore.launch.py" \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 ### 5. 只启动底盘和双目深度估计
@@ -352,5 +367,16 @@ stereonet_pub_web=True run_pcl2grid=False run_rviz=False run_perc=False run_slam
 ### 6. 只启动通用障碍物识别
 
 ```bash
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml LAUNCH_FILE="pcl_obstacle_det.launch.py" use_composition=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+LAUNCH_FILE="pcl_obstacle_det.launch.py" use_composition=False \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+```
+
+### 7. 只启动语义目标识别
+
+```bash
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+odom_type=wheel run_mask_depth=False run_pcl2grid=False run_explore=False \
+run_slam=False run_nav=False run_rviz=False \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
