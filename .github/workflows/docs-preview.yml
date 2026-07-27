@@ -1,0 +1,72 @@
+name: Docs preview (multi-branch)
+
+# Build Jekyll and publish each target branch to its own subdirectory on the
+# gh-pages branch, so all branches can be previewed from a single Pages site.
+#   main        -> https://<user>.github.io/<repo>/            (site root)
+#   develop     -> https://<user>.github.io/<repo>/develop/
+#   feature-io  -> https://<user>.github.io/<repo>/feature-io/
+# Other branches can be built on demand via workflow_dispatch.
+
+on:
+  push:
+    branches: [main, develop, feature-io]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build and publish (leave empty to use the workflow branch)'
+        required: false
+
+permissions:
+  contents: write   # peaceiris needs to push to gh-pages
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest   # switch to self-hosted if GitHub connectivity is unstable
+    steps:
+      - name: Resolve target branch
+        id: target
+        run: |
+          BR="${{ github.event.inputs.branch || github.ref_name }}"
+          echo "branch=$BR" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.branch }}
+          fetch-depth: 0
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
+      # Use the github-pages gem so the built output matches GitHub's built-in
+      # Pages build (same Jekyll + plugin versions), minimizing regressions at
+      # the root URL once the Pages source moves to gh-pages.
+      - name: Install github-pages gem
+        run: gem install github-pages
+
+      - name: Build Jekyll site
+        env:
+          JEKYLL_ENV: production
+        run: jekyll build --safe --destination _site
+
+      - name: Compute publish directory
+        id: dest
+        run: |
+          BR="${{ steps.target.outputs.branch }}"
+          if [ "$BR" = "main" ]; then
+            echo "dir=" >> "$GITHUB_OUTPUT"          # main -> gh-pages root
+          else
+            echo "dir=$BR" >> "$GITHUB_OUTPUT"       # others -> gh-pages/<branch>/
+          fi
+
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _site
+          destination_dir: ${{ steps.dest.outputs.dir }}
+          keep_files: true            # keep other branches' subdirectories intact
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
