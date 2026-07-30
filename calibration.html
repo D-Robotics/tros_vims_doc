@@ -216,11 +216,11 @@ ros2 launch camera_extrinsic_calibration camera_extrinsic_calibration.launch.py 
 </code></pre></div></div>
 
 <h3 id="更新标定参数">更新标定参数</h3>
-<p>修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的–x –y –z–roll –pitch –yaw分别进行设置：</p>
+<p>修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的–x –y –z –roll –pitch –yaw分别进行设置：</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 打开配置文件</span>
 vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml
-<span class="c"># 使用标定结果中的--x --y --z--roll --pitch --yaw设置   robot_to_camera_x  robot_to_camera_y  robot_to_camera_z  robot_to_camera_roll  robot_to_camera_pitch</span>
+<span class="c"># 使用标定结果中的--x --y --z --roll --pitch --yaw 设置   robot_to_camera_x  robot_to_camera_y  robot_to_camera_z  robot_to_camera_roll  robot_to_camera_pitch robot_to_camera_yaw</span>
 </code></pre></div></div>
 
 <h3 id="标定工具详细说明">标定工具详细说明</h3>
