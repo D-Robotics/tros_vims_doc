@@ -87,8 +87,6 @@ ros2 bag record -s mcap --compression-queue-size 5 \
 
 运行成功后将会有如下log信息：
 
-运行成功后将显示类似以下信息：
-
 ```bash
 [INFO] [1785405443.162168285] [rosbag2_recorder]: Press SPACE for pausing/resuming
 [INFO] [1785405443.186423035] [rosbag2_recorder]: Listening for topics...
