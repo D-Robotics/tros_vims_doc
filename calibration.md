@@ -58,7 +58,7 @@ odom_type=vio stereonet_pub_web=True run_pcl2grid=False run_rviz=False run_perc=
 
 > **注意**
 1. 70mm基线（带IMU）不需要设置图像旋转，即启动时指定mipi_rotation=0.0。
-2. 80mm以及其他基线（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。
+2. 80mm（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。
 3. 示例采用的移动底盘是originbot，如果采用的是其他底盘，使用robot_base参数指定。
 >
 
