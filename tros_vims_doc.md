@@ -247,7 +247,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 
 ### 3.1 RDK X5上安装双目相机
 
-SC132GS双目相机安装在RDK X5上的方法参考手册[4.2. 硬件连接](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&p=RDK+X5#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5)章节介绍。
+RDK Stereo Camera GS130WI 安装在RDK X5上的方法参考手册[4.2. 硬件连接](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&p=RDK+X5#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5)章节介绍。
 
 ### 3.2 底盘上安装 RDK X5
 
@@ -583,14 +583,14 @@ RVIZ上分别打开3D地图和障碍物点云的渲染，如下图：
 > **提示：** 
 如未使用套件默认的硬件，即存在如下任意一种情况，请完成下面表格中的**额外配置项**。
 1. 未使用 OriginBot 底盘
-2. 未使用 70mm 基线双目相机
+2. 未使用 RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）
 3. 未使用 VIO （vio模式），使用轮式里程计（wheel模式）
 >
 
 | 额外配置项 | 参数 | 配置方法 |
 | :---: | :---: | :---: |
 | 底盘类型 | robot_base | 根据机器人底盘类型选择 |
-| 相机参数 | mipi_rotation | 70mm基线（带IMU）相机设置为0.0，其他相机设置为90.0 |
+| 相机参数 | mipi_rotation | RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）设置为0.0，其他相机设置为90.0 |
 | 里程计类型 | odom_type | wheel/vio |
 | 运动类型 | rtabmap_Reg_Force3DoF | vio 模式设置 False，wheel 模式选择 True |
 | 运动类型 | rtabmap_Mem_UseOdomGravity | vio 模式设置 True，wheel 模式选择 False |
