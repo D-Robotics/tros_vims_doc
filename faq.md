@@ -28,7 +28,7 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 ```
 
 > **注意** 
-1. 70mm基线（带IMU）不需要设置图像旋转，即启动时指定mipi_rotation=0.0。 
+1. RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）不需要设置图像旋转，即启动时指定mipi_rotation=0.0。 
 2. 80mm以及其他基线（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。
 >
 
