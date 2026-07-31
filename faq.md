@@ -315,16 +315,23 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ### Q3 参数说明
 自主探索建图涉及到的参数详细说明：
 
-| 参数名 | 含义 | 取值 | 默认值 |
-| :---: | :---: | :---: | :---: |
-| min_frontier_size | 最小边界尺寸阈值，只探索超过阈值的边界 | > 0 | 0.2 |
-| return_to_init | 探索完成后是否回到起点 | true/false | false |
-| retry_limit | 探索完成后再次重新探索的次数 | >= 0 | 1 |
-| nav_timeout_seconds | 一次导航的时间限制，超过限制将会取消本次导航 | >= 0 | 300 |
-| frontier_search_radius | 探索半径阈值，只探索和机器人当前位置的距离小于阈值的边界 | > 0 | 8.0 |
-| frontier_goal_nav_path_dist | 路径规划长度阈值，如果到导航目标点的路径长度超过阈值，取消本次导航 | > 0 | 10.0 |
-| move_time_allowance | 移动超时时间，如果在超时时间内移动距离小于move_radius，取消本次导航 | > 0 | 10.0 |
-| move_radius | 移动超时距离 | > 0 | 0.2 |
+| 参数名 | 含义 | 取值 |
+| :---: | :---: | :---: |
+| min_frontier_size | 最小边界尺寸阈值，只探索超过阈值的边界 | > 0 |
+| return_to_init | 探索完成后是否回到起点 | true/false |
+| explore_retry_limit | 探索完成后再次重新探索的次数 | >= 0 |
+| nav_timeout_seconds | 一次导航的时间限制，超过限制将会取消本次导航 | >= 0 |
+| frontier_search_radius | 探索半径阈值，只探索和机器人当前位置的距离小于阈值的边界 | > 0 |
+| frontier_goal_nav_path_dist | 路径规划长度阈值，如果到导航目标点的路径长度超过阈值，取消本次导航 | > 0 |
+| move_time_allowance | 移动超时时间，如果在超时时间内移动距离小于move_radius，取消本次导航 | > 0 |
+| move_radius | 移动超时距离 | > 0 |
+
+具体参数实际取值可打开配置文件查询：
+
+```bash
+# 打开配置文件
+vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml 
+```
 
 ## 单模块运行命令
 ### 1. 运行时指定配置文件
