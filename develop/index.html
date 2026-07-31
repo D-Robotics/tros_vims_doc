@@ -783,6 +783,7 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
 <p>修改配置文件中calibration的参数，设置平移向量：</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 打开配置文件</span>
+<span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash 
 vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml
 <span class="c"># 使用标定结果设置 robot_to_camera_x  robot_to_camera_y</span>
@@ -840,6 +841,7 @@ RVIZ上，将坐标系设置为base_link/base_footprint，勾选PclObstacle，�
 </ul>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 打开配置文件</span>
+<span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash 
 vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml
 <span class="c"># 使用标定结果中的 --roll 和 --pitch 设置 robot_to_camera_roll robot_to_camera_pitch</span>
