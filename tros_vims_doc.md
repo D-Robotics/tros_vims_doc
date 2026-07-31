@@ -637,7 +637,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <img src="images/image_036.png" width="600">
 
-### 7.4 VSLAM建图
+### 7.3 VSLAM建图
 
 本章节介绍如何使用VSLAM生成用于导航的2D地图。
 
@@ -699,7 +699,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <img src="images/image_044.png" width="600">
 
-### 7.5 导航和避障
+### 7.4 导航和避障
 
 本章节介绍如何使用已经创建好的地图进行导航和避障。
 
@@ -741,7 +741,7 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml ba
 
 <img src="images/image_049.gif" width="900">
 
-### 7.6 手持建图
+### 7.5 手持建图
 
 本章节介绍在没有移动底盘的情况下，运行VSLAM（VIO和3D建图）示例的方法。
 
@@ -763,7 +763,7 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml rt
 
 <img src="images/handheld_vslam.gif" width="900">
 
-### 7.7 人机交互[TODO]
+### 7.6 人机交互[TODO]
 
 ## 8. 适配其他底盘
 
