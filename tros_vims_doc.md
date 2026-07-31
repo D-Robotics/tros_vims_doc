@@ -592,7 +592,7 @@ RVIZ上分别打开3D地图和障碍物点云的渲染，如下图：
 | 额外配置项 | 参数 | 配置方法 |
 | :---: | :---: | :---: |
 | 底盘类型 | robot_base | 根据机器人底盘类型选择 |
-| 相机参数 | mipi_rotation | RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）设置为0.0，其他相机设置为90.0 |
+| 相机参数 | mipi_rotation | RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）设置为0.0，80mm基线（不带IMU）双目相机设置为90.0 |
 | 里程计类型 | odom_type | wheel/vio |
 | 运动类型 | rtabmap_Reg_Force3DoF | vio 模式设置 False，wheel 模式选择 True |
 | 运动类型 | rtabmap_Mem_UseOdomGravity | vio 模式设置 True，wheel 模式选择 False |
