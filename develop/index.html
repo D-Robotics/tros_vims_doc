@@ -901,24 +901,11 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 <span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">rtabmap_Grid_3D</span><span class="o">=</span><span class="s2">"'true'"</span> bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
-<p>RVIZ上分别打开3D地图和障碍物点云的渲染，如下图：</p>
+<p>RVIZ上打开障碍物点云的渲染，如下图：</p>
 
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">3D地图</th>
-      <th style="text-align: center">障碍物点云</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center"><img src="images/image_032.png" height="200" /></td>
-      <td style="text-align: center"><img src="images/image_033.png" height="200" /></td>
-    </tr>
-  </tbody>
-</table>
+<p><img src="images/image_033.png" height="200" /></p>
 
-<p>其中障碍物1离地高度0.18m（低于阈值0.25m），障碍物3离地高度0.27m（高于阈值0.25m）。可以看到地图和点云只有障碍物1的渲染，无障碍物3，说明标定参数生效。</p>
+<p>其中障碍物1离地高度0.18m（低于阈值0.25m），障碍物3离地高度0.27m（高于阈值0.25m）。可以看到地图只有障碍物1的渲染，无障碍物3，说明标定参数生效。</p>
 
 <h3 id="63-相机和底盘外参标定高精度标定">6.3 相机和底盘外参标定（高精度标定）</h3>
 

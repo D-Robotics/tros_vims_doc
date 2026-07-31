@@ -550,13 +550,11 @@ source /userdata/vims/install/local_setup.bash
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml stereonet_pub_web=True run_nav=False run_explore=False rtabmap_Grid_3D="'true'" bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
-RVIZ上分别打开3D地图和障碍物点云的渲染，如下图：
+RVIZ上打开障碍物点云的渲染，如下图：
 
-| 3D地图 | 障碍物点云 |
-| :---: | :---: |
-| <img src="images/image_032.png" height="200"> | <img src="images/image_033.png" height="200"> |
+<img src="images/image_033.png" height="200">
 
-其中障碍物1离地高度0.18m（低于阈值0.25m），障碍物3离地高度0.27m（高于阈值0.25m）。可以看到地图和点云只有障碍物1的渲染，无障碍物3，说明标定参数生效。
+其中障碍物1离地高度0.18m（低于阈值0.25m），障碍物3离地高度0.27m（高于阈值0.25m）。可以看到地图只有障碍物1的渲染，无障碍物3，说明标定参数生效。
 
 ### 6.3 相机和底盘外参标定（高精度标定）
 
