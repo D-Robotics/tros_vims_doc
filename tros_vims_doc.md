@@ -377,7 +377,7 @@ sudo dpkg -i hobot-kernel-headers_3.0.4-20260514041655_arm64.deb hobot-boot_3.1.
 
 #### 配置软件
 
-参考[RDK X5配置](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam#43-rdk-x5%E9%85%8D%E7%BD%AE)。
+参考[RDK X5配置](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&p=RDK+X5#43-rdk-x5-%E9%85%8D%E7%BD%AE)。
 
 ### 4.6 配置生效
 
