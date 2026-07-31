@@ -445,9 +445,10 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
 
 | 标定参数 | 说明 | 配置参数 | 标定结果 |
 | :---: | :---: | :---: | :---: |
-| X偏移 | 双目相机左目相对于底盘两个轮子连线，X方向的偏移 | robot_to_camera_x | 0.145 |
-| Y偏移 | 双目相机左目相对于底盘两个轮子连线的中心点，Y方向的偏移 | robot_to_camera_y | 0.022 |
+| X偏移 | 双目相机左目相对于底盘两个轮子连线，X方向的偏移 | robot_to_camera_x | 0.105m |
+| Y偏移 | 双目相机左目相对于底盘两个轮子连线的中心点，Y方向的偏移 | robot_to_camera_y | 0.018m |
 
+<img src="images/originbot_cam70mm.jpg" width="300">
 
 修改配置文件中calibration的参数，设置平移向量：
 
