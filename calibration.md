@@ -87,6 +87,21 @@ ros2 bag record -s mcap --compression-queue-size 5 \
 
 运行成功后将会有如下log信息：
 
+```bash
+[INFO] [1785405443.162168285] [rosbag2_recorder]: Press SPACE for pausing/resuming
+[INFO] [1785405443.186423035] [rosbag2_recorder]: Listening for topics...
+[INFO] [1785405443.186558811] [rosbag2_recorder]: Event publisher thread: Starting
+[INFO] [1785405443.206221490] [rosbag2_recorder]: Subscribed to topic '/tf_static'
+[INFO] [1785405443.208910408] [rosbag2_recorder]: Subscribed to topic '/tf'
+[INFO] [1785405443.214892962] [rosbag2_recorder]: Subscribed to topic '/StereoNetNode/stereonet_pointcloud2'
+[INFO] [1785405443.232660950] [rosbag2_recorder]: Subscribed to topic '/odom'
+[INFO] [1785405443.238530114] [rosbag2_recorder]: Subscribed to topic '/StereoNetNode/stereonet_depth/camera_info'
+[INFO] [1785405443.243021260] [rosbag2_recorder]: Subscribed to topic '/StereoNetNode/stereonet_depth'
+[INFO] [1785405443.246088866] [rosbag2_recorder]: Subscribed to topic '/StereoNetNode/rectify_left_image'
+[INFO] [1785405443.246482812] [rosbag2_recorder]: Recording...
+[INFO] [1785405443.249659806] [rosbag2_recorder]: All requested topics are subscribed. Stopping discovery...
+```
+
 ### 控制机器人走"S型路线"
 启动底盘控制节点：
 
