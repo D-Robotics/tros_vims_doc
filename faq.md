@@ -236,7 +236,7 @@ mkdir -p /userdata/rtabmap/
 # 删除地图文件
 rm /userdata/rtabmap/office.db 
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
-run_explore=False run_traj_viz=True run_nav=False \
+run_explore=False run_traj_viz=True run_nav=False localization=False \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
