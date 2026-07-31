@@ -196,7 +196,7 @@ ros2 bag record /rosout /map /tros_diagnostics /global_costmap/costmap /local_co
 如果需要录制深度估计输出的点云，录制时添加/StereoNetNode/stereonet_pointcloud2话题。
 ### Q2 自动录制
 移动solution包含数据trigger & recorder工具，用于路径规划失败时自动触发录制系统状态数据，通过离线回放数据定位问题，支持录制触发前的数据（影子模式）。
-工具默认关闭，开启方式为将`ros2 pkg prefix tros_vision_nav --share`/params/tros_nav2.yaml配置文件中enable_record配置项设置为true后，重新启动导航命令。录制的数据保存在运行路径下，路径名为`bag_[planner_server]_[时间戳]`。
+工具默认关闭，开启方式为将`` `ros2 pkg prefix tros_vision_nav --share`/params/tros_nav2.yaml ``配置文件中enable_record配置项设置为true后，重新启动导航命令。录制的数据保存在运行路径下，路径名为`bag_[planner_server]_[时间戳]`。
 
 ```bash
 planner_server:
@@ -296,7 +296,7 @@ step5: 探索完成。完成探索后，机器人停止。
 
 ### Q2 建图区域
 
-如果发现生成的地图不完整，或者需要对更大区域进行建图，请尝试增加探索半径阈值frontier_search_radius和路径规划长度阈值frontier_goal_nav_path_dist（默认值的查看方法为：使用命令 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml 打开配置后，搜索参数关键字）。
+如果发现生成的地图不完整，或者需要对更大区域进行建图，请尝试增加探索半径阈值frontier_search_radius和路径规划长度阈值frontier_goal_nav_path_dist（默认值的查看方法为：使用命令`` vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml ``打开配置后，搜索参数关键字）。
 
 这两个参数说明如果待探索区域和机器人当前位置的距离超过frontier_search_radius米，或者规划出来的路径长度超过frontier_goal_nav_path_dist米，忽略探索这块区域。
 
