@@ -491,13 +491,15 @@ RDK终端将会打印如下标定结果信息：
 
 说明标定出来的相机距离地面高度（Camera Height）为0.146 m。
 
-修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的--roll和--pitch设置旋转矩阵，使用Camera Height（--z）设置robot_to_camera_z：
+- **方法一（动态生效）**：可直接在终端中执行上述 `run tf2_ros static_transform_publisher` 命令，标定参数将立即生效。该方式适用于临时调试，重启后失效。
+  
+- **方法二（永久生效）**：修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的--roll和--pitch设置旋转矩阵，使用Camera Height（--z）设置robot_to_camera_z：
 
 ```bash
 # 打开配置文件
 source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
-# 使用标定结果中的roll和pitch设置 robot_to_camera_roll robot_to_camera_pitch
+# 使用标定结果中的 --roll 和 --pitch 设置 robot_to_camera_roll robot_to_camera_pitch
 # 使用Camera Height（--z）设置robot_to_camera_z
 ```
 
