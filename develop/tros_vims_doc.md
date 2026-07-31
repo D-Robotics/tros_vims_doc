@@ -838,7 +838,7 @@ RDK X5上启动电机驱动功能myrobot_base，例如：
 ros2 run myrobot_base myrobot_base
 ```
 
-参考[Checklist](#71-Checklist)章节检查参数是否全部完成配置后，即可运行[应用示例](#7-应用示例)章节示例。
+参考[Checklist](#71-checklist)章节检查参数是否全部完成配置后，即可运行[应用示例](#7-应用示例)章节示例。
 
 ## 9. 版本发布记录
 
