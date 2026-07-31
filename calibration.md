@@ -128,6 +128,7 @@ currently:      speed 0.14      turn 0.28
 ### 运行标定脚本
 
 ```bash
+source /opt/tros/humble/local_setup.bash
 source /userdata/vims/cam2base_calib/install/local_setup.bash
 ros2 launch camera_extrinsic_calibration camera_extrinsic_calibration.launch.py \
     camera_color_topic:=/StereoNetNode/rectify_left_image \
@@ -153,6 +154,8 @@ ros2 launch camera_extrinsic_calibration camera_extrinsic_calibration.launch.py 
 
 ```bash
 # 打开配置文件
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/cam2base_calib/install/local_setup.bash
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 使用标定结果中的--x --y --z --roll --pitch --yaw设置   robot_to_camera_x  robot_to_camera_y  robot_to_camera_z  robot_to_camera_roll  robot_to_camera_pitch robot_to_camera_yaw
 ```
@@ -161,6 +164,7 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 标定原理、参数说明详见标定工具手册：
 
 ```bash
+source /opt/tros/humble/local_setup.bash
 source /userdata/vims/cam2base_calib/install/local_setup.bash
 # 打开标定工具手册
 vi `ros2 pkg prefix camera_extrinsic_calibration`/README.md
