@@ -490,7 +490,6 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
       <th style="text-align: center">参数名</th>
       <th style="text-align: center">含义</th>
       <th style="text-align: center">取值</th>
-      <th style="text-align: center">默认值</th>
     </tr>
   </thead>
   <tbody>
@@ -498,52 +497,50 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
       <td style="text-align: center">min_frontier_size</td>
       <td style="text-align: center">最小边界尺寸阈值，只探索超过阈值的边界</td>
       <td style="text-align: center">&gt; 0</td>
-      <td style="text-align: center">0.2</td>
     </tr>
     <tr>
       <td style="text-align: center">return_to_init</td>
       <td style="text-align: center">探索完成后是否回到起点</td>
       <td style="text-align: center">true/false</td>
-      <td style="text-align: center">false</td>
     </tr>
     <tr>
-      <td style="text-align: center">retry_limit</td>
+      <td style="text-align: center">explore_retry_limit</td>
       <td style="text-align: center">探索完成后再次重新探索的次数</td>
       <td style="text-align: center">&gt;= 0</td>
-      <td style="text-align: center">1</td>
     </tr>
     <tr>
       <td style="text-align: center">nav_timeout_seconds</td>
       <td style="text-align: center">一次导航的时间限制，超过限制将会取消本次导航</td>
       <td style="text-align: center">&gt;= 0</td>
-      <td style="text-align: center">300</td>
     </tr>
     <tr>
       <td style="text-align: center">frontier_search_radius</td>
       <td style="text-align: center">探索半径阈值，只探索和机器人当前位置的距离小于阈值的边界</td>
       <td style="text-align: center">&gt; 0</td>
-      <td style="text-align: center">8.0</td>
     </tr>
     <tr>
       <td style="text-align: center">frontier_goal_nav_path_dist</td>
       <td style="text-align: center">路径规划长度阈值，如果到导航目标点的路径长度超过阈值，取消本次导航</td>
       <td style="text-align: center">&gt; 0</td>
-      <td style="text-align: center">10.0</td>
     </tr>
     <tr>
       <td style="text-align: center">move_time_allowance</td>
       <td style="text-align: center">移动超时时间，如果在超时时间内移动距离小于move_radius，取消本次导航</td>
       <td style="text-align: center">&gt; 0</td>
-      <td style="text-align: center">10.0</td>
     </tr>
     <tr>
       <td style="text-align: center">move_radius</td>
       <td style="text-align: center">移动超时距离</td>
       <td style="text-align: center">&gt; 0</td>
-      <td style="text-align: center">0.2</td>
     </tr>
   </tbody>
 </table>
+
+<p>具体参数实际取值可打开配置文件查询：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 打开配置文件</span>
+vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml 
+</code></pre></div></div>
 
 <h2 id="单模块运行命令">单模块运行命令</h2>
 <h3 id="1-运行时指定配置文件">1. 运行时指定配置文件</h3>
