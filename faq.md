@@ -62,8 +62,9 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # True=use VIO orientation as gravity ref
 ```
 
-> **注意** 只有当里程计类型为vio时，才SLAM建图才支持3D运动模式。如果里程计类型为wheel，禁止打开SLAM建图的3D运动模式。 只有70mm基线（带IMU）相机支持vio。
->
+> **注意**
+> - 只有当里程计类型为vio时，SLAM建图才支持3D运动模式。如果里程计类型为wheel，禁止打开SLAM建图的3D运动模式。
+> - 目前仅70mm基线（带IMU）相机支持vio。
 
 ## 使用OriginBot轮式里程计
 
@@ -86,7 +87,7 @@ SLAM创建的地图保存在RDK X5上的文件名为/userdata/rtabmap/office.db�
 
 SLAM 3D地图：蓝色区域表示低矮障碍物区域（地面也属于这一类）；蓝色以上从绿色到红色，表示障碍物高度依次增加（限制了地图中的障碍物高度小于0.5米）；黑色区域表示未知区域。
 
-SALM 2D地图：白色区域表示无障碍物，黑色区域表示障碍物区域；灰色区域表示未知区域。
+SLAM 2D地图：白色区域表示无障碍物，黑色区域表示障碍物区域；灰色区域表示未知区域。
 
 导航地图：高亮区域表示局部代价地图（local costmap，箭头1、2、3所在区域）；低亮区域表示全局代价地图（global costmap，箭头5所在区域）；1表示实际障碍物区域；2和3表示膨胀层；4表示无障碍物；5表示全局代价地图的障碍物层和膨胀层。
 
@@ -94,7 +95,7 @@ SLAM 3D地图和2D地图之间的关系：3D地图通过卡高度阈值去除地
 
 导航代价地图和SLAM 2D地图之间的关系：SLAM 2D地图作为导航代价地图中的静态障碍物层，同时叠加障碍物识别算法提取的低矮障碍物，最终的到用于导航和避障的导航代价地图。
 
-| SALM 3D地图 | SALM 2D地图 | 导航代价地图 |
+| SLAM 3D地图 | SLAM 2D地图 | 导航代价地图 |
 | :---: | :---: | :---: |
 | <img src="images/image_052.png" height="200"> | <img src="images/image_053.png" height="200"> | <img src="images/image_054.png" height="200"> |
 
