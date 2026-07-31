@@ -269,8 +269,8 @@ RDK Stereo Camera GS130WI 安装在RDK X5上的方法参考手册[4.2. 硬件连
 
 ### 4.1 系统和TROS
 
-RDK X5已安装Ubuntu 22.04 desktop系统镜像，已安装TROS并升级到最新版本。
-
+RDK X5已安装RDK OS系统镜像，已安装TROS并升级到最新版本。
+- 系统烧录指引：如需重新烧录系统，请参考官方文档 [全镜像烧录](https://d-robotics.github.io/rdk_doc/Quick_start/install_os/rdk_x5/system_burn/) 章节。
 - 基础环境配置参考RDK[入门配置](https://developer.d-robotics.cc/rdk_x_doc/Quick_start/configuration_wizard)
 - 安装和升级TROS参考[安装和升级TROS](https://developer.d-robotics.cc/tros_doc/Quick_start/install_tros)
 
