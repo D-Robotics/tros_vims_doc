@@ -334,7 +334,7 @@ apt install ros-dev-tools ros-humble-cyclonedds* ros-humble-rmw-cyclonedds* ros-
 
 > **提示** 
 1. 如遇到执行apt命令速度慢的问题，可以尝试使用社区中广受好评的第三方ROS安装工具，例如“小鱼的一键安装系列”（FishROS）。这些工具通常会处理好软件源配置、依赖安装等繁琐步骤。 
-2. 例如使用“小鱼的一键安装系列”更新软件源命令：wget http://fishros.com/install -O fishros && bash fishros，选择[5] 一键配置:系统源，后续根据提示进行选择。配置完成后如果遇到apt安装ROS2包失败，请更新ros签名：sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg。
+2. 例如使用“小鱼的一键安装系列”更新软件源命令：wget http://fishros.com/install -O fishros && bash fishros，选择[5] 一键配置:系统源，后续根据提示进行选择。
 3. 配置完成后如果遇到apt安装ROS2包失败，请更新ros签名：sudo curl -sSL  -o /usr/share/keyrings/ros-archive-keyring.gpg。 
 >
 
