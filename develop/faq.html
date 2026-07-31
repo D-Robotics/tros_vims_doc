@@ -153,8 +153,11 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 </code></pre></div></div>
 
 <blockquote>
-  <p><strong>注意</strong> 只有当里程计类型为vio时，才SLAM建图才支持3D运动模式。如果里程计类型为wheel，禁止打开SLAM建图的3D运动模式。 只有70mm基线（带IMU）相机支持vio。</p>
-
+  <p><strong>注意</strong></p>
+  <ul>
+    <li>只有当里程计类型为vio时，SLAM建图才支持3D运动模式。如果里程计类型为wheel，禁止打开SLAM建图的3D运动模式。</li>
+    <li>目前仅70mm基线（带IMU）相机支持vio。</li>
+  </ul>
 </blockquote>
 
 <h2 id="使用originbot轮式里程计">使用OriginBot轮式里程计</h2>
@@ -179,7 +182,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 
 <p>SLAM 3D地图：蓝色区域表示低矮障碍物区域（地面也属于这一类）；蓝色以上从绿色到红色，表示障碍物高度依次增加（限制了地图中的障碍物高度小于0.5米）；黑色区域表示未知区域。</p>
 
-<p>SALM 2D地图：白色区域表示无障碍物，黑色区域表示障碍物区域；灰色区域表示未知区域。</p>
+<p>SLAM 2D地图：白色区域表示无障碍物，黑色区域表示障碍物区域；灰色区域表示未知区域。</p>
 
 <p>导航地图：高亮区域表示局部代价地图（local costmap，箭头1、2、3所在区域）；低亮区域表示全局代价地图（global costmap，箭头5所在区域）；1表示实际障碍物区域；2和3表示膨胀层；4表示无障碍物；5表示全局代价地图的障碍物层和膨胀层。</p>
 
@@ -190,8 +193,8 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 <table>
   <thead>
     <tr>
-      <th style="text-align: center">SALM 3D地图</th>
-      <th style="text-align: center">SALM 2D地图</th>
+      <th style="text-align: center">SLAM 3D地图</th>
+      <th style="text-align: center">SLAM 2D地图</th>
       <th style="text-align: center">导航代价地图</th>
     </tr>
   </thead>
