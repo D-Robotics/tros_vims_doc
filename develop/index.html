@@ -830,12 +830,19 @@ RVIZ上，将坐标系设置为base_link/base_footprint，勾选PclObstacle，�
 
 <p>说明标定出来的相机距离地面高度（Camera Height）为0.146 m。</p>
 
-<p>修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的–roll和–pitch设置旋转矩阵，使用Camera Height（–z）设置robot_to_camera_z：</p>
+<ul>
+  <li>
+    <p><strong>方法一（动态生效）</strong>：可直接在终端中执行上述 <code class="language-plaintext highlighter-rouge">run tf2_ros static_transform_publisher</code> 命令，标定参数将立即生效。该方式适用于临时调试，重启后失效。</p>
+  </li>
+  <li>
+    <p><strong>方法二（永久生效）</strong>：修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的–roll和–pitch设置旋转矩阵，使用Camera Height（–z）设置robot_to_camera_z：</p>
+  </li>
+</ul>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 打开配置文件</span>
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash 
 vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml
-<span class="c"># 使用标定结果中的roll和pitch设置 robot_to_camera_roll robot_to_camera_pitch</span>
+<span class="c"># 使用标定结果中的 --roll 和 --pitch 设置 robot_to_camera_roll robot_to_camera_pitch</span>
 <span class="c"># 使用Camera Height（--z）设置robot_to_camera_z</span>
 </code></pre></div></div>
 
