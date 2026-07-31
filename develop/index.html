@@ -523,7 +523,7 @@
 
 <h3 id="31-rdk-x5上安装双目相机">3.1 RDK X5上安装双目相机</h3>
 
-<p>SC132GS双目相机安装在RDK X5上的方法参考手册<a href="https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&amp;p=RDK+X5#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5">4.2. 硬件连接</a>章节介绍。</p>
+<p>RDK Stereo Camera GS130WI 安装在RDK X5上的方法参考手册<a href="https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&amp;p=RDK+X5#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5">4.2. 硬件连接</a>章节介绍。</p>
 
 <h3 id="32-底盘上安装-rdk-x5">3.2 底盘上安装 RDK X5</h3>
 
@@ -969,7 +969,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 如未使用套件默认的硬件，即存在如下任意一种情况，请完成下面表格中的<strong>额外配置项</strong>。</p>
   <ol>
     <li>未使用 OriginBot 底盘</li>
-    <li>未使用 70mm 基线双目相机</li>
+    <li>未使用 RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）</li>
     <li>未使用 VIO （vio模式），使用轮式里程计（wheel模式）</li>
   </ol>
 
@@ -992,7 +992,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
     <tr>
       <td style="text-align: center">相机参数</td>
       <td style="text-align: center">mipi_rotation</td>
-      <td style="text-align: center">70mm基线（带IMU）相机设置为0.0，其他相机设置为90.0</td>
+      <td style="text-align: center">RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）设置为0.0，其他相机设置为90.0</td>
     </tr>
     <tr>
       <td style="text-align: center">里程计类型</td>
