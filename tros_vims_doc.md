@@ -453,6 +453,7 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
 
 ```bash
 # 打开配置文件
+source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 使用标定结果设置 robot_to_camera_x  robot_to_camera_y
@@ -497,6 +498,7 @@ RDK终端将会打印如下标定结果信息：
 
 ```bash
 # 打开配置文件
+source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 使用标定结果中的 --roll 和 --pitch 设置 robot_to_camera_roll robot_to_camera_pitch
