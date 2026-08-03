@@ -429,7 +429,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <p><strong>测试</strong></p>
 
-<p>使用键盘控制机器人移动，移动过程中（左下图），rviz上会渲染起点、运行轨迹、轨迹信息。最终机器人回到起点后（右下图），可以看到机器人当前pose和起始pose之间的距离偏差，即回环偏差。从右下图可以看到，机器人移动了26米，耗时6分25秒，回环偏差0.02米。</p>
+<p>使用键盘控制机器人移动，移动过程中（左下图），rviz上会渲染起点、运行轨迹、轨迹信息。最终机器人回到起点后（右下图），可以看到机器人当前pose和起始pose之间的距离偏差，即回环偏差。从右下图可以看到，机器人移动了8.65米，耗时4分25秒，回环偏差0.01米。</p>
 
 <table>
   <thead>
@@ -446,6 +446,39 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
   </tbody>
 </table>
 
+<p>SLAM 状态信息说明：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">信息</th>
+      <th style="text-align: center">说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">stat_traj: unlc traj</td>
+      <td style="text-align: center">未闭环轨迹长度（m）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">stat_traj: slam</td>
+      <td style="text-align: center">SLAM 状态（MAPPING / LOCALIZATION）及连接/关键帧数</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">stat_traj: wm</td>
+      <td style="text-align: center">RTAB-Map working memory 数量</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">stat_traj: map known area</td>
+      <td style="text-align: center">地图已知区域面积（㎡）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">stat_traj: free</td>
+      <td style="text-align: center">地图空闲区域面积（㎡）</td>
+    </tr>
+  </tbody>
+</table>
+
 <p>渲染的轨迹信息说明：</p>
 
 <table>
@@ -457,20 +490,20 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
   </thead>
   <tbody>
     <tr>
-      <td style="text-align: center">frame id</td>
+      <td style="text-align: center">trajectory: frame id</td>
       <td style="text-align: center">轨迹坐标系</td>
     </tr>
     <tr>
-      <td style="text-align: center">time diff</td>
-      <td style="text-align: center">机器人从移动开始到结束的时间</td>
+      <td style="text-align: center">trajectory: time diff</td>
+      <td style="text-align: center">机器人从移动开始到结束的时间（X min &amp; Y sec 格式）</td>
     </tr>
     <tr>
-      <td style="text-align: center">distance</td>
-      <td style="text-align: center">机器人当前pose和起始pose之间的距离偏差，即回环偏差</td>
+      <td style="text-align: center">trajectory: distance</td>
+      <td style="text-align: center">当前 pose 与起始 pose 的距离偏差，即回环偏差（m）</td>
     </tr>
     <tr>
-      <td style="text-align: center">traj len</td>
-      <td style="text-align: center">机器人从移动开始到结束的轨迹总长度</td>
+      <td style="text-align: center">trajectory: traj len</td>
+      <td style="text-align: center">轨迹总长度（m）</td>
     </tr>
   </tbody>
 </table>
