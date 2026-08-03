@@ -22,73 +22,7 @@
 
 整个系统只使用双目相机一个传感器，相机驱动已对双目RGB图像和IMU两种数据进行了时间同步。
 
-```mermaid
-flowchart TD
-    subgraph SRC[Sensor]
-        cam[stereo cam with IMU]
-    end
-
-    subgraph PERC[Perception System]
-        sde[stereo depth estimation]
-        yolov8_seg[yolov8-seg]
-        proj[projection]
-    end
-
-    subgraph SLAM[SLAM System]
-        front_vio[front end VIO]
-        back_end[back end]
-    end
-
-    subgraph OBS_REC[Obstacle Recognition]
-        gen_obs_recog[general obs recog]
-        pcl2grid[pcl to grid]
-    end
-
-    subgraph explore[Autonomous Exploration]
-        frontier_search[frontier search]
-        loop_trigger[loop closure trigger]
-        reloc_strategy[relocating strategy]
-        mode_switch[mapping/localization switch]
-        trapped_recovery[trapped recovery]
-    end
-
-    subgraph NAV[Nav2 System]
-        nav_frame[navigation framework]
-    end
-
-    %% 输入源分发
-    cam -->|Stereo RGB Images| sde
-    cam -->|RGB Image| yolov8_seg
-    cam -->|Stereo RGB Images| front_vio
-    cam -->|IMU| front_vio
-
-    %% 感知系统内部流向
-    sde -->|pcl| gen_obs_recog
-    sde -->|depth| proj
-    yolov8_seg -->|instance seg| proj
-
-    %% back_end
-    proj -->|masked depth| back_end
-    front_vio -->|odom| back_end
-
-    %% 障碍物识别系统内部流向
-    gen_obs_recog -->|general obstacle pcl| pcl2grid
-
-    %% 跨系统数据交互
-    back_end -->|slam info| mode_switch
-    back_end -->|slam info| loop_trigger
-    back_end -->|slam info| reloc_strategy
-    nav_frame -->|costmap| frontier_search
-    proj -->|semantic obstacle pcl| pcl2grid
-    pcl2grid -->|dynamic grid map| nav_frame
-    back_end -->|static grid map| nav_frame
-    back_end -->|pose and tf| nav_frame
-    frontier_search -->|goal| nav_frame
-    reloc_strategy -->|goal| nav_frame
-    loop_trigger -->|goal| nav_frame
-    trapped_recovery -->|goal| nav_frame
-    mode_switch -->|mode| back_end
-```
+<img src="images/system_framework.png" width="900">
 
 ### 1.2 双目深度估计
 
