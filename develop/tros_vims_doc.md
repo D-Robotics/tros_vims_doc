@@ -595,7 +595,7 @@ RVIZ上打开障碍物点云的渲染，如下图：
 | 运动类型 | rtabmap_Mem_UseOdomGravity | vio 模式设置 True，wheel 模式选择 False |
 
 > **提示：**
-如需了解更详细的常用模式配置说明，请参考 [FAQ - 常用模式配置](https://d-robotics.github.io/tros_vims_doc/develop/faq.html)。
+如需了解更详细的常用模式配置说明，请参考 [FAQ - 常用模式配置](faq.html)。
 
 > **注意：** 
 1. 基于点云的通用障碍物识别算法，默认开启了自适应阈值（`params.yaml`配置文件中的`en_pcl_filter_min_z_auto_adjust`配置项），即启动时自动计算并更新阈值。 
