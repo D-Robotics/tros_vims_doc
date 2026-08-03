@@ -548,6 +548,19 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 <h2 id="单模块运行命令">单模块运行命令</h2>
 <h3 id="1-运行时指定配置文件">1. 运行时指定配置文件</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>需要使用自定义配置文件（如修改了算法参数、标定参数）运行完整Solution。</li>
+  <li>调试不同参数组合对系统行为的影响。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境和移动Solution工作空间。</li>
+  <li>已准备好自定义配置文件（如 <code class="language-plaintext highlighter-rouge">/userdata/params.yaml</code>），并已正确配置所有必要参数。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 默认使用的配置文件为`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml</span>
 <span class="c"># 支持启动时用户使用YAML_CONFIG_FILE环境变量指定配置文件</span>
 <span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span>/userdata/params.yaml <span class="se">\</span>
@@ -556,11 +569,38 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 
 <h3 id="2-只启动rviz">2. 只启动rviz</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>仅需要查看机器人状态、地图、轨迹等可视化信息，而不需要运行实际的感知或导航算法。</li>
+  <li>用于调试rviz显示配置，或远程连接RDK查看其他模块发布的数据。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境。</li>
+  <li>其他模块（如VSLAM、导航）已在其他终端中运行，并有数据发布到对应的topic。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ros2 run rviz2 rviz2 <span class="nt">-d</span> <span class="sb">`</span>ros2 pkg prefix tros_vision_nav<span class="sb">`</span>/share/tros_vision_nav/params/nav.rviz
 </code></pre></div></div>
 
 <h3 id="3-只启动导航">3. 只启动导航</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>已有预先构建好的地图，仅需运行导航和避障功能，而不启动感知、VSLAM等其他模块。</li>
+  <li>用于调试导航算法参数或测试路径规划效果。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境和移动Solution工作空间。</li>
+  <li>已存在可用的地图文件（位于 <code class="language-plaintext highlighter-rouge">/userdata/rtabmap/</code> 目录）。</li>
+  <li>其他必要模块（如底盘驱动、定位数据源）已在其他终端中运行。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
 <span class="nv">localization</span><span class="o">=</span>True <span class="nv">log_level_nav</span><span class="o">=</span>info <span class="nv">LAUNCH_FILE</span><span class="o">=</span><span class="s2">"nav.launch.py"</span> <span class="se">\</span>
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
@@ -568,6 +608,20 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 
 <h3 id="4-只启动自主探索">4. 只启动自主探索</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>需要在未知环境中自动探索建图，而无需启动完整的导航系统。</li>
+  <li>用于测试自主探索算法或收集建图数据。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境和移动Solution工作空间。</li>
+  <li>已启动底盘驱动、VSLAM等自主探索依赖的模块。</li>
+  <li>机器人放置在待探索的环境中。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
 <span class="nv">LAUNCH_PACKAGE</span><span class="o">=</span>tros_frontier_exploration <span class="nv">LAUNCH_FILE</span><span class="o">=</span><span class="s2">"explore.launch.py"</span> <span class="se">\</span>
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
@@ -575,11 +629,37 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 
 <h3 id="5-只启动底盘和双目深度估计">5. 只启动底盘和双目深度估计</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>仅需要验证双目相机工作正常、深度估计功能可用，而不启动其他模块。</li>
+  <li>用于测试相机连接、深度图效果或采集原始数据。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已完成双目相机的硬件安装和软件配置。</li>
+  <li>底盘驱动已正确安装并可与RDK X5通信。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_pcl2grid</span><span class="o">=</span>False <span class="nv">run_rviz</span><span class="o">=</span>False <span class="nv">run_perc</span><span class="o">=</span>False <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_mask_depth</span><span class="o">=</span>False <span class="nv">mipi_image_framerate</span><span class="o">=</span>20.0 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
 <h3 id="6-只启动通用障碍物识别">6. 只启动通用障碍物识别</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>需要单独测试或调试通用障碍物识别算法的效果。</li>
+  <li>用于分析点云数据中的障碍物检测结果，不依赖其他模块。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境和移动Solution工作空间。</li>
+  <li>已有点云数据源（如运行中的双目深度估计模块、或录制的bag包）发布到对应topic。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
 <span class="nv">LAUNCH_FILE</span><span class="o">=</span><span class="s2">"pcl_obstacle_det.launch.py"</span> <span class="nv">use_composition</span><span class="o">=</span>False <span class="se">\</span>
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
@@ -587,6 +667,19 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 
 <h3 id="7-只启动语义目标识别">7. 只启动语义目标识别</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>需要单独测试或调试语义目标识别算法（如识别特定物体类别）的效果。</li>
+  <li>用于验证障碍物语义分割的准确性或调试相关参数。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境和移动Solution工作空间。</li>
+  <li>已启动双目深度估计模块，提供RGB图像输入。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
 <span class="nv">odom_type</span><span class="o">=</span>wheel <span class="nv">run_mask_depth</span><span class="o">=</span>False <span class="nv">run_pcl2grid</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="se">\</span>
 <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_rviz</span><span class="o">=</span>False <span class="se">\</span>
