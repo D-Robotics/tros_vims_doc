@@ -477,7 +477,7 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml st
 ```
 
 此时PC打开WEB浏览器（chrome/firefox/edge）输入 http://IP:8000（IP为RDK IP地址），能够查看到相机画面。
-RVIZ上，将坐标系设置为base_link/base_footprint，勾选PclObstacle，移动底盘，确保rviz上渲染的点云是平面。
+RVIZ上，将坐标系设置为base_footprint，勾选PclObstacle，移动底盘，确保rviz上渲染的点云是平面。
 
 | WEB可视化 | RVIZ可视化 |
 | :---: | :---: |
