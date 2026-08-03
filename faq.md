@@ -337,6 +337,15 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 ## 单模块运行命令
 ### 1. 运行时指定配置文件
 
+**使用场景：**
+- 需要使用自定义配置文件（如修改了算法参数、标定参数）运行完整Solution。
+- 调试不同参数组合对系统行为的影响。
+
+**前置条件：**
+- 已正确source TROS环境和移动Solution工作空间。
+- 已准备好自定义配置文件（如 `/userdata/params.yaml`），并已正确配置所有必要参数。
+
+**运行命令：**
 ```bash
 # 默认使用的配置文件为`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 支持启动时用户使用YAML_CONFIG_FILE环境变量指定配置文件
@@ -346,12 +355,31 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 ### 2. 只启动rviz
 
+**使用场景：**
+- 仅需要查看机器人状态、地图、轨迹等可视化信息，而不需要运行实际的感知或导航算法。
+- 用于调试rviz显示配置，或远程连接RDK查看其他模块发布的数据。
+
+**前置条件：**
+- 已正确source TROS环境。
+- 其他模块（如VSLAM、导航）已在其他终端中运行，并有数据发布到对应的topic。
+
+**运行命令：**
 ```bash
 ros2 run rviz2 rviz2 -d `ros2 pkg prefix tros_vision_nav`/share/tros_vision_nav/params/nav.rviz
 ```
 
 ### 3. 只启动导航
 
+**使用场景：**
+- 已有预先构建好的地图，仅需运行导航和避障功能，而不启动感知、VSLAM等其他模块。
+- 用于调试导航算法参数或测试路径规划效果。
+
+**前置条件：**
+- 已正确source TROS环境和移动Solution工作空间。
+- 已存在可用的地图文件（位于 `/userdata/rtabmap/` 目录）。
+- 其他必要模块（如底盘驱动、定位数据源）已在其他终端中运行。
+
+**运行命令：**
 ```bash
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
 localization=True log_level_nav=info LAUNCH_FILE="nav.launch.py" \
@@ -360,6 +388,16 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 ### 4. 只启动自主探索
 
+**使用场景：**
+- 需要在未知环境中自动探索建图，而无需启动完整的导航系统。
+- 用于测试自主探索算法或收集建图数据。
+
+**前置条件：**
+- 已正确source TROS环境和移动Solution工作空间。
+- 已启动底盘驱动、VSLAM等自主探索依赖的模块。
+- 机器人放置在待探索的环境中。
+
+**运行命令：**
 ```bash
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
 LAUNCH_PACKAGE=tros_frontier_exploration LAUNCH_FILE="explore.launch.py" \
@@ -368,12 +406,30 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 ### 5. 只启动底盘和双目深度估计
 
+**使用场景：**
+- 仅需要验证双目相机工作正常、深度估计功能可用，而不启动其他模块。
+- 用于测试相机连接、深度图效果或采集原始数据。
+
+**前置条件：**
+- 已完成双目相机的硬件安装和软件配置。
+- 底盘驱动已正确安装并可与RDK X5通信。
+
+**运行命令：**
 ```bash
 stereonet_pub_web=True run_pcl2grid=False run_rviz=False run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False mipi_image_framerate=20.0 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 ### 6. 只启动通用障碍物识别
 
+**使用场景：**
+- 需要单独测试或调试通用障碍物识别算法的效果。
+- 用于分析点云数据中的障碍物检测结果，不依赖其他模块。
+
+**前置条件：**
+- 已正确source TROS环境和移动Solution工作空间。
+- 已有点云数据源（如运行中的双目深度估计模块、或录制的bag包）发布到对应topic。
+
+**运行命令：**
 ```bash
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
 LAUNCH_FILE="pcl_obstacle_det.launch.py" use_composition=False \
@@ -382,6 +438,15 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 ### 7. 只启动语义目标识别
 
+**使用场景：**
+- 需要单独测试或调试语义目标识别算法（如识别特定物体类别）的效果。
+- 用于验证障碍物语义分割的准确性或调试相关参数。
+
+**前置条件：**
+- 已正确source TROS环境和移动Solution工作空间。
+- 已启动双目深度估计模块，提供RGB图像输入。
+
+**运行命令：**
 ```bash
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
 odom_type=wheel run_mask_depth=False run_pcl2grid=False run_explore=False \
