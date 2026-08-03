@@ -262,20 +262,30 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 **测试**
 
-使用键盘控制机器人移动，移动过程中（左下图），rviz上会渲染起点、运行轨迹、轨迹信息。最终机器人回到起点后（右下图），可以看到机器人当前pose和起始pose之间的距离偏差，即回环偏差。从右下图可以看到，机器人移动了26米，耗时6分25秒，回环偏差0.02米。
+使用键盘控制机器人移动，移动过程中（左下图），rviz上会渲染起点、运行轨迹、轨迹信息。最终机器人回到起点后（右下图），可以看到机器人当前pose和起始pose之间的距离偏差，即回环偏差。从右下图可以看到，机器人移动了8.65米，耗时4分25秒，回环偏差0.01米。
 
 | 移动过程中 | 回到起点后 |
 | :---: | :---: |
 | <img src="images/image_038.png" height="200"> | <img src="images/image_039.png" height="200"> |
 
+SLAM 状态信息说明：
+
+| 信息 | 说明 |
+| :---: | :---: |
+| stat_traj: unlc traj | 未闭环轨迹长度（m） |
+| stat_traj: slam | SLAM 状态（MAPPING / LOCALIZATION）及连接/关键帧数 |
+| stat_traj: wm | RTAB-Map working memory 数量 |
+| stat_traj: map known area | 地图已知区域面积（㎡） |
+| stat_traj: free | 地图空闲区域面积（㎡） |
+
 渲染的轨迹信息说明：
 
 | 信息 | 说明 |
 | :---: | :---: |
-| frame id | 轨迹坐标系 |
-| time diff | 机器人从移动开始到结束的时间 |
-| distance | 机器人当前pose和起始pose之间的距离偏差，即回环偏差 |
-| traj len | 机器人从移动开始到结束的轨迹总长度 |
+| trajectory: frame id | 轨迹坐标系 |
+| trajectory: time diff | 机器人从移动开始到结束的时间（X min & Y sec 格式） |
+| trajectory: distance | 当前 pose 与起始 pose 的距离偏差，即回环偏差（m） |
+| trajectory: traj len | 轨迹总长度（m） |
 
 
 ## 自主探索建图
