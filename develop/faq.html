@@ -135,11 +135,11 @@
       <ul id="toc"></ul>
     </aside>
     <main class="content">
-      <h1 id="faq">FAQ</h1>
+      <h1 id="faq"><a href="https://github.com/D-Robotics/tros_vims_doc.git">FAQ</a></h1>
 
-<h2 id="常用模式配置">常用模式配置</h2>
+<h2 id="1-常用模式配置">1. 常用模式配置</h2>
 
-<h3 id="选择底盘">选择底盘</h3>
+<h3 id="11-选择底盘">1.1 选择底盘</h3>
 
 <p>修改配置文件中robot的参数，设置底盘类型（originbot/myrobot/create3），其中<code class="language-plaintext highlighter-rouge">myrobot</code>表示自定义底盘，需要根据实际情况修改。</p>
 
@@ -148,7 +148,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 <span class="c"># 将"robot_base"参数设置为 originbot/myrobot/create3</span>
 </code></pre></div></div>
 
-<h3 id="选择相机参数">选择相机参数</h3>
+<h3 id="12-选择相机参数">1.2 选择相机参数</h3>
 
 <p>修改配置文件中camera参数组中的mipi_rotation配置项，根据相机类型设置旋转角度：</p>
 
@@ -166,7 +166,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 
 </blockquote>
 
-<h3 id="选择里程计">选择里程计</h3>
+<h3 id="13-选择里程计">1.3 选择里程计</h3>
 <p>修改配置文件中switch参数组中的odom_type配置项，选择里程计来源：</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 打开配置文件</span>
@@ -183,7 +183,7 @@ vio 表示视觉里程计</p>
 
 </blockquote>
 
-<h3 id="选择运动类型">选择运动类型</h3>
+<h3 id="14-选择运动类型">1.4 选择运动类型</h3>
 
 <p>SLAM建图默认采用的机器人运动类型为2D平面移动，如果机器人为3D运动（机器人运动过程中存在roll/pitch/z轴高度的变化），需要将SLAM建图设置为支持3D运动模式。
 修改配置文件中rtabmap参数组中的rtabmap_Reg_Force3DoF（设置为False）和rtabmap_Mem_UseOdomGravity（设置为True）配置项，打开支持3D运动模式：</p>
@@ -204,7 +204,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
   </ul>
 </blockquote>
 
-<h2 id="使用originbot轮式里程计">使用OriginBot轮式里程计</h2>
+<h2 id="2-使用originbot轮式里程计">2. 使用OriginBot轮式里程计</h2>
 
 <p>地瓜机器人对OriginBot的MCU程序进行了重构和优化，包括数据采集频率、轮速采集计算周期、硬件同步数据触发、时间同步等功能，使最终EKF融合出的odom更准。</p>
 
@@ -214,15 +214,15 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
   <li><a href="https://www.originbot.org/guide/firmware_install.html">烧写固件</a>。</li>
 </ol>
 
-<h2 id="双目相机和深度估计">双目相机和深度估计</h2>
+<h2 id="3-双目相机和深度估计">3. 双目相机和深度估计</h2>
 <p>双目相机相关问题参考<a href="https://developer.d-robotics.cc/tros_doc/quick_demo/demo_sensor#%E5%8F%8C%E7%9B%AEmipi%E5%9B%BE%E5%83%8F%E9%87%87%E9%9B%86">双目MIPI图像采集</a>。
 深度估计相关问题参考<a href="https://developer.d-robotics.cc/tros_doc/boxs/spatial/hobot_stereonet">双目深度算法</a>。</p>
 
-<h2 id="地图">地图</h2>
-<h3 id="q1-重新建图">Q1 重新建图</h3>
+<h2 id="4-地图">4. 地图</h2>
+<h3 id="41-重新建图">4.1 重新建图</h3>
 <p>SLAM创建的地图保存在RDK X5上的文件名为/userdata/rtabmap/office.db，如果需要删除地图并重新创建地图，先停止SLAM程序，然后执行rm /userdata/rtabmap/office.db命令后重新运行SLAM。</p>
 
-<h3 id="q2-地图说明">Q2 地图说明</h3>
+<h3 id="42-地图说明">4.2 地图说明</h3>
 
 <p>SLAM 3D地图：蓝色区域表示低矮障碍物区域（地面也属于这一类）；蓝色以上从绿色到红色，表示障碍物高度依次增加（限制了地图中的障碍物高度小于0.5米）；黑色区域表示未知区域。</p>
 
@@ -252,7 +252,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 </table>
 
 <p>导航代价地图中膨胀层的说明参考https://wiki.ros.org/costmap_2d/hydro/inflation</p>
-<h3 id="q3-地图信息统计">Q3 地图信息统计</h3>
+<h3 id="43-地图信息统计">4.3 地图信息统计</h3>
 <p>运行如下命令，统计VSLAM算法创建的地图的分辨率，未知、free和障碍物区域面积等信息：</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
@@ -314,18 +314,18 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
   </tbody>
 </table>
 
-<h2 id="导航">导航</h2>
-<h3 id="q1-导航成功">Q1 导航成功</h3>
+<h2 id="5-导航">5. 导航</h2>
+<h3 id="51-导航成功">5.1 导航成功</h3>
 <p>在RVIZ的Navigation 2 Panel上，Feedback的状态显示reached，表示导航任务成功完成：</p>
 
 <p><img src="images/image_055.png" width="300" /></p>
 
-<h3 id="q2-导航失败">Q2 导航失败</h3>
+<h3 id="52-导航失败">5.2 导航失败</h3>
 <p>在RVIZ的Navigation 2 Panel上，Feedback的状态显示aborted，表示导航失败：</p>
 
 <p><img src="images/image_056.png" width="300" /></p>
 
-<h3 id="q3-导航过程控制">Q3 导航过程控制</h3>
+<h3 id="53-导航过程控制">5.3 导航过程控制</h3>
 <p>导航过程中，支持取消本次导航，或者设置新的目标位置，以新位置重新导航。
 取消本次导航的方法为，在RVIZ的Navigation 2 Panel上，选择Cancel按键（左下图），取消后Feedback的状态显示canceled（右下图）。</p>
 
@@ -344,7 +344,7 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
   </tbody>
 </table>
 
-<h3 id="q4-脱困">Q4 脱困</h3>
+<h3 id="54-脱困">5.4 脱困</h3>
 <p>当机器人在执行导航任务时，如果路径规划失败，机器人将会进入脱困流程，
 在RVIZ的Navigation 2 Panel上，Recoveries状态显示尝试脱困的次数一直在增加，直到脱困成功或者失败。脱困中：</p>
 
@@ -369,8 +369,8 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
 
 <p>因此脱困最长执行时间是45秒（15 x 3）+2次RecoveryFallback，实际约50秒左右。</p>
 
-<h2 id="数据录制">数据录制</h2>
-<h3 id="q1-命令行录制">Q1 命令行录制</h3>
+<h2 id="6-数据录制">6. 数据录制</h2>
+<h3 id="61-命令行录制">6.1 命令行录制</h3>
 <p>使用ros2命令行工具在RDK上在线录制bag包，用于数据回放分析问题，支持使用ros2 bag play命令和工具回放。使用命令ros2 bag record -h查看详细数据录制使用方法。
 需要录制的基础数据如下：</p>
 
@@ -383,7 +383,7 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
 </code></pre></div></div>
 
 <p>如果需要录制深度估计输出的点云，录制时添加/StereoNetNode/stereonet_pointcloud2话题。</p>
-<h3 id="q2-自动录制">Q2 自动录制</h3>
+<h3 id="62-自动录制">6.2 自动录制</h3>
 <p>移动solution包含数据trigger &amp; recorder工具，用于路径规划失败时自动触发录制系统状态数据，通过离线回放数据定位问题，支持录制触发前的数据（影子模式）。
 工具默认关闭，开启方式为将<code class="language-plaintext highlighter-rouge">`ros2 pkg prefix tros_vision_nav --share`/params/tros_nav2.yaml</code>配置文件中enable_record配置项设置为true后，重新启动导航命令。录制的数据保存在运行路径下，路径名为<code class="language-plaintext highlighter-rouge">bag_[planner_server]_[时间戳]</code>。</p>
 
@@ -407,9 +407,9 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
       </span>enable_record: <span class="nb">false</span>
 </code></pre></div></div>
 
-<h2 id="vslam">VSLAM</h2>
+<h2 id="7-vslam">7. VSLAM</h2>
 
-<h3 id="如何测试vslam回环">如何测试VSLAM回环</h3>
+<h3 id="71-如何测试vslam回环">7.1 如何测试VSLAM回环</h3>
 
 <p>本章节介绍如何可视化机器人的移动轨迹，以及测量回到起点后的定位误差。</p>
 
@@ -527,8 +527,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
   </tbody>
 </table>
 
-<h2 id="自主探索建图">自主探索建图</h2>
-<h3 id="q1-自主探索建图过程">Q1 自主探索建图过程</h3>
+<h2 id="8-自主探索建图">8. 自主探索建图</h2>
+<h3 id="81-自主探索建图过程">8.1 自主探索建图过程</h3>
 
 <p>step1: 观测周围环境。启动自主探索后，先旋转一周观测周围环境。</p>
 
@@ -544,7 +544,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <p><img src="images/image_061.png" width="600" /></p>
 
-<h3 id="q2-建图区域">Q2 建图区域</h3>
+<h3 id="82-建图区域">8.2 建图区域</h3>
 
 <p>如果发现生成的地图不完整，或者需要对更大区域进行建图，请尝试增加探索半径阈值frontier_search_radius和路径规划长度阈值frontier_goal_nav_path_dist（默认值的查看方法为：使用命令<code class="language-plaintext highlighter-rouge">vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml</code>打开配置后，搜索参数关键字）。</p>
 
@@ -561,7 +561,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
-<h3 id="q3-参数说明">Q3 参数说明</h3>
+<h3 id="83-参数说明">8.3 参数说明</h3>
 <p>自主探索建图涉及到的参数详细说明：</p>
 
 <table>
@@ -622,8 +622,638 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml 
 </code></pre></div></div>
 
-<h2 id="单模块运行命令">单模块运行命令</h2>
-<h3 id="1-运行时指定配置文件">1. 运行时指定配置文件</h3>
+<h2 id="9-slam-模式与子图管理说明">9. SLAM 模式与子图管理说明</h2>
+
+<p><strong>SLAM 模式与子图管理</strong>是探索节点内置的长时 SLAM 自维护机制：在无人干预下自动在”建图/定位”两种模式间切换、自动新建与删除子图，控制长期运行中的关键帧冗余与子图膨胀。它解决的是机器人长期使用后地图越用越歪、定位越来越漂、冗余子图越积越多导致导航跑偏的问题；通过”熟悉区域转定位避免关键帧冗余、陌生区域转建图补覆盖、低价值子图自动清理”的自动调度，让机器人用得越久越熟悉环境，保持稳定可靠的陪伴导航体验，全程无需用户干预。</p>
+
+<h3 id="91-这些功能解决什么问题">9.1 这些功能解决什么问题</h3>
+
+<p>长期探索过程中，视觉 SLAM 会面临两类不可避免的退化：</p>
+
+<ul>
+  <li><strong>累积漂移</strong>：随着探索范围扩大、轨迹长时间不闭合，位姿误差持续累积，地图逐渐”扭曲”。</li>
+  <li><strong>子图膨胀 / 冗余</strong>：SLAM 会不断切分新的子图（submap），其中部分子图可能规模过小、与主图断连，或因优化异常而质量下降，拖累整体定位与地图质量。</li>
+</ul>
+
+<p>探索节点内置的 <strong>SLAM 模式自动切换</strong> 与 <strong>子图自动管理</strong> 即用于在无人干预的情况下抑制这两类退化，保持长时探索的地图与定位稳定性。</p>
+
+<blockquote>
+  <p>以上两类自动行为都受同一总开关 <code class="language-plaintext highlighter-rouge">explore_en_longterm_update_map</code>（默认开启）控制；关闭后下述所有自动行为均不生效，退化到传统的先建图再定位的使用模式。</p>
+</blockquote>
+
+<h3 id="92-slam-模式自动切换">9.2 SLAM 模式自动切换</h3>
+
+<p>SLAM 有两种工作模式：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>模式</th>
+      <th>作用</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>建图（MAPPING）</strong></td>
+      <td>持续向地图中新增观测，扩展覆盖范围</td>
+    </tr>
+    <tr>
+      <td><strong>定位（LOCALIZATION）</strong></td>
+      <td>在已有地图上仅做定位，不再新增关键帧、不再扩展地图，避免关键帧冗余、降低内存占用</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>探索期间模式切换是<strong>全自动</strong>的，用户无需手动干预，核心规则如下：</p>
+
+<h4 id="921-定位--建图">9.2.1 定位 → 建图</h4>
+
+<p>触发条件有以下几类（共 7 个触发点），任一满足即切回建图：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>触发场景</th>
+      <th>涉及参数（默认值）</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>关键帧过稀 / 子图未连通</td>
+      <td><code class="language-plaintext highlighter-rouge">explore_check_kf_radius</code>（<strong>0.5 m</strong>）内关键帧数 &lt; <code class="language-plaintext highlighter-rouge">explore_kf_check_num_thr</code>（<strong>4</strong>），连续 <code class="language-plaintext highlighter-rouge">explore_check_kf_count_thr</code>（<strong>2</strong>）次确认；或 <code class="language-plaintext highlighter-rouge">cached_all_maps_connected_ == false</code></td>
+      <td>机器人当前位置关键帧密度过稀，或子图未全连通时，切回建图补齐观测</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>工作内存关键帧过少</td>
+      <td><code class="language-plaintext highlighter-rouge">wm_state</code> 关键帧数 &lt; <code class="language-plaintext highlighter-rouge">relocating_min_keyframes_thr</code>（<strong>10</strong>）</td>
+      <td>SLAM 工作内存层面的关键帧不足（与 #1 的”位置附近关键帧密度”是不同维度）</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>无地图 / 子图丢失</td>
+      <td><code class="language-plaintext highlighter-rouge">current_map_id &lt; 0</code> 且 <code class="language-plaintext highlighter-rouge">connected_map_component_values</code> 为空</td>
+      <td>当前没有可用地图，切回建图并原地旋转补图</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>未闭环轨迹过长 / 累积误差</td>
+      <td>未闭环轨迹长度 ≥ <code class="language-plaintext highlighter-rouge">search_loop_closure_thr</code>（<strong>5.0</strong>）× <code class="language-plaintext highlighter-rouge">unlc_traj_high_scale</code>（<strong>4.0</strong>）= 20</td>
+      <td>累积误差有放大风险，切回建图重置误差起点</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>重定位失败或超时</td>
+      <td>重定位失败，或耗时超过 <code class="language-plaintext highlighter-rouge">relocating_timeout</code>（<strong>30.0 s</strong>）</td>
+      <td>定位模式下重定位失败意味着现有地图无法匹配当前观测，切回建图重建</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>重定位慢成功补建图</td>
+      <td>重定位成功但耗时 ≥ <code class="language-plaintext highlighter-rouge">relocating_warn_time_thr</code>（<strong>10.0 s</strong>）</td>
+      <td>定位不够稳，切回建图并导航到缓存位姿补建图</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>当前子图优化误差过大</td>
+      <td>优化误差比 &gt; <code class="language-plaintext highlighter-rouge">slam_opt_error_thr</code>（<strong>3.0</strong>）立即删，或在 warn band（&gt; <code class="language-plaintext highlighter-rouge">slam_opt_warn_thr</code>（<strong>1.5</strong>））连续累计 ≥ <code class="language-plaintext highlighter-rouge">delete_cur_map_opt_warn_count_thr</code>（<strong>5</strong>）次删</td>
+      <td>删除当前子图前会先切回建图重建该区域（详见 9.4.2「删除子图」）</td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p><strong>与”建图→定位”的区别</strong>：这 7 个触发点是<strong>任一满足即切换</strong>（OR 关系），而”建图→定位”的 11 个条件需<strong>全部满足</strong>（AND 关系）。因此”定位→建图”更容易触发——只要任一异常出现就切回建图补齐，这是保守策略（宁可多建图也不要漂移）。</p>
+
+  <p><strong>触发后的共同行为</strong>：切回建图后会刷新 <code class="language-plaintext highlighter-rouge">mapping_start_time_</code>（重置”建图→定位”的计时器），即每次切回建图后要重新累计 <code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code>（180s）才可能再切定位。</p>
+</blockquote>
+
+<h4 id="922-建图--定位">9.2.2 建图 → 定位</h4>
+
+<p>当满足”已建图足够久、地图面积足够大、当前位置与目标点附近关键帧密度达标、子图已连通”等条件时，自动切回定位模式以避免在已熟悉区域继续新增关键帧造成冗余、降低内存占用。具体需<strong>同时满足以下 11 个条件</strong>（缺一不可，任一不满足则<strong>不切换</strong>，部分条件不满足还会<strong>重置建图计时器</strong>导致”一直切不回定位”）：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>条件</th>
+      <th>涉及参数（默认值）</th>
+      <th>不满足时的处理</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>当前处于建图模式</td>
+      <td><code class="language-plaintext highlighter-rouge">current_slam_mode_ == MAPPING</code></td>
+      <td>非 MAPPING 不触发</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>进入建图已持续超过时长阈值</td>
+      <td><code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code>（<strong>180.0 s</strong>）</td>
+      <td>未超时则不切换</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>代价地图物理面积 ≥ 阈值</td>
+      <td><code class="language-plaintext highlighter-rouge">auto_localize_map_area_thr</code>（<strong>50.0 m²</strong>，面积 = <code class="language-plaintext highlighter-rouge">getSizeInMetersX() × getSizeInMetersY()</code>）</td>
+      <td>面积不够则不切换</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>当前子图 id 有效</td>
+      <td><code class="language-plaintext highlighter-rouge">cached_current_map_id_ &gt;= 0</code></td>
+      <td>无有效子图则不切换</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>所有子图已全连通</td>
+      <td><code class="language-plaintext highlighter-rouge">cached_all_maps_connected_ == true</code></td>
+      <td>有子图断连则不切换（会先触发”定位→建图”去补连通）</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>当前位置半径内关键帧数达标</td>
+      <td><code class="language-plaintext highlighter-rouge">explore_check_kf_radius</code>（<strong>0.5 m</strong>）内关键帧数 ≥ <code class="language-plaintext highlighter-rouge">explore_kf_check_num_thr + 2</code>（<strong>4+2=6</strong>）</td>
+      <td><strong>不满足会重置 <code class="language-plaintext highlighter-rouge">mapping_start_time_ = now()</code></strong>，计时器归零，永远切不了</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>导航 goal 附近关键帧数达标</td>
+      <td>goal 位置 <code class="language-plaintext highlighter-rouge">explore_check_kf_radius</code>（<strong>0.5 m</strong>）内关键帧数 ≥ <code class="language-plaintext highlighter-rouge">explore_kf_check_num_thr + 1</code>（<strong>4+1=5</strong>）</td>
+      <td><strong>同样重置 <code class="language-plaintext highlighter-rouge">mapping_start_time_</code></strong></td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>不在重定位中</td>
+      <td><code class="language-plaintext highlighter-rouge">state_ != RELOCATING</code></td>
+      <td>重定位期间不切换</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>不在回环检测中</td>
+      <td><code class="language-plaintext highlighter-rouge">state_ != LOOPCLOSING</code></td>
+      <td>回环期间不切换</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>无进行中的模式切换请求</td>
+      <td><code class="language-plaintext highlighter-rouge">pending_slam_mode_ == UNKNOWN</code></td>
+      <td>有 pending 请求则不切换</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>长期地图管理总开关开启</td>
+      <td><code class="language-plaintext highlighter-rouge">explore_en_longterm_update_map</code>（<strong>true</strong>）</td>
+      <td>关闭则全部自动切换不生效</td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p><strong>最容易卡住的点</strong>：条件 6/7（关键帧密度）。若机器人长期停留在关键帧稀疏区域，这两条会反复<strong>重置 <code class="language-plaintext highlighter-rouge">mapping_start_time_</code></strong>，使条件 2 的”建图已持续 180s”永远从头算起，导致一直停在 MAPPING 切不回定位。排查见 9.5.3「什么时候该留心」。</p>
+
+  <p><strong><code class="language-plaintext highlighter-rouge">mapping_start_time_</code> 的额外重置点</strong>：从回环/重定位退出进入其它状态时，若当前在建图，也会重置 <code class="language-plaintext highlighter-rouge">mapping_start_time_</code>——即”建图→定位”的计时从上一次回环/重定位结束时刻起算。</p>
+</blockquote>
+
+<blockquote>
+  <p>对用户的含义：探索过程中 SLAM 会在建图与定位之间自动往返，这是正常且期望的行为，不需要手动切换。</p>
+</blockquote>
+
+<p>相关可调参数：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>默认</th>
+      <th>调参作用</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">explore_en_longterm_update_map</code></td>
+      <td>true</td>
+      <td>总开关。关闭则禁用全部自动模式切换与子图管理</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code></td>
+      <td>180.0</td>
+      <td>建图多久后<strong>允许</strong>自动切定位（秒）。增大→更长时间停留在建图、地图更完整但关键帧更冗余；减小→更早切定位、关键帧不冗余但地图扩展更慢</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">auto_localize_map_area_thr</code></td>
+      <td>50.0</td>
+      <td>地图面积下限（m²），低于此值不切定位。场地较小可下调，避免一直达不到阈值而无法切定位</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">explore_check_kf_radius</code></td>
+      <td>0.5</td>
+      <td>关键帧密度检测半径（m）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">explore_kf_check_num_thr</code></td>
+      <td>4</td>
+      <td>半径内关键帧数低于此值判定为”过稀”，触发切回建图</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">explore_check_kf_count_thr</code></td>
+      <td>2</td>
+      <td>连续多少次判定过稀才真正触发切回建图，避免偶发稀疏误触发</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">relocating_timeout</code></td>
+      <td>30.0</td>
+      <td>重定位总超时（秒）。超时未完成重定位会判定为失败，触发”定位→建图”切回建图重建</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">relocating_min_keyframes_thr</code></td>
+      <td>10</td>
+      <td>工作内存关键帧数下限，低于此值触发”定位→建图”；重定位过程中低于此值会中止重定位</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">relocating_warn_time_thr</code></td>
+      <td>10.0</td>
+      <td>重定位慢成功阈值（秒）。重定位成功但耗时超过此值会触发”定位→建图”补建图</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">search_loop_closure_thr</code></td>
+      <td>5.0</td>
+      <td>未闭环轨迹长度基础阈值。定位模式下轨迹超过 <code class="language-plaintext highlighter-rouge">阈值 × unlc_traj_high_scale</code> 触发”定位→建图”重置误差</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">unlc_traj_high_scale</code></td>
+      <td>4.0</td>
+      <td>未闭环轨迹长度的高档倍数。轨迹达 <code class="language-plaintext highlighter-rouge">search_loop_closure_thr × 该倍数</code> 时切回建图</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="93-模式稳定条件与稳态">9.3 模式稳定条件与稳态</h3>
+
+<p>SLAM 模式是否”稳定”（长时间停留在某一模式而不频繁切换），取决于环境熟悉度与所处阶段：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>阶段 / 环境状态</th>
+      <th>模式表现</th>
+      <th>稳定状态</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>环境已充分探索、机器人活动在已建图区域</td>
+      <td>“地图足够大、子图已连通、当前位置与目标点附近关键帧密度充足、建图已持续足够久”等条件持续满足，自动切到定位并长期停留</td>
+      <td><strong>稳定在定位（LOCALIZATION）</strong></td>
+    </tr>
+    <tr>
+      <td>正在探索新区域 / 关键帧密度时稀时密 / 子图尚未连通</td>
+      <td>关键帧过稀或子图未连通时切回建图，补齐后再尝试切定位，来回切换</td>
+      <td>不稳定，在建图与定位间往返</td>
+    </tr>
+    <tr>
+      <td>地图面积或建图时长始终达不到阈值，或关键帧长期过稀</td>
+      <td>无法满足切定位条件，持续建图</td>
+      <td><strong>稳定在建图（MAPPING）</strong>（持续建图、尚未收敛到定位稳态）</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>通常的稳态是定位模式</strong>：当家庭环境已被充分探索后，机器人大部分时间稳定在定位模式——地图不再显著增长，定位精度稳定，仅偶尔进入陌生或关键帧稀疏区域时短暂切回建图补齐观测，随后自动恢复定位。这是长时运行期望达到的状态。</p>
+
+<p><strong>探索期不稳定是正常的</strong>：首次建图与探索新区域阶段，模式会在建图与定位间往返，这是覆盖新区域、又在已覆盖区域避免关键帧冗余的正常过程，无需干预；随着探索完成会自然收敛到定位稳态。</p>
+
+<p><strong>无法切到定位的情况</strong>：若场地很小、地图面积始终达不到 <code class="language-plaintext highlighter-rouge">auto_localize_map_area_thr</code>，或机器人长期停留在关键帧稀疏区域，SLAM 会持续停留在建图模式而无法切换到定位——这属于场地/参数不匹配，可参照本节 9.5「使用」与 9.6「调参建议」下调面积阈值或调整关键帧密度参数。</p>
+
+<p><strong>总开关关闭时</strong>：<code class="language-plaintext highlighter-rouge">explore_en_longterm_update_map=false</code> 下不进行任何自动切换，模式固定停留在启动时的模式（由 SLAM 启动配置决定）。</p>
+
+<h3 id="94-子图自动管理">9.4 子图自动管理</h3>
+
+<p>子图管理包含两类自动行为，均仅在<strong>建图模式</strong>下生效（优化误差删除除外）：</p>
+
+<h4 id="941-新建子图解决累积误差">9.4.1 新建子图（解决累积误差）</h4>
+
+<p>当某段轨迹长时间未能闭环、累积误差有增大风险时，自动新建一个子图，相当于”在此处重置累积误差的起点”，防止误差继续放大。触发条件如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>触发场景</th>
+      <th>涉及参数（默认值）</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>未闭环轨迹长度超高档阈值</td>
+      <td>未闭环轨迹长度 ≥ <code class="language-plaintext highlighter-rouge">search_loop_closure_thr</code>（<strong>5.0</strong>）× <code class="language-plaintext highlighter-rouge">unlc_traj_high_scale</code>（<strong>4.0</strong>）= 20</td>
+      <td>累积误差有放大风险，新建子图重置误差起点</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>冷却期门控</td>
+      <td>距上次新建子图 ≥ <code class="language-plaintext highlighter-rouge">trigger_new_map_cooldown</code>（<strong>30.0 s</strong>）</td>
+      <td>冷却期内不重复触发，避免频繁切子图</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>建图模式门控</td>
+      <td><code class="language-plaintext highlighter-rouge">current_slam_mode_ == MAPPING</code> 且 <code class="language-plaintext highlighter-rouge">explore_en_longterm_update_map_</code>（<strong>true</strong>）</td>
+      <td>仅建图模式 + 总开关开启时生效</td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p><strong>与”定位→建图 #4（未闭环轨迹过长）”的关系</strong>：两者用同样的阈值（<code class="language-plaintext highlighter-rouge">search_loop_closure_thr × unlc_traj_high_scale</code>），但作用不同——”定位→建图”是<strong>切模式</strong>（LOCALIZATION→MAPPING）来重新建图；”新建子图”是在<strong>已是 MAPPING 时</strong>新建一个子图重置误差起点。常配合发生：轨迹过长先切回建图，随后新建子图。</p>
+
+  <p><strong>冷却机制</strong>：<code class="language-plaintext highlighter-rouge">trigger_new_map_cooldown</code> 防止短时间内反复新建子图（每次新建后 30s 内不再触发），避免子图碎片化。</p>
+</blockquote>
+
+<h4 id="942-删除子图清理冗余--异常子图">9.4.2 删除子图（清理冗余 / 异常子图）</h4>
+
+<p>自动删除两类”低价值”子图，触发条件如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>删除对象</th>
+      <th>触发场景</th>
+      <th>涉及参数（默认值）</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>当前子图（优化误差过大）</td>
+      <td>优化误差比超 error 阈值立即删；或在 warn band 连续累计达标删</td>
+      <td>优化误差比 &gt; <code class="language-plaintext highlighter-rouge">slam_opt_error_thr</code>（<strong>3.0</strong>）立即删；或 &gt; <code class="language-plaintext highlighter-rouge">slam_opt_warn_thr</code>（<strong>1.5</strong>）且连续 ≥ <code class="language-plaintext highlighter-rouge">delete_cur_map_opt_warn_count_thr</code>（<strong>5</strong>）次删</td>
+      <td>删除前若 <code class="language-plaintext highlighter-rouge">!is_mapping</code> 会先切回建图重建该区域。<strong>不受启动宽限期约束</strong></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>非当前子图（规模过小）</td>
+      <td>已连通子图关键帧数或面积低于阈值</td>
+      <td><code class="language-plaintext highlighter-rouge">kf &lt; delete_submap_kf_thr</code>（<strong>5</strong>）或 <code class="language-plaintext highlighter-rouge">area &lt; delete_submap_area_thr</code>（<strong>5.0 m²</strong>）</td>
+      <td>清理规模过小的冗余子图</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>非当前子图（断连超时）</td>
+      <td>与主图断连超过一定时长，且规模不够大</td>
+      <td>断连时长 ≥ <code class="language-plaintext highlighter-rouge">submap_disconnect_delete_timeout</code>（<strong>300.0 s</strong>）且 <code class="language-plaintext highlighter-rouge">kf &gt; 0</code> 且 <code class="language-plaintext highlighter-rouge">area/kf &gt; 2.0</code></td>
+      <td>强制删除断连子图，无视 kf/area 阈值；<code class="language-plaintext highlighter-rouge">submap_disconnect_delete_timeout ≤ 0</code> 禁用强制删</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>门控条件</td>
+      <td>建图模式 + 总开关 + 启动宽限期</td>
+      <td><code class="language-plaintext highlighter-rouge">is_mapping == true</code> 且 <code class="language-plaintext highlighter-rouge">explore_en_longterm_update_map_</code>（<strong>true</strong>）且超过 <code class="language-plaintext highlighter-rouge">submap_delete_delay</code>（<strong>10.0 s</strong>，运行时固定）宽限期</td>
+      <td>仅 #1（当前子图优化误差）不受宽限期约束</td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p><strong>并发保护</strong>：同一时刻只允许一个删除请求在飞（<code class="language-plaintext highlighter-rouge">delete_submap_inflight_ids_</code> 互斥），删除期间拒绝切到定位模式（避免竞争）。删除失败会 <code class="language-plaintext highlighter-rouge">break</code> 本轮，等下一帧 slamInfo 重试。</p>
+
+  <p><strong>调参方向</strong>：子图频繁被删 → 增大 <code class="language-plaintext highlighter-rouge">delete_cur_map_opt_warn_count_thr</code>/减小 <code class="language-plaintext highlighter-rouge">delete_submap_kf_thr</code>/<code class="language-plaintext highlighter-rouge">delete_submap_area_thr</code> 让删除更难；断连子图残留 → 调小 <code class="language-plaintext highlighter-rouge">submap_disconnect_delete_timeout</code>（或置 0 关闭强制删，让断连子图靠规模判定保留）。详见 9.6「调参建议」。</p>
+</blockquote>
+
+<h3 id="95-使用-slam-模式与子图管理功能">9.5 使用 SLAM 模式与子图管理功能</h3>
+
+<p>SLAM 模式切换和子图管理都是探索节点自动完成的，用户只需启动运行，然后用下面这些手段去”看”它在做什么。</p>
+
+<h4 id="951-启动">9.5.1 启动</h4>
+
+<p>打开RDK X5终端，运行如下命令，包含环境感知，VSLAM，导航，自主探索建图，rviz可视化：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/install/local_setup.bash
+<span class="nb">mkdir</span> <span class="nt">-p</span> /userdata/rtabmap/ 
+<span class="c"># 删除地图文件</span>
+<span class="nb">rm</span> /userdata/rtabmap/office.db 
+<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
+bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
+</code></pre></div></div>
+
+<p>通过键盘或者导航控制机器人开始在场地里移动。<strong>从这一刻起，模式切换和子图管理就在后台自动进行，用户无需任何手动操作。</strong></p>
+
+<blockquote>
+  <p>启动时使用<code class="language-plaintext highlighter-rouge">en_search_loop_closure=False</code>参数启动，可关闭探索时自动回环功能，通过自主探索进行测试。</p>
+</blockquote>
+
+<h4 id="952-看-slam-当前在哪个模式--子图在怎么变化">9.5.2 看 SLAM 当前在哪个模式 + 子图在怎么变化</h4>
+
+<p>SLAM 模式、子图连通、地图面积等信息发布在 <code class="language-plaintext highlighter-rouge">/tros_diagnostics</code> 上。订阅它就能一眼看全：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ros2 topic <span class="nb">echo</span> /tros_diagnostics
+</code></pre></div></div>
+
+<p>输出里关注 key 为 <code class="language-plaintext highlighter-rouge">stat_traj</code> 的那条 value，它长这样：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>unlc traj: 0.00, slam: LOCALIZATION | 9 connected 6/6 | wm: 621, map known area: 159.86 ㎡, free 138.89 ㎡ | cpu 509.1 | mem 25.3 % | bpu 49 % |
+</code></pre></div></div>
+
+<p>逐段解读（与 SLAM 模式 / 子图管理直接相关的加粗）：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>片段</th>
+      <th>含义</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">unlc traj: 0.00</code></td>
+      <td>未闭环轨迹长度，是累积误差的指标；数值持续增长到阈值会触发新建子图或切回建图（详见 9.4.1「新建子图」）</td>
+    </tr>
+    <tr>
+      <td><strong><code class="language-plaintext highlighter-rouge">slam: LOCALIZATION</code></strong></td>
+      <td><strong>SLAM 当前模式</strong>，<code class="language-plaintext highlighter-rouge">MAPPING</code>=建图（地图还在长、还在新增关键帧），<code class="language-plaintext highlighter-rouge">LOCALIZATION</code>=定位（已熟悉区域不再新增关键帧，降低内存占用）</td>
+    </tr>
+    <tr>
+      <td><strong><code class="language-plaintext highlighter-rouge">9 connected 6/6</code></strong></td>
+      <td><strong>当前子图 id=9</strong>，已全连通；<code class="language-plaintext highlighter-rouge">6/6</code> = 连通子图数 / 子图组件总数。若显示 <code class="language-plaintext highlighter-rouge">not connected</code> 说明子图尚未全部连通，会触发切回建图去补连通</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">wm: 621</code></td>
+      <td>工作内存关键帧数，反映当前子图观测密度</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">map known area: 159.86 ㎡, free 138.89 ㎡</code></td>
+      <td>已知总面积 / 可通行面积；面积达到 <code class="language-plaintext highlighter-rouge">auto_localize_map_area_thr</code> 是自动切定位的条件之一</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">cpu/mem/bpu</code></td>
+      <td>板端系统资源占用，与 SLAM 本身无关，用于判断是否资源吃紧</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>模式会来回切换是正常的</strong>（详见 9.3「模式稳定条件与稳态」）：探索新区域时 <code class="language-plaintext highlighter-rouge">slam:</code> 是 <code class="language-plaintext highlighter-rouge">MAPPING</code>，区域成熟后切 <code class="language-plaintext highlighter-rouge">LOCALIZATION</code>，遇到陌生角落又切回 <code class="language-plaintext highlighter-rouge">MAPPING</code> 补齐。<strong>看到 <code class="language-plaintext highlighter-rouge">slam:</code> 在两个值之间来回变不要以为出错了。</strong> 跑久之后（环境已充分探索），它通常会<strong>长期停在 <code class="language-plaintext highlighter-rouge">LOCALIZATION</code></strong>，偶尔短暂切回 <code class="language-plaintext highlighter-rouge">MAPPING</code> 又恢复——这就是期望的稳态。</p>
+
+<p><strong>子图会增减也是正常的</strong>：探索跑久了你会看到 <code class="language-plaintext highlighter-rouge">9 connected 6/6</code> 这段里的子图 id 变化、<code class="language-plaintext highlighter-rouge">6/6</code> 的分母（总子图数）有时变小——那就是自动删除在清理规模过小或断连的冗余子图（详见 9.4.2「删除子图」），是正常维护行为。</p>
+
+<blockquote>
+  <p>想看每个子图的逐项明细（map_id / 关键帧数 / 面积），可直接 <code class="language-plaintext highlighter-rouge">ros2 topic echo /rtabmap/info --field submap_info</code>，每条对应一个子图。</p>
+</blockquote>
+
+<p><strong>看模式切换的原因</strong>：<code class="language-plaintext highlighter-rouge">/tros_diagnostics</code> 只告诉你当前 <code class="language-plaintext highlighter-rouge">slam:</code> 是哪个模式，<strong>为什么切换</strong>要看 <code class="language-plaintext highlighter-rouge">/explore/status</code>：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ros2 topic <span class="nb">echo</span> /explore/status
+</code></pre></div></div>
+
+<p>每当模式切换（或子图删除、重定位等关键事件）发生时，探索节点会在这里发布一条带原因的字符串，常见几类：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>消息示例</th>
+      <th>含义</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">kf count is less than thr 4, switching to MAPPING @ts: 1785240683</code></td>
+      <td>当前位置/目标点附近关键帧数 &lt; <code class="language-plaintext highlighter-rouge">explore_kf_check_num_thr</code>(4)，触发”定位→建图”（关键帧过稀，补建图）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">maps not fully connected, switching to MAPPING @ts: ...</code></td>
+      <td>子图未全连通，触发”定位→建图”去补连通</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">slam mode is not mapping, switching to mapping @ts: ...</code></td>
+      <td>需要 mapping 但当前不在 mapping（如删子图前要先切建图）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">set to mapping mode (wm count) @ts: ...</code></td>
+      <td>工作内存关键帧数 &lt; <code class="language-plaintext highlighter-rouge">relocating_min_keyframes_thr</code>，切建图</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">set to mapping mode (unlc traj) @ts: ...</code></td>
+      <td>未闭环轨迹过长（累积误差），切建图重置</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">set to mapping mode success @ts: ...</code></td>
+      <td>切换成功回执</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">delete submap 3 for optimization error @ts: ...</code></td>
+      <td>删除子图（优化误差/规模/断连，map_id 在消息里）</td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p><code class="language-plaintext highlighter-rouge">@ts:</code> 后是时间戳（Unix 秒），便于和 <code class="language-plaintext highlighter-rouge">/tros_diagnostics</code> 的采样对齐。排查”为什么一直 MAPPING 切不回定位”或”为什么频繁切回建图”时，先 <code class="language-plaintext highlighter-rouge">ros2 topic echo /explore/status</code> 看最近几条原因，再对照本节 9.5.3 表格定位。</p>
+</blockquote>
+
+<h4 id="953-什么时候该留心">9.5.3 什么时候该留心</h4>
+
+<p>绝大多数情况下用户什么都不用做。留心以下几种”现象对不上预期”的情况，可对照下文 9.6「调参建议」：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>现象</th>
+      <th>通常意味着</th>
+      <th>怎么办</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>探索跑很久，<code class="language-plaintext highlighter-rouge">slam:</code> 一直是 <code class="language-plaintext highlighter-rouge">MAPPING</code>，从不切定位</td>
+      <td>自动切定位需建图→定位的 11 个判定条件<strong>全部满足</strong>，常见卡点：① 地图面积/建图时长没到阈值（<code class="language-plaintext highlighter-rouge">auto_localize_map_area_thr</code>/<code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code>）；② 当前位置或导航 goal 附近关键帧长期过稀（条件 6/7 不满足会<strong>重置</strong> <code class="language-plaintext highlighter-rouge">mapping_start_time_</code>，计时器永远归零，永远切不了）；③ <code class="language-plaintext highlighter-rouge">all_maps_connected_==false</code>（有子图断连）；④ 卡在 <code class="language-plaintext highlighter-rouge">RELOCATING</code>/<code class="language-plaintext highlighter-rouge">LOOPCLOSING</code>/有 pending 切换</td>
+      <td>先看 <code class="language-plaintext highlighter-rouge">/tros_diagnostics</code> 的 <code class="language-plaintext highlighter-rouge">all_maps_connected</code> 是否 true、<code class="language-plaintext highlighter-rouge">kf</code> 密度是否够；若是关键帧过稀导致计时器反复重置，下调 <code class="language-plaintext highlighter-rouge">explore_kf_check_num_thr</code> 或检查是否总在稀疏区域打转；场地太小可下调 <code class="language-plaintext highlighter-rouge">auto_localize_map_area_thr</code>/<code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code></td>
+    </tr>
+    <tr>
+      <td><strong>地图频繁被删除</strong>（<code class="language-plaintext highlighter-rouge">delete submap</code> 日志密集，子图数忽减忽增）</td>
+      <td>删除阈值偏松：① 当前子图因优化误差超 <code class="language-plaintext highlighter-rouge">slam_opt_error_thr_</code> 或 warn 计数达标被删（当前子图优化误差删除）；② 非当前子图规模过小（kf&lt;<code class="language-plaintext highlighter-rouge">delete_submap_kf_thr_</code> 或 area&lt;<code class="language-plaintext highlighter-rouge">delete_submap_area_thr_</code>）或断连超时被强制删（非当前子图规模/断连删除）</td>
+      <td>让删除更难触发：增大 warn 计数阈值 <code class="language-plaintext highlighter-rouge">delete_cur_map_opt_warn_count_thr</code>（连续累计更久才删当前子图）；减小 <code class="language-plaintext highlighter-rouge">delete_submap_kf_thr</code>/<code class="language-plaintext highlighter-rouge">delete_submap_area_thr</code> 让小子图也保留；断连超时删得太狠可调大 <code class="language-plaintext highlighter-rouge">submap_disconnect_delete_timeout_</code>（或置 0 关闭强制删）。对照 <code class="language-plaintext highlighter-rouge">/tros_diagnostics</code> 的 <code class="language-plaintext highlighter-rouge">delete submap</code> 日志确认是哪类删除</td>
+    </tr>
+    <tr>
+      <td><strong>地图错误</strong>（地图扭曲/漂移/与实际不符、定位错位）</td>
+      <td>多为 SLAM 累积误差或回环失败：① 长期 MAPPING 未切定位，误差累积；② 当前子图优化误差比持续高（<code class="language-plaintext highlighter-rouge">Loop/Optimization_max_error_ratio</code> &gt; warn 阈值）却没删/没新建子图；③ 回环检测失败（loop_closure_rejection_reason 非 success）；④ 子图断连导致跨子图位姿不一致</td>
+      <td>先看 <code class="language-plaintext highlighter-rouge">/tros_diagnostics</code> 的 <code class="language-plaintext highlighter-rouge">opt_error_ratio</code>、<code class="language-plaintext highlighter-rouge">loop_closure</code> 是否 success；若误差持续高，确认是否触发了当前子图删除或新建子图；若是累积误差，按下文 9.6「调参建议」下调 <code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code> 更早切定位；严重错误建议删库重建（<code class="language-plaintext highlighter-rouge">rtabmap.db</code>）</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="96-调参建议">9.6 调参建议</h3>
+
+<p>默认参数适用于多数中等规模室内场景。如遇以下情况可按方向调整：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>现象</th>
+      <th>可能原因</th>
+      <th>调整方向</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>地图越探索越”歪”、漂移明显</td>
+      <td>长期停留在建图、未及时切定位</td>
+      <td>适当<strong>减小</strong> <code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code>，或下调 <code class="language-plaintext highlighter-rouge">auto_localize_map_area_thr</code> 使其更早切定位</td>
+    </tr>
+    <tr>
+      <td>地图覆盖不全、探索后期没新区域</td>
+      <td>过早切定位、地图扩展受限</td>
+      <td>适当<strong>增大</strong> <code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code> / <code class="language-plaintext highlighter-rouge">auto_localize_map_area_thr</code></td>
+    </tr>
+    <tr>
+      <td>频繁切回建图、行为抖动</td>
+      <td>关键帧密度阈值偏高或确认次数偏低</td>
+      <td>适当<strong>减小</strong> <code class="language-plaintext highlighter-rouge">explore_kf_check_num_thr</code>，或<strong>增大</strong> <code class="language-plaintext highlighter-rouge">explore_check_kf_count_thr</code> 提高触发门槛</td>
+    </tr>
+    <tr>
+      <td>子图被频繁删除 / 地图碎片化</td>
+      <td>删除阈值偏低，过多子图被判为”规模过小”</td>
+      <td>适当<strong>减小</strong> <code class="language-plaintext highlighter-rouge">delete_submap_kf_thr</code>、<code class="language-plaintext highlighter-rouge">delete_submap_area_thr</code>，让删除更难触发，保留更多子图</td>
+    </tr>
+    <tr>
+      <td>累积误差大却迟迟不新建子图</td>
+      <td><code class="language-plaintext highlighter-rouge">unlc_traj_high_scale</code> 偏大</td>
+      <td>适当<strong>减小</strong> <code class="language-plaintext highlighter-rouge">unlc_traj_high_scale</code>，更早新建子图</td>
+    </tr>
+    <tr>
+      <td>想完全禁用自动管理</td>
+      <td>—</td>
+      <td>将 <code class="language-plaintext highlighter-rouge">explore_en_longterm_update_map</code> 置为 <code class="language-plaintext highlighter-rouge">false</code>（同时关闭模式切换与子图管理）</td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p>调参原则：一次只改一个参数，观察一轮探索效果后再决定是否继续调整。子图相关阈值改动对地图连贯性影响较大，建议小步调整。</p>
+</blockquote>
+
+<h3 id="97-小结">9.7 小结</h3>
+
+<p>核心认知只需三点：</p>
+
+<ol>
+  <li><strong>全自动</strong>：SLAM 模式切换与子图新建/删除在探索期间自动进行，无需手动操作。</li>
+  <li><strong>总开关</strong>：<code class="language-plaintext highlighter-rouge">explore_en_longterm_update_map</code>（默认开启）一键启停上述全部自动行为。</li>
+  <li><strong>可调参</strong>：通过本节所列 launch 参数调整触发阈值，以适配不同场地规模与精度需求。</li>
+</ol>
+
+<hr />
+
+<h2 id="10-单模块运行命令">10. 单模块运行命令</h2>
+<h3 id="101-运行时指定配置文件">10.1 运行时指定配置文件</h3>
 
 <p><strong>使用场景：</strong></p>
 <ul>
@@ -644,7 +1274,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
-<h3 id="2-只启动rviz">2. 只启动rviz</h3>
+<h3 id="102-只启动rviz">10.2 只启动rviz</h3>
 
 <p><strong>使用场景：</strong></p>
 <ul>
@@ -662,7 +1292,7 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ros2 run rviz2 rviz2 <span class="nt">-d</span> <span class="sb">`</span>ros2 pkg prefix tros_vision_nav<span class="sb">`</span>/share/tros_vision_nav/params/nav.rviz
 </code></pre></div></div>
 
-<h3 id="3-只启动导航">3. 只启动导航</h3>
+<h3 id="103-只启动导航">10.3 只启动导航</h3>
 
 <p><strong>使用场景：</strong></p>
 <ul>
@@ -683,7 +1313,7 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
-<h3 id="4-只启动自主探索">4. 只启动自主探索</h3>
+<h3 id="104-只启动自主探索">10.4 只启动自主探索</h3>
 
 <p><strong>使用场景：</strong></p>
 <ul>
@@ -704,7 +1334,7 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
-<h3 id="5-只启动底盘和双目深度估计">5. 只启动底盘和双目深度估计</h3>
+<h3 id="105-只启动底盘和双目深度估计">10.5 只启动底盘和双目深度估计</h3>
 
 <p><strong>使用场景：</strong></p>
 <ul>
@@ -722,7 +1352,7 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_pcl2grid</span><span class="o">=</span>False <span class="nv">run_rviz</span><span class="o">=</span>False <span class="nv">run_perc</span><span class="o">=</span>False <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_mask_depth</span><span class="o">=</span>False <span class="nv">mipi_image_framerate</span><span class="o">=</span>20.0 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
-<h3 id="6-只启动通用障碍物识别">6. 只启动通用障碍物识别</h3>
+<h3 id="106-只启动通用障碍物识别">10.6 只启动通用障碍物识别</h3>
 
 <p><strong>使用场景：</strong></p>
 <ul>
@@ -742,7 +1372,7 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
-<h3 id="7-只启动语义目标识别">7. 只启动语义目标识别</h3>
+<h3 id="107-只启动语义目标识别">10.7 只启动语义目标识别</h3>
 
 <p><strong>使用场景：</strong></p>
 <ul>
