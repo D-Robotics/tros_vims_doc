@@ -28,8 +28,8 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 ```
 
 > **注意** 
-1. 70mm基线（带IMU）不需要设置图像旋转，即启动时指定mipi_rotation=0.0。 
-2. 80mm以及其他基线（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。
+1. RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）不需要设置图像旋转，即启动时指定mipi_rotation=0.0。 
+2. 80mm（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。
 >
 
 ### 1.3 选择里程计
@@ -62,8 +62,9 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # True=use VIO orientation as gravity ref
 ```
 
-> **注意** 只有当里程计类型为vio时，才SLAM建图才支持3D运动模式。如果里程计类型为wheel，禁止打开SLAM建图的3D运动模式。 只有70mm基线（带IMU）相机支持vio。
->
+> **注意**
+> - 只有当里程计类型为vio时，SLAM建图才支持3D运动模式。如果里程计类型为wheel，禁止打开SLAM建图的3D运动模式。
+> - 目前仅70mm基线（带IMU）相机支持vio。
 
 ## 2. 使用OriginBot轮式里程计
 
@@ -86,7 +87,7 @@ SLAM创建的地图保存在RDK X5上的文件名为/userdata/rtabmap/office.db�
 
 SLAM 3D地图：蓝色区域表示低矮障碍物区域（地面也属于这一类）；蓝色以上从绿色到红色，表示障碍物高度依次增加（限制了地图中的障碍物高度小于0.5米）；黑色区域表示未知区域。
 
-SALM 2D地图：白色区域表示无障碍物，黑色区域表示障碍物区域；灰色区域表示未知区域。
+SLAM 2D地图：白色区域表示无障碍物，黑色区域表示障碍物区域；灰色区域表示未知区域。
 
 导航地图：高亮区域表示局部代价地图（local costmap，箭头1、2、3所在区域）；低亮区域表示全局代价地图（global costmap，箭头5所在区域）；1表示实际障碍物区域；2和3表示膨胀层；4表示无障碍物；5表示全局代价地图的障碍物层和膨胀层。
 
@@ -94,7 +95,7 @@ SLAM 3D地图和2D地图之间的关系：3D地图通过卡高度阈值去除地
 
 导航代价地图和SLAM 2D地图之间的关系：SLAM 2D地图作为导航代价地图中的静态障碍物层，同时叠加障碍物识别算法提取的低矮障碍物，最终的到用于导航和避障的导航代价地图。
 
-| SALM 3D地图 | SALM 2D地图 | 导航代价地图 |
+| SLAM 3D地图 | SLAM 2D地图 | 导航代价地图 |
 | :---: | :---: | :---: |
 | <img src="images/image_052.png" height="200"> | <img src="images/image_053.png" height="200"> | <img src="images/image_054.png" height="200"> |
 
@@ -196,7 +197,7 @@ ros2 bag record /rosout /map /tros_diagnostics /global_costmap/costmap /local_co
 如果需要录制深度估计输出的点云，录制时添加/StereoNetNode/stereonet_pointcloud2话题。
 ### 6.2 自动录制
 移动solution包含数据trigger & recorder工具，用于路径规划失败时自动触发录制系统状态数据，通过离线回放数据定位问题，支持录制触发前的数据（影子模式）。
-工具默认关闭，开启方式为将`ros2 pkg prefix tros_vision_nav --share`/params/tros_nav2.yaml配置文件中enable_record配置项设置为true后，重新启动导航命令。录制的数据保存在运行路径下，路径名为`bag_[planner_server]_[时间戳]`。
+工具默认关闭，开启方式为将`` `ros2 pkg prefix tros_vision_nav --share`/params/tros_nav2.yaml ``配置文件中enable_record配置项设置为true后，重新启动导航命令。录制的数据保存在运行路径下，路径名为`bag_[planner_server]_[时间戳]`。
 
 ```bash
 planner_server:
@@ -236,7 +237,7 @@ mkdir -p /userdata/rtabmap/
 # 删除地图文件
 rm /userdata/rtabmap/office.db 
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
-run_explore=False run_traj_viz=True run_nav=False \
+run_explore=False run_traj_viz=True run_nav=False localization=False \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
@@ -261,20 +262,30 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 **测试**
 
-使用键盘控制机器人移动，移动过程中（左下图），rviz上会渲染起点、运行轨迹、轨迹信息。最终机器人回到起点后（右下图），可以看到机器人当前pose和起始pose之间的距离偏差，即回环偏差。从右下图可以看到，机器人移动了26米，耗时6分25秒，回环偏差0.02米。
+使用键盘控制机器人移动，移动过程中（左下图），rviz上会渲染起点、运行轨迹、轨迹信息。最终机器人回到起点后（右下图），可以看到机器人当前pose和起始pose之间的距离偏差，即回环偏差。从右下图可以看到，机器人移动了8.65米，耗时4分25秒，回环偏差0.01米。
 
 | 移动过程中 | 回到起点后 |
 | :---: | :---: |
 | <img src="images/image_038.png" height="200"> | <img src="images/image_039.png" height="200"> |
 
+SLAM 状态信息说明：
+
+| 信息 | 说明 |
+| :---: | :---: |
+| stat_traj: unlc traj | 未闭环轨迹长度（m） |
+| stat_traj: slam | SLAM 状态（MAPPING / LOCALIZATION）及连接/关键帧数 |
+| stat_traj: wm | RTAB-Map working memory 数量 |
+| stat_traj: map known area | 地图已知区域面积（㎡） |
+| stat_traj: free | 地图空闲区域面积（㎡） |
+
 渲染的轨迹信息说明：
 
 | 信息 | 说明 |
 | :---: | :---: |
-| frame id | 轨迹坐标系 |
-| time diff | 机器人从移动开始到结束的时间 |
-| distance | 机器人当前pose和起始pose之间的距离偏差，即回环偏差 |
-| traj len | 机器人从移动开始到结束的轨迹总长度 |
+| trajectory: frame id | 轨迹坐标系 |
+| trajectory: time diff | 机器人从移动开始到结束的时间（X min & Y sec 格式） |
+| trajectory: distance | 当前 pose 与起始 pose 的距离偏差，即回环偏差（m） |
+| trajectory: traj len | 轨迹总长度（m） |
 
 
 ## 8. 自主探索建图
@@ -296,7 +307,7 @@ step5: 探索完成。完成探索后，机器人停止。
 
 ### 8.2 建图区域
 
-如果发现生成的地图不完整，或者需要对更大区域进行建图，请尝试增加探索半径阈值frontier_search_radius和路径规划长度阈值frontier_goal_nav_path_dist（默认值的查看方法为：使用命令 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml 打开配置后，搜索参数关键字）。
+如果发现生成的地图不完整，或者需要对更大区域进行建图，请尝试增加探索半径阈值frontier_search_radius和路径规划长度阈值frontier_goal_nav_path_dist（默认值的查看方法为：使用命令`` vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml ``打开配置后，搜索参数关键字）。
 
 这两个参数说明如果待探索区域和机器人当前位置的距离超过frontier_search_radius米，或者规划出来的路径长度超过frontier_goal_nav_path_dist米，忽略探索这块区域。
 
@@ -315,16 +326,23 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ### 8.3 参数说明
 自主探索建图涉及到的参数详细说明：
 
-| 参数名 | 含义 | 取值 | 默认值 |
-| :---: | :---: | :---: | :---: |
-| min_frontier_size | 最小边界尺寸阈值，只探索超过阈值的边界 | > 0 | 0.2 |
-| return_to_init | 探索完成后是否回到起点 | true/false | false |
-| retry_limit | 探索完成后再次重新探索的次数 | >= 0 | 1 |
-| nav_timeout_seconds | 一次导航的时间限制，超过限制将会取消本次导航 | >= 0 | 300 |
-| frontier_search_radius | 探索半径阈值，只探索和机器人当前位置的距离小于阈值的边界 | > 0 | 8.0 |
-| frontier_goal_nav_path_dist | 路径规划长度阈值，如果到导航目标点的路径长度超过阈值，取消本次导航 | > 0 | 10.0 |
-| move_time_allowance | 移动超时时间，如果在超时时间内移动距离小于move_radius，取消本次导航 | > 0 | 10.0 |
-| move_radius | 移动超时距离 | > 0 | 0.2 |
+| 参数名 | 含义 | 取值 |
+| :---: | :---: | :---: |
+| min_frontier_size | 最小边界尺寸阈值，只探索超过阈值的边界 | > 0 |
+| return_to_init | 探索完成后是否回到起点 | true/false |
+| explore_retry_limit | 探索完成后再次重新探索的次数 | >= 0 |
+| nav_timeout_seconds | 一次导航的时间限制，超过限制将会取消本次导航 | >= 0 |
+| frontier_search_radius | 探索半径阈值，只探索和机器人当前位置的距离小于阈值的边界 | > 0 |
+| frontier_goal_nav_path_dist | 路径规划长度阈值，如果到导航目标点的路径长度超过阈值，取消本次导航 | > 0 |
+| move_time_allowance | 移动超时时间，如果在超时时间内移动距离小于move_radius，取消本次导航 | > 0 |
+| move_radius | 移动超时距离 | > 0 |
+
+具体参数实际取值可打开配置文件查询：
+
+```bash
+# 打开配置文件
+vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml 
+```
 
 ## 9. SLAM 模式与子图管理说明
 
@@ -572,6 +590,15 @@ ros2 topic echo /explore/status
 ## 10. 单模块运行命令
 ### 10.1 运行时指定配置文件
 
+**使用场景：**
+- 需要使用自定义配置文件（如修改了算法参数、标定参数）运行完整Solution。
+- 调试不同参数组合对系统行为的影响。
+
+**前置条件：**
+- 已正确source TROS环境和移动Solution工作空间。
+- 已准备好自定义配置文件（如 `/userdata/params.yaml`），并已正确配置所有必要参数。
+
+**运行命令：**
 ```bash
 # 默认使用的配置文件为`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 支持启动时用户使用YAML_CONFIG_FILE环境变量指定配置文件
@@ -581,12 +608,31 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 ### 10.2 只启动rviz
 
+**使用场景：**
+- 仅需要查看机器人状态、地图、轨迹等可视化信息，而不需要运行实际的感知或导航算法。
+- 用于调试rviz显示配置，或远程连接RDK查看其他模块发布的数据。
+
+**前置条件：**
+- 已正确source TROS环境。
+- 其他模块（如VSLAM、导航）已在其他终端中运行，并有数据发布到对应的topic。
+
+**运行命令：**
 ```bash
 ros2 run rviz2 rviz2 -d `ros2 pkg prefix tros_vision_nav`/share/tros_vision_nav/params/nav.rviz
 ```
 
 ### 10.3 只启动导航
 
+**使用场景：**
+- 已有预先构建好的地图，仅需运行导航和避障功能，而不启动感知、VSLAM等其他模块。
+- 用于调试导航算法参数或测试路径规划效果。
+
+**前置条件：**
+- 已正确source TROS环境和移动Solution工作空间。
+- 已存在可用的地图文件（位于 `/userdata/rtabmap/` 目录）。
+- 其他必要模块（如底盘驱动、定位数据源）已在其他终端中运行。
+
+**运行命令：**
 ```bash
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
 localization=True log_level_nav=info LAUNCH_FILE="nav.launch.py" \
@@ -595,6 +641,16 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 ### 10.4 只启动自主探索
 
+**使用场景：**
+- 需要在未知环境中自动探索建图，而无需启动完整的导航系统。
+- 用于测试自主探索算法或收集建图数据。
+
+**前置条件：**
+- 已正确source TROS环境和移动Solution工作空间。
+- 已启动底盘驱动、VSLAM等自主探索依赖的模块。
+- 机器人放置在待探索的环境中。
+
+**运行命令：**
 ```bash
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
 LAUNCH_PACKAGE=tros_frontier_exploration LAUNCH_FILE="explore.launch.py" \
@@ -603,12 +659,30 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 ### 10.5 只启动底盘和双目深度估计
 
+**使用场景：**
+- 仅需要验证双目相机工作正常、深度估计功能可用，而不启动其他模块。
+- 用于测试相机连接、深度图效果或采集原始数据。
+
+**前置条件：**
+- 已完成双目相机的硬件安装和软件配置。
+- 底盘驱动已正确安装并可与RDK X5通信。
+
+**运行命令：**
 ```bash
 stereonet_pub_web=True run_pcl2grid=False run_rviz=False run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False mipi_image_framerate=20.0 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 ### 10.6 只启动通用障碍物识别
 
+**使用场景：**
+- 需要单独测试或调试通用障碍物识别算法的效果。
+- 用于分析点云数据中的障碍物检测结果，不依赖其他模块。
+
+**前置条件：**
+- 已正确source TROS环境和移动Solution工作空间。
+- 已有点云数据源（如运行中的双目深度估计模块、或录制的bag包）发布到对应topic。
+
+**运行命令：**
 ```bash
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
 LAUNCH_FILE="pcl_obstacle_det.launch.py" use_composition=False \
@@ -617,6 +691,15 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 ### 10.7 只启动语义目标识别
 
+**使用场景：**
+- 需要单独测试或调试语义目标识别算法（如识别特定物体类别）的效果。
+- 用于验证障碍物语义分割的准确性或调试相关参数。
+
+**前置条件：**
+- 已正确source TROS环境和移动Solution工作空间。
+- 已启动双目深度估计模块，提供RGB图像输入。
+
+**运行命令：**
 ```bash
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
 odom_type=wheel run_mask_depth=False run_pcl2grid=False run_explore=False \

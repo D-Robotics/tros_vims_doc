@@ -5,8 +5,8 @@ layout: default
 
 # 相机和底盘外参标定（高精度标定）
 
-本章节介绍使用二维码（A4纸打印），实现相机和底盘之间x, y, x, roll, pitch, yaw外参的简单、高精度标定。
-需要采用高精度标定的场景：相机和底盘之间yaw角较大，或者对标定精度有极高要求。简单、快速的粗标定能够满足基本使用需求。
+本章节介绍使用二维码（A4纸打印），实现相机和底盘之间x, y, z, roll, pitch, yaw外参的简单、高精度标定。
+需要采用高精度标定的场景：相机和底盘之间yaw角较大，或者对标定精度有极高要求。
 本章节涉及到的所有操作均在RDK X5上运行。
 
 ## 安装标定工具
@@ -58,7 +58,7 @@ odom_type=vio stereonet_pub_web=True run_pcl2grid=False run_rviz=False run_perc=
 
 > **注意**
 1. 70mm基线（带IMU）不需要设置图像旋转，即启动时指定mipi_rotation=0.0。
-2. 80mm以及其他基线（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。
+2. 80mm（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。
 3. 示例采用的移动底盘是originbot，如果采用的是其他底盘，使用robot_base参数指定。
 >
 
@@ -87,6 +87,21 @@ ros2 bag record -s mcap --compression-queue-size 5 \
 
 运行成功后将会有如下log信息：
 
+```bash
+[INFO] [1785405443.162168285] [rosbag2_recorder]: Press SPACE for pausing/resuming
+[INFO] [1785405443.186423035] [rosbag2_recorder]: Listening for topics...
+[INFO] [1785405443.186558811] [rosbag2_recorder]: Event publisher thread: Starting
+[INFO] [1785405443.206221490] [rosbag2_recorder]: Subscribed to topic '/tf_static'
+[INFO] [1785405443.208910408] [rosbag2_recorder]: Subscribed to topic '/tf'
+[INFO] [1785405443.214892962] [rosbag2_recorder]: Subscribed to topic '/StereoNetNode/stereonet_pointcloud2'
+[INFO] [1785405443.232660950] [rosbag2_recorder]: Subscribed to topic '/odom'
+[INFO] [1785405443.238530114] [rosbag2_recorder]: Subscribed to topic '/StereoNetNode/stereonet_depth/camera_info'
+[INFO] [1785405443.243021260] [rosbag2_recorder]: Subscribed to topic '/StereoNetNode/stereonet_depth'
+[INFO] [1785405443.246088866] [rosbag2_recorder]: Subscribed to topic '/StereoNetNode/rectify_left_image'
+[INFO] [1785405443.246482812] [rosbag2_recorder]: Recording...
+[INFO] [1785405443.249659806] [rosbag2_recorder]: All requested topics are subscribed. Stopping discovery...
+```
+
 ### 控制机器人走"S型路线"
 启动底盘控制节点：
 
@@ -102,17 +117,18 @@ currently:      speed 0.14      turn 0.28
 平移速度为0.14m/s
 经过标记地面关键点:p1 -> p2 -> p3 -> p4 进行数据采集(可以沿着绿色线的路径行走)
 途径每个关键点需要原地左右旋转30 °采集5s再继续运动
-打开WEB可视化界面(web端打开:, 其中ip:为RKD-X5的ip), 确保机器人运动的过程中所有Apriltag的角点都在视野内。
+打开WEB可视化界面(web端打开:http://ip:8000, 其中ip:为RKD-X5的ip), 确保机器人运动的过程中所有Apriltag的角点都在视野内。
 
 移动完成后，停止录包。
 
 ## 开始标定
 ### 测量外参初始值
 标定算法要求提供初始外参，初始值和真值测量的角度偏差不超过10(°), 平移偏差不超过0.01(m)。
-参考 相机和底盘外参标定（粗标定） 章节测量初始外参。
+参考[相机和底盘外参标定（粗标定）](tros_vims_doc.html#61-相机和底盘外参标定粗标定)  章节测量初始外参。
 ### 运行标定脚本
 
 ```bash
+source /opt/tros/humble/local_setup.bash
 source /userdata/vims/cam2base_calib/install/local_setup.bash
 ros2 launch camera_extrinsic_calibration camera_extrinsic_calibration.launch.py \
     camera_color_topic:=/StereoNetNode/rectify_left_image \
@@ -138,14 +154,17 @@ ros2 launch camera_extrinsic_calibration camera_extrinsic_calibration.launch.py 
 
 ```bash
 # 打开配置文件
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/cam2base_calib/install/local_setup.bash
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
-# 使用标定结果中的--x --y --z --roll --pitch --yaw 设置   robot_to_camera_x  robot_to_camera_y  robot_to_camera_z  robot_to_camera_roll  robot_to_camera_pitch robot_to_camera_yaw
+# 使用标定结果中的--x --y --z --roll --pitch --yaw设置   robot_to_camera_x  robot_to_camera_y  robot_to_camera_z  robot_to_camera_roll  robot_to_camera_pitch robot_to_camera_yaw
 ```
 
 ### 标定工具详细说明
 标定原理、参数说明详见标定工具手册：
 
 ```bash
+source /opt/tros/humble/local_setup.bash
 source /userdata/vims/cam2base_calib/install/local_setup.bash
 # 打开标定工具手册
 vi `ros2 pkg prefix camera_extrinsic_calibration`/README.md
