@@ -720,15 +720,7 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml ba
 
 <img src="images/image_046.png" width="400">
 
-#### 绑架后重定位
-
-定位模式下，使用默认originbot搭配VIO时，抬起机器人，搬移到新位置过程中，机器人会自动更新实时位置。
-
-重定位过程：
-
-<img src="images/relocation.gif" width="900">
-
-**导航效果**
+#### 导航效果
 
 在RVIZ上选择导航的目标点，导航过程和完成后的结果如下：
 
