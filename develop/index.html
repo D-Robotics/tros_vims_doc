@@ -316,9 +316,9 @@
 
 <h4 id="134-重定位">1.3.4 重定位</h4>
 
-<p>支持机器人在启动时和劫持后的重定位。</p>
+<p>支持机器人在启动时和劫持时的重定位。</p>
 
-<p>如下图，机器人被劫持后，在7秒内完成重定位。</p>
+<p>如下图，机器人被劫持过程中，能够实时完成重定位。</p>
 
 <p><img src="intro_images/kidnap_relocation.gif" width="900" /></p>
 
@@ -1204,22 +1204,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <h4 id="绑架后重定位">绑架后重定位</h4>
 
-<p>定位模式下，抬起机器人，搬移到新位置并放回地面上后，机器人将会自动进入到重定位状态，重定位中和重定位成功后RVIZ上显示如下信息：</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">重定位中</th>
-      <th style="text-align: center">重定位成功</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center"><img src="images/image_047.png" height="100" /></td>
-      <td style="text-align: center"><img src="images/image_048.png" height="100" /></td>
-    </tr>
-  </tbody>
-</table>
+<p>定位模式下，使用默认originbot搭配VIO时，抬起机器人，搬移到新位置过程中，机器人会自动更新实时位置。</p>
 
 <p>重定位过程：</p>
 
