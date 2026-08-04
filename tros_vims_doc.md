@@ -1,10 +1,10 @@
-# 视觉移动Solution套件使用手册
+# [视觉移动Solution套件使用手册](https://github.com/D-Robotics/tros_vims_doc.git)
 
 ## 1. 功能介绍
 
 基于 [D-Robotics RDK X5](https://developer.d-robotics.cc/rdkx5) 平台，面向室内移动机器人场景，提供软硬结合、深度优化、低成本、开箱即用的**全栈纯视觉移动参考解决方案**，帮助用户建立起移动机器人底层的核心和基础能力，推动智能机器人产品快速落地。支持轮式、四足、双足等不同机器人类型。
 
-针对室内陪伴机器人，移动Solution提供了无感和断点续建的建图能力，使陪伴机器人从开箱时刻起就成为家庭的一员。机器人首次启动就能够立刻和人互动，无需等待，在互动的过程中自动完成建图。同时在家庭复杂环境下能够自主避障和自动脱困，不制造麻烦。得益于Lifelong的SLAM能力，机器人在使用的过程中持续进化，越来越"懂家"，越用越聪明。使移动Solution成为家庭智能服务的隐形守护者。
+针对室内家庭场景，移动Solution提供了无感和断点续建的建图能力，使机器人从开箱时刻起就成为家庭的一员。机器人首次启动就能够立刻和人互动，无需等待，在互动的过程中自动完成建图。同时在家庭复杂环境下能够自主避障和自动脱困，不制造麻烦。得益于Lifelong的SLAM能力，机器人在使用的过程中持续进化，越来越"懂家"，越用越聪明。使移动Solution成为家庭智能服务的隐形守护者。
 
 移动Solution包含双目深度估计、VSLAM（6DoF位姿估计、重定位、Lifelong实时3D建图）、障碍物识别、导航和避障、以及用于开发的工具箱。
 
@@ -179,7 +179,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 1. 未知环境下自主探索建图 — 自动搜索地图边界frontier并导航前往，用户零干预下完成地图构建任务。
 2. 回环检测(loop closure)触发 — 自动触发回环检测，提升定位精度和地图质量。
 3. 重定位(relocating)策略 — 丢失定位时自动触发重定位策略，加速机器人恢复定位。
-4. SLAM模式切换 — mapping/localization模式自动切换，实现Lifelong SLAM。
+4. SLAM模式切换 — mapping/localization模式自动切换，实现Lifelong SLAM。详见 [FAQ - SLAM 模式与子图管理说明](faq.html#9-slam-模式与子图管理说明)。
 5. 脱困(trapped recovery) — 自动识别机器人是否被困，被困时自动脱困。
 
 未知环境下探索建图：
@@ -836,4 +836,6 @@ ros2 run myrobot_base myrobot_base
 
 ## 10. FAQ
 
-详见 [FAQ](faq.html)
+详见 [FAQ](faq.html)。
+
+如有问题，请[提issue](https://github.com/D-Robotics/tros_vims_doc/issues)。
