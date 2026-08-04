@@ -66,8 +66,27 @@
     .content ul, .content ol { margin: 0 0 12px; padding-left: 28px; }
     .content li { margin: 4px 0; }
     .content code { background: #f6f8fa; padding: 2px 5px; border-radius: 3px; font-size: 85%; }
-    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; }
+    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; position: relative; }
     .content pre code { background: none; padding: 0; font-size: 100%; }
+    .content pre .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      background: #e1e4e8;
+      border: 1px solid #d1d5da;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #24292e;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 1;
+    }
+    .content pre:hover .copy-btn { opacity: 1; }
+    .content pre .copy-btn:hover { background: #d1d5da; }
+    .content pre .copy-btn.copied { background: #28a745; color: #fff; border-color: #28a745; }
     .content table { border-collapse: collapse; width: 100%; margin: 0 0 12px; }
     .content th, .content td { border: 1px solid #dfe2e5; padding: 8px 12px; text-align: left; }
     .content th { background: #f6f8fa; font-weight: 600; }
@@ -76,6 +95,31 @@
     .content blockquote { border-left: 4px solid #dfe2e5; padding: 8px 16px; color: #586069; margin: 0 0 12px; background: #f6f8fa; }
     .content a { color: #0366d6; text-decoration: none; }
     .content a:hover { text-decoration: underline; }
+    .content img { cursor: zoom-in; }
+    .img-lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s;
+      cursor: zoom-out;
+    }
+    .img-lightbox.open { opacity: 1; visibility: visible; }
+    .img-lightbox img {
+      max-width: 92vw;
+      max-height: 92vh;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+      transform: scale(0.96);
+      transition: transform 0.2s ease;
+    }
+    .img-lightbox.open img { transform: scale(1); }
     .inline-toc { display: none; }
     @media (max-width: 900px) {
       .container { flex-direction: column; }
@@ -116,8 +160,8 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 <blockquote>
   <p><strong>注意</strong></p>
   <ol>
-    <li>70mm基线（带IMU）不需要设置图像旋转，即启动时指定mipi_rotation=0.0。</li>
-    <li>80mm以及其他基线（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。</li>
+    <li>RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）不需要设置图像旋转，即启动时指定mipi_rotation=0.0。</li>
+    <li>80mm（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。</li>
   </ol>
 
 </blockquote>
@@ -153,8 +197,11 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 </code></pre></div></div>
 
 <blockquote>
-  <p><strong>注意</strong> 只有当里程计类型为vio时，才SLAM建图才支持3D运动模式。如果里程计类型为wheel，禁止打开SLAM建图的3D运动模式。 只有70mm基线（带IMU）相机支持vio。</p>
-
+  <p><strong>注意</strong></p>
+  <ul>
+    <li>只有当里程计类型为vio时，SLAM建图才支持3D运动模式。如果里程计类型为wheel，禁止打开SLAM建图的3D运动模式。</li>
+    <li>目前仅70mm基线（带IMU）相机支持vio。</li>
+  </ul>
 </blockquote>
 
 <h2 id="2-使用originbot轮式里程计">2. 使用OriginBot轮式里程计</h2>
@@ -179,7 +226,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 
 <p>SLAM 3D地图：蓝色区域表示低矮障碍物区域（地面也属于这一类）；蓝色以上从绿色到红色，表示障碍物高度依次增加（限制了地图中的障碍物高度小于0.5米）；黑色区域表示未知区域。</p>
 
-<p>SALM 2D地图：白色区域表示无障碍物，黑色区域表示障碍物区域；灰色区域表示未知区域。</p>
+<p>SLAM 2D地图：白色区域表示无障碍物，黑色区域表示障碍物区域；灰色区域表示未知区域。</p>
 
 <p>导航地图：高亮区域表示局部代价地图（local costmap，箭头1、2、3所在区域）；低亮区域表示全局代价地图（global costmap，箭头5所在区域）；1表示实际障碍物区域；2和3表示膨胀层；4表示无障碍物；5表示全局代价地图的障碍物层和膨胀层。</p>
 
@@ -190,8 +237,8 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 <table>
   <thead>
     <tr>
-      <th style="text-align: center">SALM 3D地图</th>
-      <th style="text-align: center">SALM 2D地图</th>
+      <th style="text-align: center">SLAM 3D地图</th>
+      <th style="text-align: center">SLAM 2D地图</th>
       <th style="text-align: center">导航代价地图</th>
     </tr>
   </thead>
@@ -338,7 +385,7 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
 <p>如果需要录制深度估计输出的点云，录制时添加/StereoNetNode/stereonet_pointcloud2话题。</p>
 <h3 id="62-自动录制">6.2 自动录制</h3>
 <p>移动solution包含数据trigger &amp; recorder工具，用于路径规划失败时自动触发录制系统状态数据，通过离线回放数据定位问题，支持录制触发前的数据（影子模式）。
-工具默认关闭，开启方式为将<code class="language-plaintext highlighter-rouge">ros2 pkg prefix tros_vision_nav --share</code>/params/tros_nav2.yaml配置文件中enable_record配置项设置为true后，重新启动导航命令。录制的数据保存在运行路径下，路径名为<code class="language-plaintext highlighter-rouge">bag_[planner_server]_[时间戳]</code>。</p>
+工具默认关闭，开启方式为将<code class="language-plaintext highlighter-rouge">`ros2 pkg prefix tros_vision_nav --share`/params/tros_nav2.yaml</code>配置文件中enable_record配置项设置为true后，重新启动导航命令。录制的数据保存在运行路径下，路径名为<code class="language-plaintext highlighter-rouge">bag_[planner_server]_[时间戳]</code>。</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>planner_server:
   ros__parameters:
@@ -376,7 +423,7 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
 <span class="c"># 删除地图文件</span>
 <span class="nb">rm</span> /userdata/rtabmap/office.db 
 <span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
-<span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_traj_viz</span><span class="o">=</span>True <span class="nv">run_nav</span><span class="o">=</span>False <span class="se">\</span>
+<span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_traj_viz</span><span class="o">=</span>True <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">localization</span><span class="o">=</span>False <span class="se">\</span>
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
@@ -401,7 +448,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <p><strong>测试</strong></p>
 
-<p>使用键盘控制机器人移动，移动过程中（左下图），rviz上会渲染起点、运行轨迹、轨迹信息。最终机器人回到起点后（右下图），可以看到机器人当前pose和起始pose之间的距离偏差，即回环偏差。从右下图可以看到，机器人移动了26米，耗时6分25秒，回环偏差0.02米。</p>
+<p>使用键盘控制机器人移动，移动过程中（左下图），rviz上会渲染起点、运行轨迹、轨迹信息。最终机器人回到起点后（右下图），可以看到机器人当前pose和起始pose之间的距离偏差，即回环偏差。从右下图可以看到，机器人移动了8.65米，耗时4分25秒，回环偏差0.01米。</p>
 
 <table>
   <thead>
@@ -418,6 +465,39 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
   </tbody>
 </table>
 
+<p>SLAM 状态信息说明：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">信息</th>
+      <th style="text-align: center">说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">stat_traj: unlc traj</td>
+      <td style="text-align: center">未闭环轨迹长度（m）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">stat_traj: slam</td>
+      <td style="text-align: center">SLAM 状态（MAPPING / LOCALIZATION）及连接/关键帧数</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">stat_traj: wm</td>
+      <td style="text-align: center">RTAB-Map working memory 数量</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">stat_traj: map known area</td>
+      <td style="text-align: center">地图已知区域面积（㎡）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">stat_traj: free</td>
+      <td style="text-align: center">地图空闲区域面积（㎡）</td>
+    </tr>
+  </tbody>
+</table>
+
 <p>渲染的轨迹信息说明：</p>
 
 <table>
@@ -429,20 +509,20 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
   </thead>
   <tbody>
     <tr>
-      <td style="text-align: center">frame id</td>
+      <td style="text-align: center">trajectory: frame id</td>
       <td style="text-align: center">轨迹坐标系</td>
     </tr>
     <tr>
-      <td style="text-align: center">time diff</td>
-      <td style="text-align: center">机器人从移动开始到结束的时间</td>
+      <td style="text-align: center">trajectory: time diff</td>
+      <td style="text-align: center">机器人从移动开始到结束的时间（X min &amp; Y sec 格式）</td>
     </tr>
     <tr>
-      <td style="text-align: center">distance</td>
-      <td style="text-align: center">机器人当前pose和起始pose之间的距离偏差，即回环偏差</td>
+      <td style="text-align: center">trajectory: distance</td>
+      <td style="text-align: center">当前 pose 与起始 pose 的距离偏差，即回环偏差（m）</td>
     </tr>
     <tr>
-      <td style="text-align: center">traj len</td>
-      <td style="text-align: center">机器人从移动开始到结束的轨迹总长度</td>
+      <td style="text-align: center">trajectory: traj len</td>
+      <td style="text-align: center">轨迹总长度（m）</td>
     </tr>
   </tbody>
 </table>
@@ -466,7 +546,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <h3 id="82-建图区域">8.2 建图区域</h3>
 
-<p>如果发现生成的地图不完整，或者需要对更大区域进行建图，请尝试增加探索半径阈值frontier_search_radius和路径规划长度阈值frontier_goal_nav_path_dist（默认值的查看方法为：使用命令 vi <code class="language-plaintext highlighter-rouge">ros2 pkg prefix tros_vision_nav --share</code>/params/params.yaml 打开配置后，搜索参数关键字）。</p>
+<p>如果发现生成的地图不完整，或者需要对更大区域进行建图，请尝试增加探索半径阈值frontier_search_radius和路径规划长度阈值frontier_goal_nav_path_dist（默认值的查看方法为：使用命令<code class="language-plaintext highlighter-rouge">vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml</code>打开配置后，搜索参数关键字）。</p>
 
 <p>这两个参数说明如果待探索区域和机器人当前位置的距离超过frontier_search_radius米，或者规划出来的路径长度超过frontier_goal_nav_path_dist米，忽略探索这块区域。</p>
 
@@ -490,7 +570,6 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
       <th style="text-align: center">参数名</th>
       <th style="text-align: center">含义</th>
       <th style="text-align: center">取值</th>
-      <th style="text-align: center">默认值</th>
     </tr>
   </thead>
   <tbody>
@@ -498,52 +577,50 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
       <td style="text-align: center">min_frontier_size</td>
       <td style="text-align: center">最小边界尺寸阈值，只探索超过阈值的边界</td>
       <td style="text-align: center">&gt; 0</td>
-      <td style="text-align: center">0.2</td>
     </tr>
     <tr>
       <td style="text-align: center">return_to_init</td>
       <td style="text-align: center">探索完成后是否回到起点</td>
       <td style="text-align: center">true/false</td>
-      <td style="text-align: center">false</td>
     </tr>
     <tr>
-      <td style="text-align: center">retry_limit</td>
+      <td style="text-align: center">explore_retry_limit</td>
       <td style="text-align: center">探索完成后再次重新探索的次数</td>
       <td style="text-align: center">&gt;= 0</td>
-      <td style="text-align: center">1</td>
     </tr>
     <tr>
       <td style="text-align: center">nav_timeout_seconds</td>
       <td style="text-align: center">一次导航的时间限制，超过限制将会取消本次导航</td>
       <td style="text-align: center">&gt;= 0</td>
-      <td style="text-align: center">300</td>
     </tr>
     <tr>
       <td style="text-align: center">frontier_search_radius</td>
       <td style="text-align: center">探索半径阈值，只探索和机器人当前位置的距离小于阈值的边界</td>
       <td style="text-align: center">&gt; 0</td>
-      <td style="text-align: center">8.0</td>
     </tr>
     <tr>
       <td style="text-align: center">frontier_goal_nav_path_dist</td>
       <td style="text-align: center">路径规划长度阈值，如果到导航目标点的路径长度超过阈值，取消本次导航</td>
       <td style="text-align: center">&gt; 0</td>
-      <td style="text-align: center">10.0</td>
     </tr>
     <tr>
       <td style="text-align: center">move_time_allowance</td>
       <td style="text-align: center">移动超时时间，如果在超时时间内移动距离小于move_radius，取消本次导航</td>
       <td style="text-align: center">&gt; 0</td>
-      <td style="text-align: center">10.0</td>
     </tr>
     <tr>
       <td style="text-align: center">move_radius</td>
       <td style="text-align: center">移动超时距离</td>
       <td style="text-align: center">&gt; 0</td>
-      <td style="text-align: center">0.2</td>
     </tr>
   </tbody>
 </table>
+
+<p>具体参数实际取值可打开配置文件查询：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 打开配置文件</span>
+vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml 
+</code></pre></div></div>
 
 <h2 id="9-slam-模式与子图管理说明">9. SLAM 模式与子图管理说明</h2>
 
@@ -1178,6 +1255,19 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 <h2 id="10-单模块运行命令">10. 单模块运行命令</h2>
 <h3 id="101-运行时指定配置文件">10.1 运行时指定配置文件</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>需要使用自定义配置文件（如修改了算法参数、标定参数）运行完整Solution。</li>
+  <li>调试不同参数组合对系统行为的影响。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境和移动Solution工作空间。</li>
+  <li>已准备好自定义配置文件（如 <code class="language-plaintext highlighter-rouge">/userdata/params.yaml</code>），并已正确配置所有必要参数。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 默认使用的配置文件为`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml</span>
 <span class="c"># 支持启动时用户使用YAML_CONFIG_FILE环境变量指定配置文件</span>
 <span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span>/userdata/params.yaml <span class="se">\</span>
@@ -1186,11 +1276,38 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 
 <h3 id="102-只启动rviz">10.2 只启动rviz</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>仅需要查看机器人状态、地图、轨迹等可视化信息，而不需要运行实际的感知或导航算法。</li>
+  <li>用于调试rviz显示配置，或远程连接RDK查看其他模块发布的数据。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境。</li>
+  <li>其他模块（如VSLAM、导航）已在其他终端中运行，并有数据发布到对应的topic。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ros2 run rviz2 rviz2 <span class="nt">-d</span> <span class="sb">`</span>ros2 pkg prefix tros_vision_nav<span class="sb">`</span>/share/tros_vision_nav/params/nav.rviz
 </code></pre></div></div>
 
 <h3 id="103-只启动导航">10.3 只启动导航</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>已有预先构建好的地图，仅需运行导航和避障功能，而不启动感知、VSLAM等其他模块。</li>
+  <li>用于调试导航算法参数或测试路径规划效果。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境和移动Solution工作空间。</li>
+  <li>已存在可用的地图文件（位于 <code class="language-plaintext highlighter-rouge">/userdata/rtabmap/</code> 目录）。</li>
+  <li>其他必要模块（如底盘驱动、定位数据源）已在其他终端中运行。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
 <span class="nv">localization</span><span class="o">=</span>True <span class="nv">log_level_nav</span><span class="o">=</span>info <span class="nv">LAUNCH_FILE</span><span class="o">=</span><span class="s2">"nav.launch.py"</span> <span class="se">\</span>
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
@@ -1198,6 +1315,20 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 
 <h3 id="104-只启动自主探索">10.4 只启动自主探索</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>需要在未知环境中自动探索建图，而无需启动完整的导航系统。</li>
+  <li>用于测试自主探索算法或收集建图数据。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境和移动Solution工作空间。</li>
+  <li>已启动底盘驱动、VSLAM等自主探索依赖的模块。</li>
+  <li>机器人放置在待探索的环境中。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
 <span class="nv">LAUNCH_PACKAGE</span><span class="o">=</span>tros_frontier_exploration <span class="nv">LAUNCH_FILE</span><span class="o">=</span><span class="s2">"explore.launch.py"</span> <span class="se">\</span>
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
@@ -1205,11 +1336,37 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 
 <h3 id="105-只启动底盘和双目深度估计">10.5 只启动底盘和双目深度估计</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>仅需要验证双目相机工作正常、深度估计功能可用，而不启动其他模块。</li>
+  <li>用于测试相机连接、深度图效果或采集原始数据。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已完成双目相机的硬件安装和软件配置。</li>
+  <li>底盘驱动已正确安装并可与RDK X5通信。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_pcl2grid</span><span class="o">=</span>False <span class="nv">run_rviz</span><span class="o">=</span>False <span class="nv">run_perc</span><span class="o">=</span>False <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_mask_depth</span><span class="o">=</span>False <span class="nv">mipi_image_framerate</span><span class="o">=</span>20.0 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
 <h3 id="106-只启动通用障碍物识别">10.6 只启动通用障碍物识别</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>需要单独测试或调试通用障碍物识别算法的效果。</li>
+  <li>用于分析点云数据中的障碍物检测结果，不依赖其他模块。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境和移动Solution工作空间。</li>
+  <li>已有点云数据源（如运行中的双目深度估计模块、或录制的bag包）发布到对应topic。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
 <span class="nv">LAUNCH_FILE</span><span class="o">=</span><span class="s2">"pcl_obstacle_det.launch.py"</span> <span class="nv">use_composition</span><span class="o">=</span>False <span class="se">\</span>
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
@@ -1217,6 +1374,19 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 
 <h3 id="107-只启动语义目标识别">10.7 只启动语义目标识别</h3>
 
+<p><strong>使用场景：</strong></p>
+<ul>
+  <li>需要单独测试或调试语义目标识别算法（如识别特定物体类别）的效果。</li>
+  <li>用于验证障碍物语义分割的准确性或调试相关参数。</li>
+</ul>
+
+<p><strong>前置条件：</strong></p>
+<ul>
+  <li>已正确source TROS环境和移动Solution工作空间。</li>
+  <li>已启动双目深度估计模块，提供RGB图像输入。</li>
+</ul>
+
+<p><strong>运行命令：</strong></p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
 <span class="nv">odom_type</span><span class="o">=</span>wheel <span class="nv">run_mask_depth</span><span class="o">=</span>False <span class="nv">run_pcl2grid</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="se">\</span>
 <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_rviz</span><span class="o">=</span>False <span class="se">\</span>
@@ -1254,6 +1424,52 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
       pre.parentElement.replaceChild(div, pre);
     });
     mermaid.initialize({startOnLoad:true, theme:'default'});
+  })();
+  </script>
+  <script>
+  (function() {
+    // 给代码块添加复制按钮
+    document.querySelectorAll('.content pre').forEach(function(pre) {
+      if (pre.classList.contains('mermaid') || !pre.querySelector('code')) return;
+      var btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = '复制';
+      btn.addEventListener('click', function() {
+        var code = pre.querySelector('code');
+        navigator.clipboard.writeText(code ? code.textContent : pre.textContent).then(function() {
+          btn.textContent = '已复制';
+          btn.classList.add('copied');
+          setTimeout(function() {
+            btn.textContent = '复制';
+            btn.classList.remove('copied');
+          }, 2000);
+        });
+      });
+      pre.appendChild(btn);
+    // click picture to enlarge it（lightbox）
+    var overlay = document.createElement('div');
+    overlay.className = 'img-lightbox';
+    var big = document.createElement('img');
+    overlay.appendChild(big);
+    document.body.appendChild(overlay);
+
+    function close() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    overlay.addEventListener('click', close);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') close();
+    });
+
+    document.querySelector('.content').addEventListener('click', function(e) {
+      var img = e.target.closest('img');
+      if (!img || img.closest('a')) return;
+      big.src = img.src;
+      big.alt = img.alt || '';
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
   })();
   </script>
 </body>

@@ -66,8 +66,27 @@
     .content ul, .content ol { margin: 0 0 12px; padding-left: 28px; }
     .content li { margin: 4px 0; }
     .content code { background: #f6f8fa; padding: 2px 5px; border-radius: 3px; font-size: 85%; }
-    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; }
+    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; position: relative; }
     .content pre code { background: none; padding: 0; font-size: 100%; }
+    .content pre .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      background: #e1e4e8;
+      border: 1px solid #d1d5da;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #24292e;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 1;
+    }
+    .content pre:hover .copy-btn { opacity: 1; }
+    .content pre .copy-btn:hover { background: #d1d5da; }
+    .content pre .copy-btn.copied { background: #28a745; color: #fff; border-color: #28a745; }
     .content table { border-collapse: collapse; width: 100%; margin: 0 0 12px; }
     .content th, .content td { border: 1px solid #dfe2e5; padding: 8px 12px; text-align: left; }
     .content th { background: #f6f8fa; font-weight: 600; }
@@ -76,6 +95,31 @@
     .content blockquote { border-left: 4px solid #dfe2e5; padding: 8px 16px; color: #586069; margin: 0 0 12px; background: #f6f8fa; }
     .content a { color: #0366d6; text-decoration: none; }
     .content a:hover { text-decoration: underline; }
+    .content img { cursor: zoom-in; }
+    .img-lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s;
+      cursor: zoom-out;
+    }
+    .img-lightbox.open { opacity: 1; visibility: visible; }
+    .img-lightbox img {
+      max-width: 92vw;
+      max-height: 92vh;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+      transform: scale(0.96);
+      transition: transform 0.2s ease;
+    }
+    .img-lightbox.open img { transform: scale(1); }
     .inline-toc { display: none; }
     @media (max-width: 900px) {
       .container { flex-direction: column; }
@@ -197,6 +241,52 @@
       pre.parentElement.replaceChild(div, pre);
     });
     mermaid.initialize({startOnLoad:true, theme:'default'});
+  })();
+  </script>
+  <script>
+  (function() {
+    // 给代码块添加复制按钮
+    document.querySelectorAll('.content pre').forEach(function(pre) {
+      if (pre.classList.contains('mermaid') || !pre.querySelector('code')) return;
+      var btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = '复制';
+      btn.addEventListener('click', function() {
+        var code = pre.querySelector('code');
+        navigator.clipboard.writeText(code ? code.textContent : pre.textContent).then(function() {
+          btn.textContent = '已复制';
+          btn.classList.add('copied');
+          setTimeout(function() {
+            btn.textContent = '复制';
+            btn.classList.remove('copied');
+          }, 2000);
+        });
+      });
+      pre.appendChild(btn);
+    // click picture to enlarge it（lightbox）
+    var overlay = document.createElement('div');
+    overlay.className = 'img-lightbox';
+    var big = document.createElement('img');
+    overlay.appendChild(big);
+    document.body.appendChild(overlay);
+
+    function close() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    overlay.addEventListener('click', close);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') close();
+    });
+
+    document.querySelector('.content').addEventListener('click', function(e) {
+      var img = e.target.closest('img');
+      if (!img || img.closest('a')) return;
+      big.src = img.src;
+      big.alt = img.alt || '';
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
   })();
   </script>
 </body>

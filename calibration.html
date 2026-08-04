@@ -66,8 +66,27 @@
     .content ul, .content ol { margin: 0 0 12px; padding-left: 28px; }
     .content li { margin: 4px 0; }
     .content code { background: #f6f8fa; padding: 2px 5px; border-radius: 3px; font-size: 85%; }
-    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; }
+    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; position: relative; }
     .content pre code { background: none; padding: 0; font-size: 100%; }
+    .content pre .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      background: #e1e4e8;
+      border: 1px solid #d1d5da;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #24292e;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 1;
+    }
+    .content pre:hover .copy-btn { opacity: 1; }
+    .content pre .copy-btn:hover { background: #d1d5da; }
+    .content pre .copy-btn.copied { background: #28a745; color: #fff; border-color: #28a745; }
     .content table { border-collapse: collapse; width: 100%; margin: 0 0 12px; }
     .content th, .content td { border: 1px solid #dfe2e5; padding: 8px 12px; text-align: left; }
     .content th { background: #f6f8fa; font-weight: 600; }
@@ -76,6 +95,31 @@
     .content blockquote { border-left: 4px solid #dfe2e5; padding: 8px 16px; color: #586069; margin: 0 0 12px; background: #f6f8fa; }
     .content a { color: #0366d6; text-decoration: none; }
     .content a:hover { text-decoration: underline; }
+    .content img { cursor: zoom-in; }
+    .img-lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s;
+      cursor: zoom-out;
+    }
+    .img-lightbox.open { opacity: 1; visibility: visible; }
+    .img-lightbox img {
+      max-width: 92vw;
+      max-height: 92vh;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+      transform: scale(0.96);
+      transition: transform 0.2s ease;
+    }
+    .img-lightbox.open img { transform: scale(1); }
     .inline-toc { display: none; }
     @media (max-width: 900px) {
       .container { flex-direction: column; }
@@ -93,8 +137,8 @@
     <main class="content">
       <h1 id="相机和底盘外参标定高精度标定">相机和底盘外参标定（高精度标定）</h1>
 
-<p>本章节介绍使用二维码（A4纸打印），实现相机和底盘之间x, y, x, roll, pitch, yaw外参的简单、高精度标定。
-需要采用高精度标定的场景：相机和底盘之间yaw角较大，或者对标定精度有极高要求。简单、快速的粗标定能够满足基本使用需求。
+<p>本章节介绍使用二维码（A4纸打印），实现相机和底盘之间x, y, z, roll, pitch, yaw外参的简单、高精度标定。
+需要采用高精度标定的场景：相机和底盘之间yaw角较大，或者对标定精度有极高要求。
 本章节涉及到的所有操作均在RDK X5上运行。</p>
 
 <h2 id="安装标定工具">安装标定工具</h2>
@@ -143,7 +187,7 @@ Apriltag粘贴以及路径标记示意图：</p>
   <p><strong>注意</strong></p>
   <ol>
     <li>70mm基线（带IMU）不需要设置图像旋转，即启动时指定mipi_rotation=0.0。</li>
-    <li>80mm以及其他基线（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。</li>
+    <li>80mm（不带IMU）需要设置图像旋转，即启动时指定mipi_rotation=90.0。</li>
     <li>示例采用的移动底盘是originbot，如果采用的是其他底盘，使用robot_base参数指定。</li>
   </ol>
 
@@ -172,6 +216,20 @@ ros2 bag record <span class="nt">-s</span> mcap <span class="nt">--compression-q
 
 <p>运行成功后将会有如下log信息：</p>
 
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>INFO] <span class="o">[</span>1785405443.162168285] <span class="o">[</span>rosbag2_recorder]: Press SPACE <span class="k">for </span>pausing/resuming
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.186423035] <span class="o">[</span>rosbag2_recorder]: Listening <span class="k">for </span>topics...
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.186558811] <span class="o">[</span>rosbag2_recorder]: Event publisher thread: Starting
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.206221490] <span class="o">[</span>rosbag2_recorder]: Subscribed to topic <span class="s1">'/tf_static'</span>
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.208910408] <span class="o">[</span>rosbag2_recorder]: Subscribed to topic <span class="s1">'/tf'</span>
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.214892962] <span class="o">[</span>rosbag2_recorder]: Subscribed to topic <span class="s1">'/StereoNetNode/stereonet_pointcloud2'</span>
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.232660950] <span class="o">[</span>rosbag2_recorder]: Subscribed to topic <span class="s1">'/odom'</span>
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.238530114] <span class="o">[</span>rosbag2_recorder]: Subscribed to topic <span class="s1">'/StereoNetNode/stereonet_depth/camera_info'</span>
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.243021260] <span class="o">[</span>rosbag2_recorder]: Subscribed to topic <span class="s1">'/StereoNetNode/stereonet_depth'</span>
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.246088866] <span class="o">[</span>rosbag2_recorder]: Subscribed to topic <span class="s1">'/StereoNetNode/rectify_left_image'</span>
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.246482812] <span class="o">[</span>rosbag2_recorder]: Recording...
+<span class="o">[</span>INFO] <span class="o">[</span>1785405443.249659806] <span class="o">[</span>rosbag2_recorder]: All requested topics are subscribed. Stopping discovery...
+</code></pre></div></div>
+
 <h3 id="控制机器人走s型路线">控制机器人走”S型路线”</h3>
 <p>启动底盘控制节点：</p>
 
@@ -186,17 +244,18 @@ currently:      speed 0.14      turn 0.28</p>
 平移速度为0.14m/s
 经过标记地面关键点:p1 -&gt; p2 -&gt; p3 -&gt; p4 进行数据采集(可以沿着绿色线的路径行走)
 途径每个关键点需要原地左右旋转30 °采集5s再继续运动
-打开WEB可视化界面(web端打开:, 其中ip:为RKD-X5的ip), 确保机器人运动的过程中所有Apriltag的角点都在视野内。</p>
+打开WEB可视化界面(web端打开:http://ip:8000, 其中ip:为RKD-X5的ip), 确保机器人运动的过程中所有Apriltag的角点都在视野内。</p>
 
 <p>移动完成后，停止录包。</p>
 
 <h2 id="开始标定">开始标定</h2>
 <h3 id="测量外参初始值">测量外参初始值</h3>
 <p>标定算法要求提供初始外参，初始值和真值测量的角度偏差不超过10(°), 平移偏差不超过0.01(m)。
-参考 相机和底盘外参标定（粗标定） 章节测量初始外参。</p>
+参考<a href="tros_vims_doc.html#61-相机和底盘外参标定粗标定">相机和底盘外参标定（粗标定）</a>  章节测量初始外参。</p>
 <h3 id="运行标定脚本">运行标定脚本</h3>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /userdata/vims/cam2base_calib/install/local_setup.bash
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/cam2base_calib/install/local_setup.bash
 ros2 launch camera_extrinsic_calibration camera_extrinsic_calibration.launch.py <span class="se">\</span>
     camera_color_topic:<span class="o">=</span>/StereoNetNode/rectify_left_image <span class="se">\</span>
     camera_pointcloud_topic:<span class="o">=</span>/StereoNetNode/stereonet_pointcloud2 <span class="se">\</span>
@@ -219,14 +278,17 @@ ros2 launch camera_extrinsic_calibration camera_extrinsic_calibration.launch.py 
 <p>修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的–x –y –z –roll –pitch –yaw分别进行设置：</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 打开配置文件</span>
+<span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/cam2base_calib/install/local_setup.bash
 vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml
-<span class="c"># 使用标定结果中的--x --y --z --roll --pitch --yaw 设置   robot_to_camera_x  robot_to_camera_y  robot_to_camera_z  robot_to_camera_roll  robot_to_camera_pitch robot_to_camera_yaw</span>
+<span class="c"># 使用标定结果中的--x --y --z --roll --pitch --yaw设置   robot_to_camera_x  robot_to_camera_y  robot_to_camera_z  robot_to_camera_roll  robot_to_camera_pitch robot_to_camera_yaw</span>
 </code></pre></div></div>
 
 <h3 id="标定工具详细说明">标定工具详细说明</h3>
 <p>标定原理、参数说明详见标定工具手册：</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /userdata/vims/cam2base_calib/install/local_setup.bash
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/cam2base_calib/install/local_setup.bash
 <span class="c"># 打开标定工具手册</span>
 vi <span class="sb">`</span>ros2 pkg prefix camera_extrinsic_calibration<span class="sb">`</span>/README.md
 </code></pre></div></div>
@@ -262,6 +324,52 @@ vi <span class="sb">`</span>ros2 pkg prefix camera_extrinsic_calibration<span cl
       pre.parentElement.replaceChild(div, pre);
     });
     mermaid.initialize({startOnLoad:true, theme:'default'});
+  })();
+  </script>
+  <script>
+  (function() {
+    // 给代码块添加复制按钮
+    document.querySelectorAll('.content pre').forEach(function(pre) {
+      if (pre.classList.contains('mermaid') || !pre.querySelector('code')) return;
+      var btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = '复制';
+      btn.addEventListener('click', function() {
+        var code = pre.querySelector('code');
+        navigator.clipboard.writeText(code ? code.textContent : pre.textContent).then(function() {
+          btn.textContent = '已复制';
+          btn.classList.add('copied');
+          setTimeout(function() {
+            btn.textContent = '复制';
+            btn.classList.remove('copied');
+          }, 2000);
+        });
+      });
+      pre.appendChild(btn);
+    // click picture to enlarge it（lightbox）
+    var overlay = document.createElement('div');
+    overlay.className = 'img-lightbox';
+    var big = document.createElement('img');
+    overlay.appendChild(big);
+    document.body.appendChild(overlay);
+
+    function close() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    overlay.addEventListener('click', close);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') close();
+    });
+
+    document.querySelector('.content').addEventListener('click', function(e) {
+      var img = e.target.closest('img');
+      if (!img || img.closest('a')) return;
+      big.src = img.src;
+      big.alt = img.alt || '';
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
   })();
   </script>
 </body>

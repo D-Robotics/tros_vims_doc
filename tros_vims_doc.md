@@ -128,9 +128,9 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 
 #### 1.3.4 重定位
 
-支持机器人在启动时和劫持后的重定位。
+支持机器人在启动时和劫持时的重定位。
 
-如下图，机器人被劫持后，在7秒内完成重定位。
+如下图，机器人被劫持过程中，能够实时完成重定位。
 
 <img src="intro_images/kidnap_relocation.gif" width="900">
 
@@ -247,7 +247,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 
 ### 3.1 RDK X5上安装双目相机
 
-SC132GS双目相机安装在RDK X5上的方法参考手册[4.2. 硬件连接](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&p=RDK+X5#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5)章节介绍。
+RDK Stereo Camera GS130WI 安装在RDK X5上的方法参考手册[4.2. 硬件连接](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&p=RDK+X5#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5)章节介绍。
 
 ### 3.2 底盘上安装 RDK X5
 
@@ -269,8 +269,8 @@ SC132GS双目相机安装在RDK X5上的方法参考手册[4.2. 硬件连接](ht
 
 ### 4.1 系统和TROS
 
-RDK X5已安装Ubuntu 22.04 desktop系统镜像，已安装TROS并升级到最新版本。
-
+RDK X5已安装RDK OS系统镜像，已安装TROS并升级到最新版本。
+- 系统烧录指引：如需重新烧录系统，请参考官方文档 [全镜像烧录](https://developer.d-robotics.cc/rdk_x_doc/Quick_start/install_os/rdk_x5/system_burn?v=3.5.0&p=RDK+X5) 章节。
 - 基础环境配置参考RDK[入门配置](https://developer.d-robotics.cc/rdk_x_doc/Quick_start/configuration_wizard)
 - 安装和升级TROS参考[安装和升级TROS](https://developer.d-robotics.cc/tros_doc/Quick_start/install_tros)
 
@@ -334,8 +334,8 @@ apt install ros-dev-tools ros-humble-cyclonedds* ros-humble-rmw-cyclonedds* ros-
 
 > **提示** 
 1. 如遇到执行apt命令速度慢的问题，可以尝试使用社区中广受好评的第三方ROS安装工具，例如“小鱼的一键安装系列”（FishROS）。这些工具通常会处理好软件源配置、依赖安装等繁琐步骤。 
-2. 例如使用“小鱼的一键安装系列”更新软件源命令：wget http://fishros.com/install -O fishros && bash fishros，选择[5] 一键配置:系统源，后续根据提示进行选择。配置完成后如果遇到apt安装ROS2包失败，请更新ros签名：sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg。
-3. 配置完成后如果遇到apt安装ROS2包失败，请更新ros签名：sudo curl -sSL  -o /usr/share/keyrings/ros-archive-keyring.gpg。 
+2. 例如使用“小鱼的一键安装系列”更新软件源命令：wget http://fishros.com/install -O fishros && bash fishros，选择[5] 一键配置:系统源，后续根据提示进行选择。
+3. 配置完成后如果遇到apt安装ROS2包失败，请更新ros签名：sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg。
 >
 
 #### 安装yq
@@ -377,7 +377,7 @@ sudo dpkg -i hobot-kernel-headers_3.0.4-20260514041655_arm64.deb hobot-boot_3.1.
 
 #### 配置软件
 
-参考[RDK X5配置](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam#43-rdk-x5%E9%85%8D%E7%BD%AE)。
+参考[RDK X5配置](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&p=RDK+X5#43-rdk-x5-%E9%85%8D%E7%BD%AE)。
 
 ### 4.6 配置生效
 
@@ -434,7 +434,7 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
 
 ### 6.1 相机和底盘外参标定（粗标定）
 
-本章节介绍不依赖标定治具的情况下，实现相机和底盘之间x, y, x, roll, pitch外参的快速粗标定。
+本章节介绍不依赖标定治具的情况下，实现相机和底盘之间x, y, z, roll, pitch外参的快速粗标定。
 此方法无法标定yaw角，如果相机和底盘之间yaw角较大，或者对标定精度有极高要求，请参考[相机和底盘外参标定（高精度标定）](calibration.html)进行标定。
 
 简单、快速的粗标定能够满足基本使用需求，建议采用此标定方法。
@@ -445,14 +445,16 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
 
 | 标定参数 | 说明 | 配置参数 | 标定结果 |
 | :---: | :---: | :---: | :---: |
-| X偏移 | 双目相机左目相对于底盘两个轮子连线，X方向的偏移 | robot_to_camera_x | 0.145 |
-| Y偏移 | 双目相机左目相对于底盘两个轮子连线的中心点，Y方向的偏移 | robot_to_camera_y | 0.022 |
+| X偏移 | 双目相机左目相对于底盘两个轮子连线，X方向的偏移 | robot_to_camera_x | 0.105m |
+| Y偏移 | 双目相机左目相对于底盘两个轮子连线的中心点，Y方向的偏移 | robot_to_camera_y | 0.018m |
 
+<img src="images/originbot_cam70mm.jpg" width="300">
 
 修改配置文件中calibration的参数，设置平移向量：
 
 ```bash
 # 打开配置文件
+source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 使用标定结果设置 robot_to_camera_x  robot_to_camera_y
@@ -475,7 +477,7 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml st
 ```
 
 此时PC打开WEB浏览器（chrome/firefox/edge）输入 http://IP:8000（IP为RDK IP地址），能够查看到相机画面。
-RVIZ上，将坐标系设置为base_link/base_footprint，勾选PclObstacle，移动底盘，确保rviz上渲染的点云是平面。
+RVIZ上，将坐标系设置为base_footprint，勾选PclObstacle，移动底盘，确保rviz上渲染的点云是平面。
 
 | WEB可视化 | RVIZ可视化 |
 | :---: | :---: |
@@ -491,13 +493,16 @@ RDK终端将会打印如下标定结果信息：
 
 说明标定出来的相机距离地面高度（Camera Height）为0.146 m。
 
-修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的--roll和--pitch设置旋转矩阵，使用Camera Height（--z）设置robot_to_camera_z：
+- **方法一（动态生效）**：可直接在终端中执行上述 `run tf2_ros static_transform_publisher` 命令，标定参数将立即生效。该方式适用于临时调试，重启后失效。
+  
+- **方法二（永久生效）**：修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的--roll和--pitch设置旋转矩阵，使用Camera Height（--z）设置robot_to_camera_z：
 
 ```bash
 # 打开配置文件
+source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
-# 使用标定结果中的roll和pitch设置 robot_to_camera_roll robot_to_camera_pitch
+# 使用标定结果中的 --roll 和 --pitch 设置 robot_to_camera_roll robot_to_camera_pitch
 # 使用Camera Height（--z）设置robot_to_camera_z
 ```
 
@@ -548,17 +553,11 @@ source /userdata/vims/install/local_setup.bash
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml stereonet_pub_web=True run_nav=False run_explore=False rtabmap_Grid_3D="'true'" bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
-RVIZ上分别打开3D地图和障碍物点云的渲染，如下图：
+RVIZ上打开障碍物点云的渲染，如下图：
 
-| 3D地图 | 障碍物点云 |
-| :---: | :---: |
-| <img src="images/image_032.png" height="200"> | <img src="images/image_033.png" height="200"> |
+<img src="images/image_033.png" height="200">
 
-其中障碍物1离地高度0.18m（低于阈值0.25m），障碍物3离地高度0.27m（高于阈值0.25m）。可以看到地图和点云只有障碍物1的渲染，无障碍物3，说明标定参数生效。
-
-### 6.3 相机和底盘外参标定（高精度标定）
-
-如果相机和底盘之间yaw角较大，或者对标定精度有极高要求，请参考[相机和底盘外参标定（高精度标定）](calibration.html)进行标定。
+其中障碍物1离地高度0.18m（低于阈值0.25m），障碍物3离地高度0.27m（高于阈值0.25m）。可以看到地图只有障碍物1的渲染，无障碍物3，说明标定参数生效。
 
 ## 7. 应用示例
 
@@ -583,17 +582,20 @@ RVIZ上分别打开3D地图和障碍物点云的渲染，如下图：
 > **提示：** 
 如未使用套件默认的硬件，即存在如下任意一种情况，请完成下面表格中的**额外配置项**。
 1. 未使用 OriginBot 底盘
-2. 未使用 70mm 基线双目相机
+2. 未使用 RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）
 3. 未使用 VIO （vio模式），使用轮式里程计（wheel模式）
 >
 
 | 额外配置项 | 参数 | 配置方法 |
 | :---: | :---: | :---: |
 | 底盘类型 | robot_base | 根据机器人底盘类型选择 |
-| 相机参数 | mipi_rotation | 70mm基线（带IMU）相机设置为0.0，其他相机设置为90.0 |
+| 相机参数 | mipi_rotation | RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）设置为0.0，80mm基线（不带IMU）双目相机设置为90.0 |
 | 里程计类型 | odom_type | wheel/vio |
 | 运动类型 | rtabmap_Reg_Force3DoF | vio 模式设置 False，wheel 模式选择 True |
 | 运动类型 | rtabmap_Mem_UseOdomGravity | vio 模式设置 True，wheel 模式选择 False |
+
+> **提示：**
+如需了解更详细的常用模式配置说明，请参考 [FAQ - 常用模式配置](faq.html)。
 
 > **注意：** 
 1. 基于点云的通用障碍物识别算法，默认开启了自适应阈值（`params.yaml`配置文件中的`en_pcl_filter_min_z_auto_adjust`配置项），即启动时自动计算并更新阈值。 
@@ -632,7 +634,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <img src="images/image_036.png" width="600">
 
-### 7.4 VSLAM建图
+### 7.3 VSLAM建图
 
 本章节介绍如何使用VSLAM生成用于导航的2D地图。
 
@@ -651,7 +653,7 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml ba
 
 > **提示** 
 1. 当Rviz上渲染出地图，并且Exploration状态为IDLE时，表示启动完成，可以开始启动自主探索建图。 
-2. 建图过程中，rviz上（下图）会渲染SLAM回环发生时刻（loop_closure at stamp，只显示了时间戳秒部分）、地图面积（map known aera）和距离上次回环机器人的移动轨迹长度（to last loop_closure traj len）。
+2. 建图过程中，rviz上（下图）会渲染地图面积（map known area）和未闭合轨迹长度（unlc traj）。
 3. 当距离上次回环的轨迹长度超过5米时，将会自动暂停自主探索，控制机器人回到已建图区域，使其发生回环，避免由于累积误差过大导致地图出现偏差。
 4. 发生回环后，rviz上将会刷新回环发生时刻，以及轨迹长度，此时可以恢复自主探索建图。 完成建图后，如发现地图存在偏移或者其他明显错误，需要通过导航或者手动控制机器人到错误地图处更新地图。 
 5. 默认关闭3D建图，启动建图时使用参数打开：rtabmap_Grid_3D="'true'"。开启3D建图将会导致回环检测速度显著变慢，请根据实际需求选择是否开启3D建图。
@@ -694,7 +696,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <img src="images/image_044.png" width="600">
 
-### 7.5 导航和避障
+### 7.4 导航和避障
 
 本章节介绍如何使用已经创建好的地图进行导航和避障。
 
@@ -718,25 +720,13 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml ba
 
 <img src="images/image_046.png" width="400">
 
-#### 绑架后重定位
-
-定位模式下，抬起机器人，搬移到新位置并放回地面上后，机器人将会自动进入到重定位状态，重定位中和重定位成功后RVIZ上显示如下信息：
-
-| 重定位中 | 重定位成功 |
-| :---: | :---: |
-| <img src="images/image_047.png" height="100"> | <img src="images/image_048.png" height="100"> |
-
-重定位过程：
-
-<img src="images/relocation.gif" width="900">
-
-**导航效果**
+#### 导航效果
 
 在RVIZ上选择导航的目标点，导航过程和完成后的结果如下：
 
 <img src="images/image_049.gif" width="900">
 
-### 7.6 手持建图
+### 7.5 手持建图
 
 本章节介绍在没有移动底盘的情况下，运行VSLAM（VIO和3D建图）示例的方法。
 
@@ -758,7 +748,7 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml rt
 
 <img src="images/handheld_vslam.gif" width="900">
 
-### 7.7 人机交互[TODO]
+### 7.6 人机交互[TODO]
 
 ## 8. 适配其他底盘
 
@@ -836,7 +826,7 @@ RDK X5上启动电机驱动功能myrobot_base，例如：
 ros2 run myrobot_base myrobot_base
 ```
 
-参考[Checklist](#71-Checklist)章节检查参数是否全部完成配置后，即可运行[应用示例](#7-应用示例)章节示例。
+参考[Checklist](#71-checklist)章节检查参数是否全部完成配置后，即可运行[应用示例](#7-应用示例)章节示例。
 
 ## 9. 版本发布记录
 

@@ -66,8 +66,27 @@
     .content ul, .content ol { margin: 0 0 12px; padding-left: 28px; }
     .content li { margin: 4px 0; }
     .content code { background: #f6f8fa; padding: 2px 5px; border-radius: 3px; font-size: 85%; }
-    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; }
+    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; position: relative; }
     .content pre code { background: none; padding: 0; font-size: 100%; }
+    .content pre .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      background: #e1e4e8;
+      border: 1px solid #d1d5da;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #24292e;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 1;
+    }
+    .content pre:hover .copy-btn { opacity: 1; }
+    .content pre .copy-btn:hover { background: #d1d5da; }
+    .content pre .copy-btn.copied { background: #28a745; color: #fff; border-color: #28a745; }
     .content table { border-collapse: collapse; width: 100%; margin: 0 0 12px; }
     .content th, .content td { border: 1px solid #dfe2e5; padding: 8px 12px; text-align: left; }
     .content th { background: #f6f8fa; font-weight: 600; }
@@ -76,6 +95,31 @@
     .content blockquote { border-left: 4px solid #dfe2e5; padding: 8px 16px; color: #586069; margin: 0 0 12px; background: #f6f8fa; }
     .content a { color: #0366d6; text-decoration: none; }
     .content a:hover { text-decoration: underline; }
+    .content img { cursor: zoom-in; }
+    .img-lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s;
+      cursor: zoom-out;
+    }
+    .img-lightbox.open { opacity: 1; visibility: visible; }
+    .img-lightbox img {
+      max-width: 92vw;
+      max-height: 92vh;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+      transform: scale(0.96);
+      transition: transform 0.2s ease;
+    }
+    .img-lightbox.open img { transform: scale(1); }
     .inline-toc { display: none; }
     @media (max-width: 900px) {
       .container { flex-direction: column; }
@@ -272,9 +316,9 @@
 
 <h4 id="134-重定位">1.3.4 重定位</h4>
 
-<p>支持机器人在启动时和劫持后的重定位。</p>
+<p>支持机器人在启动时和劫持时的重定位。</p>
 
-<p>如下图，机器人被劫持后，在7秒内完成重定位。</p>
+<p>如下图，机器人被劫持过程中，能够实时完成重定位。</p>
 
 <p><img src="intro_images/kidnap_relocation.gif" width="900" /></p>
 
@@ -523,7 +567,7 @@
 
 <h3 id="31-rdk-x5上安装双目相机">3.1 RDK X5上安装双目相机</h3>
 
-<p>SC132GS双目相机安装在RDK X5上的方法参考手册<a href="https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&amp;p=RDK+X5#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5">4.2. 硬件连接</a>章节介绍。</p>
+<p>RDK Stereo Camera GS130WI 安装在RDK X5上的方法参考手册<a href="https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&amp;p=RDK+X5#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5">4.2. 硬件连接</a>章节介绍。</p>
 
 <h3 id="32-底盘上安装-rdk-x5">3.2 底盘上安装 RDK X5</h3>
 
@@ -547,9 +591,9 @@
 
 <h3 id="41-系统和tros">4.1 系统和TROS</h3>
 
-<p>RDK X5已安装Ubuntu 22.04 desktop系统镜像，已安装TROS并升级到最新版本。</p>
-
+<p>RDK X5已安装RDK OS系统镜像，已安装TROS并升级到最新版本。</p>
 <ul>
+  <li>系统烧录指引：如需重新烧录系统，请参考官方文档 <a href="https://developer.d-robotics.cc/rdk_x_doc/Quick_start/install_os/rdk_x5/system_burn?v=3.5.0&amp;p=RDK+X5">全镜像烧录</a> 章节。</li>
   <li>基础环境配置参考RDK<a href="https://developer.d-robotics.cc/rdk_x_doc/Quick_start/configuration_wizard">入门配置</a></li>
   <li>安装和升级TROS参考<a href="https://developer.d-robotics.cc/tros_doc/Quick_start/install_tros">安装和升级TROS</a></li>
 </ul>
@@ -625,8 +669,8 @@ apt <span class="nb">install </span>ros-dev-tools ros-humble-cyclonedds<span cla
   <p><strong>提示</strong></p>
   <ol>
     <li>如遇到执行apt命令速度慢的问题，可以尝试使用社区中广受好评的第三方ROS安装工具，例如“小鱼的一键安装系列”（FishROS）。这些工具通常会处理好软件源配置、依赖安装等繁琐步骤。</li>
-    <li>例如使用“小鱼的一键安装系列”更新软件源命令：wget http://fishros.com/install -O fishros &amp;&amp; bash fishros，选择[5] 一键配置:系统源，后续根据提示进行选择。配置完成后如果遇到apt安装ROS2包失败，请更新ros签名：sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg。</li>
-    <li>配置完成后如果遇到apt安装ROS2包失败，请更新ros签名：sudo curl -sSL  -o /usr/share/keyrings/ros-archive-keyring.gpg。</li>
+    <li>例如使用“小鱼的一键安装系列”更新软件源命令：wget http://fishros.com/install -O fishros &amp;&amp; bash fishros，选择[5] 一键配置:系统源，后续根据提示进行选择。</li>
+    <li>配置完成后如果遇到apt安装ROS2包失败，请更新ros签名：sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg。</li>
   </ol>
 
 </blockquote>
@@ -667,7 +711,7 @@ wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/deb/h
 
 <h4 id="配置软件">配置软件</h4>
 
-<p>参考<a href="https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam#43-rdk-x5%E9%85%8D%E7%BD%AE">RDK X5配置</a>。</p>
+<p>参考<a href="https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&amp;p=RDK+X5#43-rdk-x5-%E9%85%8D%E7%BD%AE">RDK X5配置</a>。</p>
 
 <h3 id="46-配置生效">4.6 配置生效</h3>
 
@@ -746,7 +790,7 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
 
 <h3 id="61-相机和底盘外参标定粗标定">6.1 相机和底盘外参标定（粗标定）</h3>
 
-<p>本章节介绍不依赖标定治具的情况下，实现相机和底盘之间x, y, x, roll, pitch外参的快速粗标定。
+<p>本章节介绍不依赖标定治具的情况下，实现相机和底盘之间x, y, z, roll, pitch外参的快速粗标定。
 此方法无法标定yaw角，如果相机和底盘之间yaw角较大，或者对标定精度有极高要求，请参考<a href="calibration.html">相机和底盘外参标定（高精度标定）</a>进行标定。</p>
 
 <p>简单、快速的粗标定能够满足基本使用需求，建议采用此标定方法。</p>
@@ -769,20 +813,23 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
       <td style="text-align: center">X偏移</td>
       <td style="text-align: center">双目相机左目相对于底盘两个轮子连线，X方向的偏移</td>
       <td style="text-align: center">robot_to_camera_x</td>
-      <td style="text-align: center">0.145</td>
+      <td style="text-align: center">0.105m</td>
     </tr>
     <tr>
       <td style="text-align: center">Y偏移</td>
       <td style="text-align: center">双目相机左目相对于底盘两个轮子连线的中心点，Y方向的偏移</td>
       <td style="text-align: center">robot_to_camera_y</td>
-      <td style="text-align: center">0.022</td>
+      <td style="text-align: center">0.018m</td>
     </tr>
   </tbody>
 </table>
 
+<p><img src="images/originbot_cam70mm.jpg" width="300" /></p>
+
 <p>修改配置文件中calibration的参数，设置平移向量：</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 打开配置文件</span>
+<span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash 
 vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml
 <span class="c"># 使用标定结果设置 robot_to_camera_x  robot_to_camera_y</span>
@@ -804,7 +851,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 </code></pre></div></div>
 
 <p>此时PC打开WEB浏览器（chrome/firefox/edge）输入 http://IP:8000（IP为RDK IP地址），能够查看到相机画面。
-RVIZ上，将坐标系设置为base_link/base_footprint，勾选PclObstacle，移动底盘，确保rviz上渲染的点云是平面。</p>
+RVIZ上，将坐标系设置为base_footprint，勾选PclObstacle，移动底盘，确保rviz上渲染的点云是平面。</p>
 
 <table>
   <thead>
@@ -830,12 +877,20 @@ RVIZ上，将坐标系设置为base_link/base_footprint，勾选PclObstacle，�
 
 <p>说明标定出来的相机距离地面高度（Camera Height）为0.146 m。</p>
 
-<p>修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的–roll和–pitch设置旋转矩阵，使用Camera Height（–z）设置robot_to_camera_z：</p>
+<ul>
+  <li>
+    <p><strong>方法一（动态生效）</strong>：可直接在终端中执行上述 <code class="language-plaintext highlighter-rouge">run tf2_ros static_transform_publisher</code> 命令，标定参数将立即生效。该方式适用于临时调试，重启后失效。</p>
+  </li>
+  <li>
+    <p><strong>方法二（永久生效）</strong>：修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的–roll和–pitch设置旋转矩阵，使用Camera Height（–z）设置robot_to_camera_z：</p>
+  </li>
+</ul>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 打开配置文件</span>
+<span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash 
 vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml
-<span class="c"># 使用标定结果中的roll和pitch设置 robot_to_camera_roll robot_to_camera_pitch</span>
+<span class="c"># 使用标定结果中的 --roll 和 --pitch 设置 robot_to_camera_roll robot_to_camera_pitch</span>
 <span class="c"># 使用Camera Height（--z）设置robot_to_camera_z</span>
 </code></pre></div></div>
 
@@ -894,28 +949,11 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 <span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">rtabmap_Grid_3D</span><span class="o">=</span><span class="s2">"'true'"</span> bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
-<p>RVIZ上分别打开3D地图和障碍物点云的渲染，如下图：</p>
+<p>RVIZ上打开障碍物点云的渲染，如下图：</p>
 
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">3D地图</th>
-      <th style="text-align: center">障碍物点云</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center"><img src="images/image_032.png" height="200" /></td>
-      <td style="text-align: center"><img src="images/image_033.png" height="200" /></td>
-    </tr>
-  </tbody>
-</table>
+<p><img src="images/image_033.png" height="200" /></p>
 
-<p>其中障碍物1离地高度0.18m（低于阈值0.25m），障碍物3离地高度0.27m（高于阈值0.25m）。可以看到地图和点云只有障碍物1的渲染，无障碍物3，说明标定参数生效。</p>
-
-<h3 id="63-相机和底盘外参标定高精度标定">6.3 相机和底盘外参标定（高精度标定）</h3>
-
-<p>如果相机和底盘之间yaw角较大，或者对标定精度有极高要求，请参考<a href="calibration.html">相机和底盘外参标定（高精度标定）</a>进行标定。</p>
+<p>其中障碍物1离地高度0.18m（低于阈值0.25m），障碍物3离地高度0.27m（高于阈值0.25m）。可以看到地图只有障碍物1的渲染，无障碍物3，说明标定参数生效。</p>
 
 <h2 id="7-应用示例">7. 应用示例</h2>
 
@@ -962,7 +1000,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 如未使用套件默认的硬件，即存在如下任意一种情况，请完成下面表格中的<strong>额外配置项</strong>。</p>
   <ol>
     <li>未使用 OriginBot 底盘</li>
-    <li>未使用 70mm 基线双目相机</li>
+    <li>未使用 RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）</li>
     <li>未使用 VIO （vio模式），使用轮式里程计（wheel模式）</li>
   </ol>
 
@@ -985,7 +1023,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
     <tr>
       <td style="text-align: center">相机参数</td>
       <td style="text-align: center">mipi_rotation</td>
-      <td style="text-align: center">70mm基线（带IMU）相机设置为0.0，其他相机设置为90.0</td>
+      <td style="text-align: center">RDK Stereo Camera GS130WI（70mm 基线(带IMU)双目相机）设置为0.0，80mm基线（不带IMU）双目相机设置为90.0</td>
     </tr>
     <tr>
       <td style="text-align: center">里程计类型</td>
@@ -1004,6 +1042,11 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
     </tr>
   </tbody>
 </table>
+
+<blockquote>
+  <p><strong>提示：</strong>
+如需了解更详细的常用模式配置说明，请参考 <a href="faq.html">FAQ - 常用模式配置</a>。</p>
+</blockquote>
 
 <blockquote>
   <p><strong>注意：</strong></p>
@@ -1044,7 +1087,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <p><img src="images/image_036.png" width="600" /></p>
 
-<h3 id="74-vslam建图">7.4 VSLAM建图</h3>
+<h3 id="73-vslam建图">7.3 VSLAM建图</h3>
 
 <p>本章节介绍如何使用VSLAM生成用于导航的2D地图。</p>
 
@@ -1064,7 +1107,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
   <p><strong>提示</strong></p>
   <ol>
     <li>当Rviz上渲染出地图，并且Exploration状态为IDLE时，表示启动完成，可以开始启动自主探索建图。</li>
-    <li>建图过程中，rviz上（下图）会渲染SLAM回环发生时刻（loop_closure at stamp，只显示了时间戳秒部分）、地图面积（map known aera）和距离上次回环机器人的移动轨迹长度（to last loop_closure traj len）。</li>
+    <li>建图过程中，rviz上（下图）会渲染地图面积（map known area）和未闭合轨迹长度（unlc traj）。</li>
     <li>当距离上次回环的轨迹长度超过5米时，将会自动暂停自主探索，控制机器人回到已建图区域，使其发生回环，避免由于累积误差过大导致地图出现偏差。</li>
     <li>发生回环后，rviz上将会刷新回环发生时刻，以及轨迹长度，此时可以恢复自主探索建图。 完成建图后，如发现地图存在偏移或者其他明显错误，需要通过导航或者手动控制机器人到错误地图处更新地图。</li>
     <li>默认关闭3D建图，启动建图时使用参数打开：rtabmap_Grid_3D=”‘true’“。开启3D建图将会导致回环检测速度显著变慢，请根据实际需求选择是否开启3D建图。</li>
@@ -1134,7 +1177,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <p><img src="images/image_044.png" width="600" /></p>
 
-<h3 id="75-导航和避障">7.5 导航和避障</h3>
+<h3 id="74-导航和避障">7.4 导航和避障</h3>
 
 <p>本章节介绍如何使用已经创建好的地图进行导航和避障。</p>
 
@@ -1159,36 +1202,13 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <p><img src="images/image_046.png" width="400" /></p>
 
-<h4 id="绑架后重定位">绑架后重定位</h4>
-
-<p>定位模式下，抬起机器人，搬移到新位置并放回地面上后，机器人将会自动进入到重定位状态，重定位中和重定位成功后RVIZ上显示如下信息：</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">重定位中</th>
-      <th style="text-align: center">重定位成功</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center"><img src="images/image_047.png" height="100" /></td>
-      <td style="text-align: center"><img src="images/image_048.png" height="100" /></td>
-    </tr>
-  </tbody>
-</table>
-
-<p>重定位过程：</p>
-
-<p><img src="images/relocation.gif" width="900" /></p>
-
-<p><strong>导航效果</strong></p>
+<h4 id="导航效果">导航效果</h4>
 
 <p>在RVIZ上选择导航的目标点，导航过程和完成后的结果如下：</p>
 
 <p><img src="images/image_049.gif" width="900" /></p>
 
-<h3 id="76-手持建图">7.6 手持建图</h3>
+<h3 id="75-手持建图">7.5 手持建图</h3>
 
 <p>本章节介绍在没有移动底盘的情况下，运行VSLAM（VIO和3D建图）示例的方法。</p>
 
@@ -1216,7 +1236,7 @@ ros2 run tf2_ros static_transform_publisher <span class="nt">--frame-id</span> b
 
 <p><img src="images/handheld_vslam.gif" width="900" /></p>
 
-<h3 id="77-人机交互todo">7.7 人机交互[TODO]</h3>
+<h3 id="76-人机交互todo">7.6 人机交互[TODO]</h3>
 
 <h2 id="8-适配其他底盘">8. 适配其他底盘</h2>
 
@@ -1293,7 +1313,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ros2 run myrobot_base myrobot_base
 </code></pre></div></div>
 
-<p>参考<a href="#71-Checklist">Checklist</a>章节检查参数是否全部完成配置后，即可运行<a href="#7-应用示例">应用示例</a>章节示例。</p>
+<p>参考<a href="#71-checklist">Checklist</a>章节检查参数是否全部完成配置后，即可运行<a href="#7-应用示例">应用示例</a>章节示例。</p>
 
 <h2 id="9-版本发布记录">9. 版本发布记录</h2>
 
@@ -1339,6 +1359,52 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
       pre.parentElement.replaceChild(div, pre);
     });
     mermaid.initialize({startOnLoad:true, theme:'default'});
+  })();
+  </script>
+  <script>
+  (function() {
+    // 给代码块添加复制按钮
+    document.querySelectorAll('.content pre').forEach(function(pre) {
+      if (pre.classList.contains('mermaid') || !pre.querySelector('code')) return;
+      var btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = '复制';
+      btn.addEventListener('click', function() {
+        var code = pre.querySelector('code');
+        navigator.clipboard.writeText(code ? code.textContent : pre.textContent).then(function() {
+          btn.textContent = '已复制';
+          btn.classList.add('copied');
+          setTimeout(function() {
+            btn.textContent = '复制';
+            btn.classList.remove('copied');
+          }, 2000);
+        });
+      });
+      pre.appendChild(btn);
+    // click picture to enlarge it（lightbox）
+    var overlay = document.createElement('div');
+    overlay.className = 'img-lightbox';
+    var big = document.createElement('img');
+    overlay.appendChild(big);
+    document.body.appendChild(overlay);
+
+    function close() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    overlay.addEventListener('click', close);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') close();
+    });
+
+    document.querySelector('.content').addEventListener('click', function(e) {
+      var img = e.target.closest('img');
+      if (!img || img.closest('a')) return;
+      big.src = img.src;
+      big.alt = img.alt || '';
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
   })();
   </script>
 </body>
