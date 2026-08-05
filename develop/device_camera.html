@@ -96,6 +96,7 @@
     .content a { color: #0366d6; text-decoration: none; }
     .content a:hover { text-decoration: underline; }
     .content img { cursor: zoom-in; }
+    .content .mermaid svg { cursor: zoom-in; }
     .img-lightbox {
       position: fixed;
       inset: 0;
@@ -282,11 +283,24 @@
 
     document.querySelector('.content').addEventListener('click', function(e) {
       var img = e.target.closest('img');
-      if (!img || img.closest('a')) return;
-      big.src = img.src;
-      big.alt = img.alt || '';
-      overlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
+      if (img && !img.closest('a')) {
+        big.src = img.src;
+        big.alt = img.alt || '';
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        return;
+      }
+      // mermaid 图表放大
+      var svg = e.target.closest('.mermaid svg');
+      if (svg) {
+        var clone = svg.cloneNode(true);
+        clone.setAttribute('style', 'background: white;');
+        var svgStr = new XMLSerializer().serializeToString(clone);
+        big.src = URL.createObjectURL(new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'}));
+        big.alt = '';
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
     });
   })();
   </script>
