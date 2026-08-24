@@ -357,7 +357,7 @@ iw dev wlan0 get power_save
 ```bash
 apt update 
 apt upgrade -y 
-apt install ros-dev-tools ros-humble-cyclonedds* ros-humble-rmw-cyclonedds* ros-humble-rviz* ros-humble-rtabmap* ros-humble-octomap-rviz-plugins ros-humble-teleop-twist-keyboard ros-humble-nav* ros-humble-robot-localization -y  
+apt install ros-dev-tools ros-humble-cyclonedds* ros-humble-rmw-cyclonedds* ros-humble-rviz* ros-humble-rtabmap* ros-humble-octomap-rviz-plugins ros-humble-teleop-twist-keyboard ros-humble-nav* ros-humble-robot-localization ros-humble-foxglove-bridge -y  
 ```
 
 > **提示** 
@@ -424,6 +424,50 @@ grep "<version>" `ros2 pkg prefix tros_vision_nav --share`/package.xml
 输出如下信息（以0.0.1版本为例）：
 
 <img src="images/image_012.png" width="600">
+
+### 4.8 使用 Foxglove 展示
+
+Foxglove 是面向机器人开发者的数据平台，帮助开发者在整个数据生命周期中快速构建、监控和改进机器人，支持机器人数据的采集、排查、调试和回放分析。
+
+本章节介绍如何配置和使用Foxglove，详细的配置和使用说明请参考 [Foxglove 官网](https://foxglove.dev/) 和 [官方使用文档](https://docs.foxglove.dev/)。
+
+1. PC 浏览器（chrome/firefox/edge）输入 (https://foxglove.dev/studio) ， 进入 foxglove 官网（除了在浏览器上展示，也可以下载 Foxglove 桌面版）：
+
+<img src="images/foxglove_guide_1.png" width="800">
+
+2. 首次使用需要注册，可使用谷歌账号或第三方邮箱进行注册：
+
+<img src="images/foxglove_guide_11.png" width="800">
+
+3. 从RDK上移动solution的安装路径中下载 foxglove layout 配置文件，并参考Foxglove使用文档将配置导入到foxglove studio。
+
+foxglove layout 配置文件在RDK上的位置：
+
+```bash
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/install/local_setup.bash
+ls `ros2 pkg prefix tros_vision_nav --share`/params/vims-foxglove-layout.json
+```
+
+4. RDK X5上运行如下命令，启动foxglove bridge：
+
+```bash
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/install/local_setup.bash
+ros2 run foxglove_bridge foxglove_bridge
+```
+
+5. PC端foxglove studio连接RDK（其中192.168.66.191为RDK X5的IP地址，使用时请替换为实际IP地址）：
+
+<img src="images/foxglove-pc-openning.png" width="800">
+
+连接成功后，RDK X5运行foxglove bridge的终端会输出`publishing connection graph`日志信息。
+
+> **提示** 
+- 移动solution支持使用rviz和foxglove进行数据可视化，启动时使用`run_rviz`和`run_foxglove`参数进行开关。
+- 例如启动时`run_rviz=False run_foxglove=True`表示使用foxglove进行数据可视化，将会自动启动 foxglove bridge 。`run_rviz=True run_foxglove=False`表示使用rviz进行数据可视化。
+>
+
 
 ## 5. 基础功能测试
 
@@ -824,13 +868,19 @@ flowchart LR
 
 ##### 启动solution
 
-在 RDK X5 终端运行如下命令，启动环境感知、VSLAM、Nav2，与[7.4 导航和避障](#74-导航和避障)启动命令一致）：
+在 RDK X5 终端运行如下命令，启动环境感知、VSLAM、Nav2，与[7.4 导航和避障](#74-导航和避障)启动命令一致：
 
 ```bash
 source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+run_rviz=False run_foxglove=True \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
+
+> **注意** 
+以上命令使用 Foxglove 可视化；如需使用 rviz，请改用 `run_rviz=True run_foxglove=False` 。
+>
 
 ##### 启动跟随服务
 
@@ -851,27 +901,23 @@ ros2 launch tros_person_following tros_person_following.launch.py enable_perc_re
 
 ##### 启停跟随请求
 
-跟随服务启动后默认**不跟随**（忽略所有检测），需通过 `/enable_follow` service 显式开启，运行中可随时启停。
+跟随服务启动后默认**不跟随**（忽略所有检测），需通过 `/enable_follow` service 显式开启，运行中可随时启停。在 Foxglove 中使用跟随控制面板，可启动/停止跟随并查看当前跟踪状态（Foxglove 配置方法见 [4.8 使用 Foxglove 展示](#48-使用-foxglove-展示)）：
 
-开启跟随：
+<img src="images/vims-foxglove-person-tracking.png" width="400">
 
-```bash
-ros2 service call /enable_follow std_srvs/srv/SetBool "{data: true}"
-```
+控件说明：
+（1） 启动跟随服务
+（2） 停止跟随服务
+（3） 当前跟随状态
+（4） 跟随目标渲染
 
-开启后机器人进入 IDLE 搜索目标 → 检测到有效 moving 目标进入 TRACKING → 按距离带跟随。当前状态发布在 `/tros_tracking_status`，可随时查询：
-
-```bash
-ros2 topic echo /tros_tracking_status
-```
-
-停止跟随：
-
-```bash
-ros2 service call /enable_follow std_srvs/srv/SetBool "{data: false}"
-```
+开启后机器人进入 IDLE 搜索目标 → 检测到有效 moving 目标进入 TRACKING → 按距离带跟随。当前状态发布在 `/tros_tracking_status`。
 
 停止后机器人取消当前导航目标、停止旋转搜索，原地不动。
+
+> **提示**
+使用命令行开启跟随： ros2 service call /enable_follow std_srvs/srv/SetBool "{data: true}"
+>
 
 #### 跟随状态机
 
