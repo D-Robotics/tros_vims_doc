@@ -726,7 +726,7 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml ba
 > **提示** 
 1. 当Rviz上渲染出地图，并且Exploration状态为IDLE时，表示启动完成，可以开始启动自主探索建图。 
 2. 建图过程中，rviz上（下图）会渲染SLAM回环发生时刻（loop_closure at stamp，只显示了时间戳秒部分）、地图面积（map known area）和距离上次回环机器人的移动轨迹长度（to last loop_closure traj len）。
-3. 当距离上次回环的轨迹长度超过5米时，将会自动暂停自主探索，控制机器人回到已建图区域，使其发生回环，避免由于累积误差过大导致地图出现偏差。
+3. 当距离上次回环的轨迹长度超过5.0米（支持使用 `search_loop_closure_thr=5.0` 参数在启动时配置）时，将会自动暂停自主探索，控制机器人回到已建图区域，使其发生回环，避免由于累积误差过大导致地图出现偏差。 支持使用 `en_search_loop_closure=False` 参数在启动时关闭自主回环搜索功能。
 4. 发生回环后，rviz上将会刷新回环发生时刻，以及轨迹长度，此时可以恢复自主探索建图。 完成建图后，如发现地图存在偏移或者其他明显错误，需要通过导航或者手动控制机器人到错误地图处更新地图。 
 5. 默认关闭3D建图，启动建图时使用参数打开：rtabmap_Grid_3D="'true'"。开启3D建图将会导致回环检测速度显著变慢，请根据实际需求选择是否开启3D建图。
 >
@@ -842,31 +842,11 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml rt
 
 > 完整跟随效果视频：[vims_person_tracking.mp4](https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/images/vims_person_tracking.mp4)
 
-#### 数据流
-
-人体跟随基于"感知 → 深度融合 → 多目标跟踪 → 跟随控制 → Nav2"的链路，复用 [7.4 导航和避障](#74-导航和避障) 章节已启动的建图、定位、导航和障碍物感知能力：
-
-```mermaid
-flowchart LR
-    subgraph Base[基础 solution 7.4 已启动]
-        depth[双目深度估计]
-        detect[人体检测]
-        slam[SLAM 定位]
-        nav[Nav2 导航/避障]
-    end
-    detect --> fusion[障碍物深度融合]
-    depth --> fusion
-    fusion --> mot[多目标跟踪 MOT]
-    mot --> follow[tros_person_following 跟随控制]
-    follow -->|NavigateToPose| nav
-    nav -->|costmap| follow
-```
-
 #### 运行示例
 
 运行人体跟随示例需依次完成三步：启动基础 solution（建图/定位/导航/感知）、启动跟随服务（人体检测/跟踪/跟随控制）、按需启停跟随请求。
 
-##### 启动solution
+##### （1）启动solution
 
 在 RDK X5 终端运行如下命令，启动环境感知、VSLAM、Nav2，与[7.4 导航和避障](#74-导航和避障)启动命令一致：
 
@@ -882,9 +862,9 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 以上命令使用 Foxglove 可视化；如需使用 rviz，请改用 `run_rviz=True run_foxglove=False` 。
 >
 
-##### 启动跟随服务
+##### （2）启动跟随服务
 
-基础 solution 就绪后，在新的 RDK X5 终端启动人体跟随链路（深度融合 + MOT + 跟随控制 + 网页可视化）：
+基础 solution 就绪后，在新的 RDK X5 终端启动人体跟随链路（深度融合 + MOT + 跟随控制 + 可视化）：
 
 ```bash
 source /opt/tros/humble/local_setup.bash
@@ -899,24 +879,30 @@ ros2 launch tros_person_following tros_person_following.launch.py enable_perc_re
 | `follow_distance_min` / `follow_distance_max` | 1.8 / 2.0 | 跟随距离带（m）：停车 / withhold / 跟随 |
 | `target_filter_confidence_thr` / `select_min_confidence` | 0.5 / 0.7 | 目标过滤 / 选择的置信度门槛 |
 
-##### 启停跟随请求
+##### （3）启停跟随请求
 
-跟随服务启动后默认**不跟随**（忽略所有检测），需通过 `/enable_follow` service 显式开启，运行中可随时启停。在 Foxglove 中使用跟随控制面板，可启动/停止跟随并查看当前跟踪状态（Foxglove 配置方法见 [4.8 使用 Foxglove 展示](#48-使用-foxglove-展示)）：
+跟随服务启动后默认**没有激活跟随**（忽略所有检测），需通过 `/enable_follow` service 显式开启，运行中可随时启停。
+
+在 Foxglove 中使用跟随控制面板，可启动/停止跟随并查看当前跟踪状态（Foxglove 配置方法见 [4.8 使用 Foxglove 展示](#48-使用-foxglove-展示)）：
 
 <img src="images/vims-foxglove-person-tracking.png" width="400">
 
 控件说明：
-（1） 启动跟随服务
-（2） 停止跟随服务
-（3） 当前跟随状态
+
+（1） 启动跟随服务；
+
+（2） 停止跟随服务；
+
+（3） 当前跟随状态；
+
 （4） 跟随目标渲染
 
-开启后机器人进入 IDLE 搜索目标 → 检测到有效 moving 目标进入 TRACKING → 按距离带跟随。当前状态发布在 `/tros_tracking_status`。
+开启后机器人进入 IDLE 搜索目标 → 检测到有效 moving 目标进入 TRACKING → 按距离带跟随。当前状态通过 `/tros_tracking_status` topic发布。
 
 停止后机器人取消当前导航目标、停止旋转搜索，原地不动。
 
 > **提示**
-使用命令行开启跟随： ros2 service call /enable_follow std_srvs/srv/SetBool "{data: true}"
+除了使用 Foxglove ，也可以使用命令行开启跟随： ros2 service call /enable_follow std_srvs/srv/SetBool "{data: true}"
 >
 
 #### 跟随状态机
@@ -936,6 +922,46 @@ flowchart LR
 - **LOST**：目标丢失。优先找回原 id，其次接受上次已知位置（LKP）附近的新 moving 目标，同时跑 belief search（预测点优先 + LKP 附近观测点扫描）主动恢复；超时回 IDLE。
 
 > 目标丢失后的恢复流程详见 [tros_person_following](https://github.com/D-Robotics/tros_person_following)。
+
+#### 蜂鸣器状态提示
+
+跟随过程中通过蜂鸣器提醒**被跟踪人**当前跟踪状态：仅在 `TRACKING → LOST`（目标丢失）时响 1 声，进入 `TRACKING`（锁定 / 重锁 / 切换目标）不响，`LOST → IDLE`（放弃）静默。被跟踪人听到响声即知"机器人丢失目标了"。
+
+该功能由 `tros_person_following` 发布 pattern id 到 `/buzzer_pattern`（`std_msgs/UInt8`），由 `originbot_base` 解码后驱动蜂鸣器发声，需 `originbot_base` 新二进制同板在线。
+
+节流参数 `buzzer_min_interval_sec`（启动时可配，默认 3.0s）压制检测闪烁导致的 `TRACKING ↔ LOST` 快速震荡嗡鸣：
+
+| 取值 | 行为 |
+| :---: | --- |
+| `>0` | 距上次发声不足该值则跳过（默认 3.0，推荐） |
+| `==0` | 不限制，每次 `TRACKING → LOST` 都响 |
+| `<0` | 完全禁用，不发任何蜂鸣器消息 |
+
+启动时配置示例：
+
+```bash
+ros2 launch tros_person_following tros_person_following.launch.py enable_perc_render:=True buzzer_min_interval_sec:=3.0
+```
+
+#### 数据流
+
+人体跟随基于"感知 → 深度融合 → 多目标跟踪 → 跟随控制 → Nav2"的链路，复用 [7.4 导航和避障](#74-导航和避障) 章节已启动的建图、定位、导航和障碍物感知能力：
+
+```mermaid
+flowchart LR
+    subgraph Base[基础 solution 7.4 已启动]
+        depth[双目深度估计]
+        detect[人体检测]
+        slam[SLAM 定位]
+        nav[Nav2 导航/避障]
+    end
+    detect --> fusion[障碍物深度融合]
+    depth --> fusion
+    fusion --> mot[多目标跟踪 MOT]
+    mot --> follow[tros_person_following 跟随控制]
+    follow -->|NavigateToPose| nav
+    nav -->|costmap| follow
+```
 
 ## 8. 适配其他底盘
 
