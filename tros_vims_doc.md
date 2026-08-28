@@ -1,10 +1,10 @@
-# 视觉移动Solution套件使用手册
+# [视觉移动Solution套件使用手册](https://github.com/D-Robotics/tros_vims_doc.git)
 
 ## 1. 功能介绍
 
 基于 [D-Robotics RDK X5](https://developer.d-robotics.cc/rdkx5) 平台，面向室内移动机器人场景，提供软硬结合、深度优化、低成本、开箱即用的**全栈纯视觉移动参考解决方案**，帮助用户建立起移动机器人底层的核心和基础能力，推动智能机器人产品快速落地。支持轮式、四足、双足等不同机器人类型。
 
-针对室内陪伴机器人，移动Solution提供了无感和断点续建的建图能力，使陪伴机器人从开箱时刻起就成为家庭的一员。机器人首次启动就能够立刻和人互动，无需等待，在互动的过程中自动完成建图。同时在家庭复杂环境下能够自主避障和自动脱困，不制造麻烦。得益于Lifelong的SLAM能力，机器人在使用的过程中持续进化，越来越"懂家"，越用越聪明。使移动Solution成为家庭智能服务的隐形守护者。
+针对室内家庭场景，移动Solution提供了无感和断点续建的建图能力，使机器人从开箱时刻起就成为家庭的一员。机器人首次启动就能够立刻和人互动，无需等待，在互动的过程中自动完成建图。同时在家庭复杂环境下能够自主避障和自动脱困，不制造麻烦。得益于Lifelong的SLAM能力，机器人在使用的过程中持续进化，越来越"懂家"，越用越聪明。使移动Solution成为家庭智能服务的隐形守护者。
 
 移动Solution包含双目深度估计、VSLAM（6DoF位姿估计、重定位、Lifelong实时3D建图）、障碍物识别、导航和避障、以及用于开发的工具箱。
 
@@ -128,9 +128,9 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 
 #### 1.3.4 重定位
 
-支持机器人在启动时和劫持后的重定位。
+支持机器人在启动时和劫持时的重定位。
 
-如下图，机器人被劫持后，在7秒内完成重定位。
+如下图，机器人被劫持过程中，能够实时完成重定位。
 
 <img src="intro_images/kidnap_relocation.gif" width="900">
 
@@ -179,7 +179,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 1. 未知环境下自主探索建图 — 自动搜索地图边界frontier并导航前往，用户零干预下完成地图构建任务。
 2. 回环检测(loop closure)触发 — 自动触发回环检测，提升定位精度和地图质量。
 3. 重定位(relocating)策略 — 丢失定位时自动触发重定位策略，加速机器人恢复定位。
-4. SLAM模式切换 — mapping/localization模式自动切换，实现Lifelong SLAM。
+4. SLAM模式切换 — mapping/localization模式自动切换，实现Lifelong SLAM。详见 [FAQ - SLAM 模式与子图管理说明](faq.html#9-slam-模式与子图管理说明)。
 5. 脱困(trapped recovery) — 自动识别机器人是否被困，被困时自动脱困。
 
 未知环境下探索建图：
@@ -725,8 +725,8 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml ba
 
 > **提示** 
 1. 当Rviz上渲染出地图，并且Exploration状态为IDLE时，表示启动完成，可以开始启动自主探索建图。 
-2. 建图过程中，rviz上（下图）会渲染SLAM回环发生时刻（loop_closure at stamp，只显示了时间戳秒部分）、地图面积（map known area）和距离上次回环机器人的移动轨迹长度（to last loop_closure traj len）。
-3. 当距离上次回环的轨迹长度超过5.0米（支持使用 `search_loop_closure_thr=5.0` 参数在启动时配置）时，将会自动暂停自主探索，控制机器人回到已建图区域，使其发生回环，避免由于累积误差过大导致地图出现偏差。 支持使用 `en_search_loop_closure=False` 参数在启动时关闭自主回环搜索功能。
+2. 建图过程中，rviz上（下图）会渲染地图面积（map known area）和未闭合轨迹长度（unlc traj）。
+3. 当距离上次回环的轨迹长度超过5米时，将会自动暂停自主探索，控制机器人回到已建图区域，使其发生回环，避免由于累积误差过大导致地图出现偏差。
 4. 发生回环后，rviz上将会刷新回环发生时刻，以及轨迹长度，此时可以恢复自主探索建图。 完成建图后，如发现地图存在偏移或者其他明显错误，需要通过导航或者手动控制机器人到错误地图处更新地图。 
 5. 默认关闭3D建图，启动建图时使用参数打开：rtabmap_Grid_3D="'true'"。开启3D建图将会导致回环检测速度显著变慢，请根据实际需求选择是否开启3D建图。
 >
@@ -792,19 +792,7 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml ba
 
 <img src="images/image_046.png" width="400">
 
-#### 绑架后重定位
-
-定位模式下，抬起机器人，搬移到新位置并放回地面上后，机器人将会自动进入到重定位状态，重定位中和重定位成功后RVIZ上显示如下信息：
-
-| 重定位中 | 重定位成功 |
-| :---: | :---: |
-| <img src="images/image_047.png" height="100"> | <img src="images/image_048.png" height="100"> |
-
-重定位过程：
-
-<img src="images/relocation.gif" width="900">
-
-**导航效果**
+#### 导航效果
 
 在RVIZ上选择导航的目标点，导航过程和完成后的结果如下：
 
@@ -1049,4 +1037,6 @@ ros2 run myrobot_base myrobot_base
 
 ## 10. FAQ
 
-详见 [FAQ](faq.html)
+详见 [FAQ](faq.html)。
+
+如有问题，请[提issue](https://github.com/D-Robotics/tros_vims_doc/issues)。
