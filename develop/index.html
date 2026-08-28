@@ -655,6 +655,36 @@
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s2">"export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"</span> <span class="o">&gt;&gt;</span> ~/.bashrc
 </code></pre></div></div>
 
+<h4 id="关闭开发板wifi省电模式">关闭开发板WiFi省电模式</h4>
+
+<p>RDK X5 的 aic8800 WiFi 模块默认开启省电模式（信标间隔内休眠），会引入链路延迟抖动，长时间运行还可能触发路由器（AP）转发表异常，导致开发板与局域网内个别设备断连（其余设备仍可互ping）。进行SLAM建图、NFS挂载开发板文件系统等对链路稳定性敏感的操作前，建议关闭。</p>
+
+<p>在RDK X5上执行以下命令，立即生效并持久化（重启、重新关联WiFi后仍有效）：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 立即关闭软件省电</span>
+iw dev wlan0 <span class="nb">set </span>power_save off
+
+<span class="c"># 持久化：驱动级省电开关（下次加载模块生效，即重启后生效）</span>
+<span class="nb">printf</span> <span class="s2">"# disable aic8800 wifi power saving (stability for NFS-over-WiFi + AP FDB)</span><span class="se">\n</span><span class="s2">options aic8800_fdrv ps_on=N</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;</span> /etc/modprobe.d/aic8800-ps-off.conf
+
+<span class="c"># 持久化：udev规则，WiFi重新关联后自动关闭软件省电</span>
+<span class="nb">printf</span> <span class="s2">"ACTION==</span><span class="se">\"</span><span class="s2">add|change</span><span class="se">\"</span><span class="s2">, SUBSYSTEM==</span><span class="se">\"</span><span class="s2">net</span><span class="se">\"</span><span class="s2">, KERNEL==</span><span class="se">\"</span><span class="s2">wlan0</span><span class="se">\"</span><span class="s2">, TEST==</span><span class="se">\"</span><span class="s2">iw</span><span class="se">\"</span><span class="s2">, RUN+=</span><span class="se">\"</span><span class="s2">/sbin/iw dev wlan0 set power_save off</span><span class="se">\"\n</span><span class="s2">"</span> <span class="o">&gt;</span> /etc/udev/rules.d/70-wlan0-powersave-off.rules
+</code></pre></div></div>
+
+<p>验证当前省电状态（应输出 <code class="language-plaintext highlighter-rouge">Power save: off</code>）：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>iw dev wlan0 get power_save
+</code></pre></div></div>
+
+<blockquote>
+  <p><strong>提示</strong></p>
+  <ol>
+    <li>若提示找不到 <code class="language-plaintext highlighter-rouge">iw</code>，确认其路径（RDK X5 上为 <code class="language-plaintext highlighter-rouge">/sbin/iw</code>）。</li>
+    <li>关闭省电会增加 WiFi 模块功耗（约零点几瓦），对 X5 供电和散热无影响；使用电池供电的移动场景需自行权衡。</li>
+    <li>该驱动还提供深度省电参数 <code class="language-plaintext highlighter-rouge">dpsm</code>（默认已关闭 <code class="language-plaintext highlighter-rouge">N</code>），无需处理。</li>
+  </ol>
+</blockquote>
+
 <h3 id="43-安装依赖">4.3 安装依赖</h3>
 
 <h4 id="安装ros功能包">安装ROS功能包</h4>
@@ -663,7 +693,7 @@
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apt update 
 apt upgrade <span class="nt">-y</span> 
-apt <span class="nb">install </span>ros-dev-tools ros-humble-cyclonedds<span class="k">*</span> ros-humble-rmw-cyclonedds<span class="k">*</span> ros-humble-rviz<span class="k">*</span> ros-humble-rtabmap<span class="k">*</span> ros-humble-octomap-rviz-plugins ros-humble-teleop-twist-keyboard ros-humble-nav<span class="k">*</span> ros-humble-robot-localization <span class="nt">-y</span>  
+apt <span class="nb">install </span>ros-dev-tools ros-humble-cyclonedds<span class="k">*</span> ros-humble-rmw-cyclonedds<span class="k">*</span> ros-humble-rviz<span class="k">*</span> ros-humble-rtabmap<span class="k">*</span> ros-humble-octomap-rviz-plugins ros-humble-teleop-twist-keyboard ros-humble-nav<span class="k">*</span> ros-humble-robot-localization ros-humble-foxglove-bridge <span class="nt">-y</span>  
 </code></pre></div></div>
 
 <blockquote>
@@ -730,6 +760,61 @@ wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/deb/h
 <p>输出如下信息（以0.0.1版本为例）：</p>
 
 <p><img src="images/image_012.png" width="600" /></p>
+
+<h3 id="48-使用-foxglove-展示">4.8 使用 Foxglove 展示</h3>
+
+<p>Foxglove 是面向机器人开发者的数据平台，帮助开发者在整个数据生命周期中快速构建、监控和改进机器人，支持机器人数据的采集、排查、调试和回放分析。</p>
+
+<p>本章节介绍如何配置和使用Foxglove，详细的配置和使用说明请参考 <a href="https://foxglove.dev/">Foxglove 官网</a> 和 <a href="https://docs.foxglove.dev/">官方使用文档</a>。</p>
+
+<ol>
+  <li>PC 浏览器（chrome/firefox/edge）输入 (https://foxglove.dev/studio) ， 进入 foxglove 官网（除了在浏览器上展示，也可以下载 Foxglove 桌面版）：</li>
+</ol>
+
+<p><img src="images/foxglove_guide_1.png" width="800" /></p>
+
+<ol>
+  <li>首次使用需要注册，可使用谷歌账号或第三方邮箱进行注册：</li>
+</ol>
+
+<p><img src="images/foxglove_guide_11.png" width="800" /></p>
+
+<ol>
+  <li>从RDK上移动solution的安装路径中下载 foxglove layout 配置文件，并参考Foxglove使用文档将配置导入到foxglove studio。</li>
+</ol>
+
+<p>foxglove layout 配置文件在RDK上的位置：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/install/local_setup.bash
+<span class="nb">ls</span> <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/vims-foxglove-layout.json
+</code></pre></div></div>
+
+<ol>
+  <li>RDK X5上运行如下命令，启动foxglove bridge：</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/install/local_setup.bash
+ros2 run foxglove_bridge foxglove_bridge
+</code></pre></div></div>
+
+<ol>
+  <li>PC端foxglove studio连接RDK（其中192.168.66.191为RDK X5的IP地址，使用时请替换为实际IP地址）：</li>
+</ol>
+
+<p><img src="images/foxglove-pc-openning.png" width="800" /></p>
+
+<p>连接成功后，RDK X5运行foxglove bridge的终端会输出<code class="language-plaintext highlighter-rouge">publishing connection graph</code>日志信息。</p>
+
+<blockquote>
+  <p><strong>提示</strong></p>
+  <ul>
+    <li>移动solution支持使用rviz和foxglove进行数据可视化，启动时使用<code class="language-plaintext highlighter-rouge">run_rviz</code>和<code class="language-plaintext highlighter-rouge">run_foxglove</code>参数进行开关。</li>
+    <li>例如启动时<code class="language-plaintext highlighter-rouge">run_rviz=False run_foxglove=True</code>表示使用foxglove进行数据可视化，将会自动启动 foxglove bridge 。<code class="language-plaintext highlighter-rouge">run_rviz=True run_foxglove=False</code>表示使用rviz进行数据可视化。</li>
+  </ul>
+
+</blockquote>
 
 <h2 id="5-基础功能测试">5. 基础功能测试</h2>
 
@@ -1237,7 +1322,175 @@ ros2 run tf2_ros static_transform_publisher <span class="nt">--frame-id</span> b
 
 <p><img src="images/handheld_vslam.gif" width="900" /></p>
 
-<h3 id="76-人机交互todo">7.6 人机交互[TODO]</h3>
+<h3 id="76-人机交互">7.6 人机交互</h3>
+
+<p>本章节介绍机器人对人体目标的自动跟随功能。机器人通过双目相机识别并选取目标人体，自主导航跟随，实现人机交互，不依赖预先建好地图，支持跟随过程中建图。该功能包含目标选择和跟随、目标丢失恢复（belief search）、边缘转向等能力，详细机制和代码实现参考 <a href="https://github.com/D-Robotics/tros_person_following">tros_person_following</a>。</p>
+
+<h4 id="跟随效果">跟随效果</h4>
+
+<p><img src="images/vims_person_tracking.gif" width="900" /></p>
+
+<blockquote>
+  <p>完整跟随效果视频：<a href="https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/images/vims_person_tracking.mp4">vims_person_tracking.mp4</a></p>
+</blockquote>
+
+<h4 id="运行示例">运行示例</h4>
+
+<p>运行人体跟随示例需依次完成三步：启动基础 solution（建图/定位/导航/感知）、启动跟随服务（人体检测/跟踪/跟随控制）、按需启停跟随请求。</p>
+
+<h5 id="1启动solution">（1）启动solution</h5>
+
+<p>在 RDK X5 终端运行如下命令，启动环境感知、VSLAM、Nav2，与<a href="#74-导航和避障">7.4 导航和避障</a>启动命令一致：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/install/local_setup.bash
+<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
+<span class="nv">run_rviz</span><span class="o">=</span>False <span class="nv">run_foxglove</span><span class="o">=</span>True <span class="se">\</span>
+bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
+</code></pre></div></div>
+
+<blockquote>
+  <p><strong>注意</strong> 
+以上命令使用 Foxglove 可视化；如需使用 rviz，请改用 <code class="language-plaintext highlighter-rouge">run_rviz=True run_foxglove=False</code> 。</p>
+
+</blockquote>
+
+<h5 id="2启动跟随服务">（2）启动跟随服务</h5>
+
+<p>基础 solution 就绪后，在新的 RDK X5 终端启动人体跟随链路（深度融合 + MOT + 跟随控制 + 可视化）：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/install/local_setup.bash
+ros2 launch tros_person_following tros_person_following.launch.py enable_perc_render:<span class="o">=</span>True
+</code></pre></div></div>
+
+<p>常用启动参数（可用 <code class="language-plaintext highlighter-rouge">ros2 launch ... &lt;参数&gt;:=&lt;值&gt;</code> 覆盖）：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">参数</th>
+      <th style="text-align: center">默认</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">follow_distance_min</code> / <code class="language-plaintext highlighter-rouge">follow_distance_max</code></td>
+      <td style="text-align: center">1.8 / 2.0</td>
+      <td>跟随距离带（m）：停车 / withhold / 跟随</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">target_filter_confidence_thr</code> / <code class="language-plaintext highlighter-rouge">select_min_confidence</code></td>
+      <td style="text-align: center">0.5 / 0.7</td>
+      <td>目标过滤 / 选择的置信度门槛</td>
+    </tr>
+  </tbody>
+</table>
+
+<h5 id="3启停跟随请求">（3）启停跟随请求</h5>
+
+<p>跟随服务启动后默认<strong>没有激活跟随</strong>（忽略所有检测），需通过 <code class="language-plaintext highlighter-rouge">/enable_follow</code> service 显式开启，运行中可随时启停。</p>
+
+<p>在 Foxglove 中使用跟随控制面板，可启动/停止跟随并查看当前跟踪状态（Foxglove 配置方法见 <a href="#48-使用-foxglove-展示">4.8 使用 Foxglove 展示</a>）：</p>
+
+<p><img src="images/vims-foxglove-person-tracking.png" width="400" /></p>
+
+<p>控件说明：</p>
+
+<p>（1） 启动跟随服务；</p>
+
+<p>（2） 停止跟随服务；</p>
+
+<p>（3） 当前跟随状态；</p>
+
+<p>（4） 跟随目标渲染</p>
+
+<p>开启后机器人进入 IDLE 搜索目标 → 检测到有效 moving 目标进入 TRACKING → 按距离带跟随。当前状态通过 <code class="language-plaintext highlighter-rouge">/tros_tracking_status</code> topic发布。</p>
+
+<p>停止后机器人取消当前导航目标、停止旋转搜索，原地不动。</p>
+
+<blockquote>
+  <p><strong>提示</strong>
+除了使用 Foxglove ，也可以使用命令行开启跟随： ros2 service call /enable_follow std_srvs/srv/SetBool “{data: true}”</p>
+
+</blockquote>
+
+<h4 id="跟随状态机">跟随状态机</h4>
+
+<p>跟随控制节点核心是一个三状态有限状态机：</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    IDLE -- 检测到有效 moving 目标 --&gt; TRACKING
+    TRACKING -- 连续丢失超过阈值 --&gt; LOST
+    LOST -- 超时 --&gt; IDLE
+    LOST -- 重新发现同一 id / 接受新目标 --&gt; TRACKING
+</code></pre>
+
+<ul>
+  <li><strong>IDLE</strong>：未跟踪目标。超时无目标时原地旋转搜索；出现有效 moving 目标则进入 TRACKING（含静止目标观察期）。</li>
+  <li><strong>TRACKING</strong>：正在跟踪目标。按 robot↔target 距离分三段：小于 <code class="language-plaintext highlighter-rouge">follow_distance_min</code> 停车（cancel + 零速 + 边缘转向）；处于 <code class="language-plaintext highlighter-rouge">[min, max]</code> 迟滞区 withhold（不发 nav、不 cancel）；大于 <code class="language-plaintext highlighter-rouge">follow_distance_max</code> 发 <code class="language-plaintext highlighter-rouge">NavigateToPose</code> 跟随。max 边界带迟滞，防抖动。</li>
+  <li><strong>LOST</strong>：目标丢失。优先找回原 id，其次接受上次已知位置（LKP）附近的新 moving 目标，同时跑 belief search（预测点优先 + LKP 附近观测点扫描）主动恢复；超时回 IDLE。</li>
+</ul>
+
+<blockquote>
+  <p>目标丢失后的恢复流程详见 <a href="https://github.com/D-Robotics/tros_person_following">tros_person_following</a>。</p>
+</blockquote>
+
+<h4 id="蜂鸣器状态提示">蜂鸣器状态提示</h4>
+
+<p>跟随过程中通过蜂鸣器提醒<strong>被跟踪人</strong>当前跟踪状态：仅在 <code class="language-plaintext highlighter-rouge">TRACKING → LOST</code>（目标丢失）时响 1 声，进入 <code class="language-plaintext highlighter-rouge">TRACKING</code>（锁定 / 重锁 / 切换目标）不响，<code class="language-plaintext highlighter-rouge">LOST → IDLE</code>（放弃）静默。被跟踪人听到响声即知”机器人丢失目标了”。</p>
+
+<p>该功能由 <code class="language-plaintext highlighter-rouge">tros_person_following</code> 发布 pattern id 到 <code class="language-plaintext highlighter-rouge">/buzzer_pattern</code>（<code class="language-plaintext highlighter-rouge">std_msgs/UInt8</code>），由 <code class="language-plaintext highlighter-rouge">originbot_base</code> 解码后驱动蜂鸣器发声，需 <code class="language-plaintext highlighter-rouge">originbot_base</code> 新二进制同板在线。</p>
+
+<p>节流参数 <code class="language-plaintext highlighter-rouge">buzzer_min_interval_sec</code>（启动时可配，默认 3.0s）压制检测闪烁导致的 <code class="language-plaintext highlighter-rouge">TRACKING ↔ LOST</code> 快速震荡嗡鸣：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">取值</th>
+      <th>行为</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">&gt;0</code></td>
+      <td>距上次发声不足该值则跳过（默认 3.0，推荐）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">==0</code></td>
+      <td>不限制，每次 <code class="language-plaintext highlighter-rouge">TRACKING → LOST</code> 都响</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">&lt;0</code></td>
+      <td>完全禁用，不发任何蜂鸣器消息</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>启动时配置示例：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ros2 launch tros_person_following tros_person_following.launch.py enable_perc_render:<span class="o">=</span>True buzzer_min_interval_sec:<span class="o">=</span>3.0
+</code></pre></div></div>
+
+<h4 id="数据流">数据流</h4>
+
+<p>人体跟随基于”感知 → 深度融合 → 多目标跟踪 → 跟随控制 → Nav2”的链路，复用 <a href="#74-导航和避障">7.4 导航和避障</a> 章节已启动的建图、定位、导航和障碍物感知能力：</p>
+
+<pre><code class="language-mermaid">flowchart LR
+    subgraph Base[基础 solution 7.4 已启动]
+        depth[双目深度估计]
+        detect[人体检测]
+        slam[SLAM 定位]
+        nav[Nav2 导航/避障]
+    end
+    detect --&gt; fusion[障碍物深度融合]
+    depth --&gt; fusion
+    fusion --&gt; mot[多目标跟踪 MOT]
+    mot --&gt; follow[tros_person_following 跟随控制]
+    follow --&gt;|NavigateToPose| nav
+    nav --&gt;|costmap| follow
+</code></pre>
 
 <h2 id="8-适配其他底盘">8. 适配其他底盘</h2>
 
