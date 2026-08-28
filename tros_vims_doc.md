@@ -320,6 +320,34 @@ echo "export ROS_DOMAIN_ID=42" >> ~/.bashrc
 echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ~/.bashrc
 ```
 
+#### 关闭开发板WiFi省电模式
+
+RDK X5 的 aic8800 WiFi 模块默认开启省电模式（信标间隔内休眠），会引入链路延迟抖动，长时间运行还可能触发路由器（AP）转发表异常，导致开发板与局域网内个别设备断连（其余设备仍可互ping）。进行SLAM建图、NFS挂载开发板文件系统等对链路稳定性敏感的操作前，建议关闭。
+
+在RDK X5上执行以下命令，立即生效并持久化（重启、重新关联WiFi后仍有效）：
+
+```bash
+# 立即关闭软件省电
+iw dev wlan0 set power_save off
+
+# 持久化：驱动级省电开关（下次加载模块生效，即重启后生效）
+printf "# disable aic8800 wifi power saving (stability for NFS-over-WiFi + AP FDB)\noptions aic8800_fdrv ps_on=N\n" > /etc/modprobe.d/aic8800-ps-off.conf
+
+# 持久化：udev规则，WiFi重新关联后自动关闭软件省电
+printf "ACTION==\"add|change\", SUBSYSTEM==\"net\", KERNEL==\"wlan0\", TEST==\"iw\", RUN+=\"/sbin/iw dev wlan0 set power_save off\"\n" > /etc/udev/rules.d/70-wlan0-powersave-off.rules
+```
+
+验证当前省电状态（应输出 `Power save: off`）：
+
+```bash
+iw dev wlan0 get power_save
+```
+
+> **提示**
+> 1. 若提示找不到 `iw`，确认其路径（RDK X5 上为 `/sbin/iw`）。
+> 2. 关闭省电会增加 WiFi 模块功耗（约零点几瓦），对 X5 供电和散热无影响；使用电池供电的移动场景需自行权衡。
+> 3. 该驱动还提供深度省电参数 `dpsm`（默认已关闭 `N`），无需处理。
+
 ### 4.3 安装依赖
 
 #### 安装ROS功能包
@@ -329,7 +357,7 @@ echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ~/.bashrc
 ```bash
 apt update 
 apt upgrade -y 
-apt install ros-dev-tools ros-humble-cyclonedds* ros-humble-rmw-cyclonedds* ros-humble-rviz* ros-humble-rtabmap* ros-humble-octomap-rviz-plugins ros-humble-teleop-twist-keyboard ros-humble-nav* ros-humble-robot-localization -y  
+apt install ros-dev-tools ros-humble-cyclonedds* ros-humble-rmw-cyclonedds* ros-humble-rviz* ros-humble-rtabmap* ros-humble-octomap-rviz-plugins ros-humble-teleop-twist-keyboard ros-humble-nav* ros-humble-robot-localization ros-humble-foxglove-bridge -y  
 ```
 
 > **提示** 
@@ -396,6 +424,50 @@ grep "<version>" `ros2 pkg prefix tros_vision_nav --share`/package.xml
 输出如下信息（以0.0.1版本为例）：
 
 <img src="images/image_012.png" width="600">
+
+### 4.8 使用 Foxglove 展示
+
+Foxglove 是面向机器人开发者的数据平台，帮助开发者在整个数据生命周期中快速构建、监控和改进机器人，支持机器人数据的采集、排查、调试和回放分析。
+
+本章节介绍如何配置和使用Foxglove，详细的配置和使用说明请参考 [Foxglove 官网](https://foxglove.dev/) 和 [官方使用文档](https://docs.foxglove.dev/)。
+
+1. PC 浏览器（chrome/firefox/edge）输入 (https://foxglove.dev/studio) ， 进入 foxglove 官网（除了在浏览器上展示，也可以下载 Foxglove 桌面版）：
+
+<img src="images/foxglove_guide_1.png" width="800">
+
+2. 首次使用需要注册，可使用谷歌账号或第三方邮箱进行注册：
+
+<img src="images/foxglove_guide_11.png" width="800">
+
+3. 从RDK上移动solution的安装路径中下载 foxglove layout 配置文件，并参考Foxglove使用文档将配置导入到foxglove studio。
+
+foxglove layout 配置文件在RDK上的位置：
+
+```bash
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/install/local_setup.bash
+ls `ros2 pkg prefix tros_vision_nav --share`/params/vims-foxglove-layout.json
+```
+
+4. RDK X5上运行如下命令，启动foxglove bridge：
+
+```bash
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/install/local_setup.bash
+ros2 run foxglove_bridge foxglove_bridge
+```
+
+5. PC端foxglove studio连接RDK（其中192.168.66.191为RDK X5的IP地址，使用时请替换为实际IP地址）：
+
+<img src="images/foxglove-pc-openning.png" width="800">
+
+连接成功后，RDK X5运行foxglove bridge的终端会输出`publishing connection graph`日志信息。
+
+> **提示** 
+- 移动solution支持使用rviz和foxglove进行数据可视化，启动时使用`run_rviz`和`run_foxglove`参数进行开关。
+- 例如启动时`run_rviz=False run_foxglove=True`表示使用foxglove进行数据可视化，将会自动启动 foxglove bridge 。`run_rviz=True run_foxglove=False`表示使用rviz进行数据可视化。
+>
+
 
 ## 5. 基础功能测试
 
@@ -748,7 +820,136 @@ YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml rt
 
 <img src="images/handheld_vslam.gif" width="900">
 
-### 7.6 人机交互[TODO]
+### 7.6 人机交互
+
+本章节介绍机器人对人体目标的自动跟随功能。机器人通过双目相机识别并选取目标人体，自主导航跟随，实现人机交互，不依赖预先建好地图，支持跟随过程中建图。该功能包含目标选择和跟随、目标丢失恢复（belief search）、边缘转向等能力，详细机制和代码实现参考 [tros_person_following](https://github.com/D-Robotics/tros_person_following)。
+
+#### 跟随效果
+
+<img src="images/vims_person_tracking.gif" width="900">
+
+> 完整跟随效果视频：[vims_person_tracking.mp4](https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/images/vims_person_tracking.mp4)
+
+#### 运行示例
+
+运行人体跟随示例需依次完成三步：启动基础 solution（建图/定位/导航/感知）、启动跟随服务（人体检测/跟踪/跟随控制）、按需启停跟随请求。
+
+##### （1）启动solution
+
+在 RDK X5 终端运行如下命令，启动环境感知、VSLAM、Nav2，与[7.4 导航和避障](#74-导航和避障)启动命令一致：
+
+```bash
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/install/local_setup.bash
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+run_rviz=False run_foxglove=True \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+```
+
+> **注意** 
+以上命令使用 Foxglove 可视化；如需使用 rviz，请改用 `run_rviz=True run_foxglove=False` 。
+>
+
+##### （2）启动跟随服务
+
+基础 solution 就绪后，在新的 RDK X5 终端启动人体跟随链路（深度融合 + MOT + 跟随控制 + 可视化）：
+
+```bash
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/install/local_setup.bash
+ros2 launch tros_person_following tros_person_following.launch.py enable_perc_render:=True
+```
+
+常用启动参数（可用 `ros2 launch ... <参数>:=<值>` 覆盖）：
+
+| 参数 | 默认 | 说明 |
+| :---: | :---: | --- |
+| `follow_distance_min` / `follow_distance_max` | 1.8 / 2.0 | 跟随距离带（m）：停车 / withhold / 跟随 |
+| `target_filter_confidence_thr` / `select_min_confidence` | 0.5 / 0.7 | 目标过滤 / 选择的置信度门槛 |
+
+##### （3）启停跟随请求
+
+跟随服务启动后默认**没有激活跟随**（忽略所有检测），需通过 `/enable_follow` service 显式开启，运行中可随时启停。
+
+在 Foxglove 中使用跟随控制面板，可启动/停止跟随并查看当前跟踪状态（Foxglove 配置方法见 [4.8 使用 Foxglove 展示](#48-使用-foxglove-展示)）：
+
+<img src="images/vims-foxglove-person-tracking.png" width="400">
+
+控件说明：
+
+（1） 启动跟随服务；
+
+（2） 停止跟随服务；
+
+（3） 当前跟随状态；
+
+（4） 跟随目标渲染
+
+开启后机器人进入 IDLE 搜索目标 → 检测到有效 moving 目标进入 TRACKING → 按距离带跟随。当前状态通过 `/tros_tracking_status` topic发布。
+
+停止后机器人取消当前导航目标、停止旋转搜索，原地不动。
+
+> **提示**
+除了使用 Foxglove ，也可以使用命令行开启跟随： ros2 service call /enable_follow std_srvs/srv/SetBool "{data: true}"
+>
+
+#### 跟随状态机
+
+跟随控制节点核心是一个三状态有限状态机：
+
+```mermaid
+flowchart LR
+    IDLE -- 检测到有效 moving 目标 --> TRACKING
+    TRACKING -- 连续丢失超过阈值 --> LOST
+    LOST -- 超时 --> IDLE
+    LOST -- 重新发现同一 id / 接受新目标 --> TRACKING
+```
+
+- **IDLE**：未跟踪目标。超时无目标时原地旋转搜索；出现有效 moving 目标则进入 TRACKING（含静止目标观察期）。
+- **TRACKING**：正在跟踪目标。按 robot↔target 距离分三段：小于 `follow_distance_min` 停车（cancel + 零速 + 边缘转向）；处于 `[min, max]` 迟滞区 withhold（不发 nav、不 cancel）；大于 `follow_distance_max` 发 `NavigateToPose` 跟随。max 边界带迟滞，防抖动。
+- **LOST**：目标丢失。优先找回原 id，其次接受上次已知位置（LKP）附近的新 moving 目标，同时跑 belief search（预测点优先 + LKP 附近观测点扫描）主动恢复；超时回 IDLE。
+
+> 目标丢失后的恢复流程详见 [tros_person_following](https://github.com/D-Robotics/tros_person_following)。
+
+#### 蜂鸣器状态提示
+
+跟随过程中通过蜂鸣器提醒**被跟踪人**当前跟踪状态：仅在 `TRACKING → LOST`（目标丢失）时响 1 声，进入 `TRACKING`（锁定 / 重锁 / 切换目标）不响，`LOST → IDLE`（放弃）静默。被跟踪人听到响声即知"机器人丢失目标了"。
+
+该功能由 `tros_person_following` 发布 pattern id 到 `/buzzer_pattern`（`std_msgs/UInt8`），由 `originbot_base` 解码后驱动蜂鸣器发声，需 `originbot_base` 新二进制同板在线。
+
+节流参数 `buzzer_min_interval_sec`（启动时可配，默认 3.0s）压制检测闪烁导致的 `TRACKING ↔ LOST` 快速震荡嗡鸣：
+
+| 取值 | 行为 |
+| :---: | --- |
+| `>0` | 距上次发声不足该值则跳过（默认 3.0，推荐） |
+| `==0` | 不限制，每次 `TRACKING → LOST` 都响 |
+| `<0` | 完全禁用，不发任何蜂鸣器消息 |
+
+启动时配置示例：
+
+```bash
+ros2 launch tros_person_following tros_person_following.launch.py enable_perc_render:=True buzzer_min_interval_sec:=3.0
+```
+
+#### 数据流
+
+人体跟随基于"感知 → 深度融合 → 多目标跟踪 → 跟随控制 → Nav2"的链路，复用 [7.4 导航和避障](#74-导航和避障) 章节已启动的建图、定位、导航和障碍物感知能力：
+
+```mermaid
+flowchart LR
+    subgraph Base[基础 solution 7.4 已启动]
+        depth[双目深度估计]
+        detect[人体检测]
+        slam[SLAM 定位]
+        nav[Nav2 导航/避障]
+    end
+    detect --> fusion[障碍物深度融合]
+    depth --> fusion
+    fusion --> mot[多目标跟踪 MOT]
+    mot --> follow[tros_person_following 跟随控制]
+    follow -->|NavigateToPose| nav
+    nav -->|costmap| follow
+```
 
 ## 8. 适配其他底盘
 
