@@ -283,6 +283,7 @@ RDK X5已安装RDK OS系统镜像，已安装TROS并升级到最新版本。
 
 | 移动Solution套件版本号 | TROS版本号 |
 | :---: | :---: |
+| V0.0.6 | 2.5.2 |
 | V0.0.5 | 2.5.2 |
 
 移动Solution套件版本发布记录请查看[版本发布记录](#9-版本发布记录)章节。查看版本方法参考[软件配置](#4-软件配置)章节。
@@ -382,8 +383,8 @@ yq --version
 mkdir /userdata/vims 
 mkdir /userdata/rtabmap 
 cd /userdata/vims 
-wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.5.tar.gz 
-tar -zxvf /userdata/vims/install-vims-v0.0.5.tar.gz -C /userdata/vims
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.6.tar.gz 
+tar -zxvf /userdata/vims/install-vims-v0.0.6.tar.gz -C /userdata/vims
 ```
 
 ### 4.5 配置相机
@@ -1030,6 +1031,15 @@ ros2 run myrobot_base myrobot_base
 参考[Checklist](#71-checklist)章节检查参数是否全部完成配置后，即可运行[应用示例](#7-应用示例)章节示例。
 
 ## 9. 版本发布记录
+
+### 版本号：0.0.6
+
+本版本主要围绕**建图与导航的稳定性增强**：
+
+- **建图 / 探索更稳**：实现子图重连 + 子图自动清理 + 模式切换限制，探索目标只在自由区选点并滤除伪前沿，解决跨子图断连与累积误差，提升长时建图稳定与定位可靠；无地图时启动即自动建图并保护唯一子图，绑架检测更一致。
+- **导航顺滑、目标不丢失**：采用外部目标快照 + 重发保护，避免 SLAM 维护流程丢失导航目标；速度上限提升、障碍响应更快（`max_vel_x` / `max_vel_theta` 可经 `params.yaml` 配置）。
+- **新增能力**：新增 `tros_person_following` 跟人节点（目标丢失时蜂鸣告警）、Foxglove 调试看板。
+- **可靠性提升**：按障碍物**相对相机的位置**判定是否在视野与量程内、并把低矮障碍分流到独立话题，避障更准确顺畅；costmap / controller 配置按预期生效；回环与重访更稳，定位跳变更少；下电 / 退出更稳，依赖升级提稳。
 
 ### 版本号：0.0.5
 
