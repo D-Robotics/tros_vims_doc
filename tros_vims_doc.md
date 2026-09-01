@@ -720,7 +720,7 @@ source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash
 mkdir -p /userdata/rtabmap/ 
 # 删除地图文件
-rm /userdata/rtabmap/office.db 
+rm /userdata/rtabmap/office.db* 
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
