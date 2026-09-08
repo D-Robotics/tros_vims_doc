@@ -482,56 +482,56 @@
   <tbody>
     <tr>
       <td style="text-align: center">环境感知（注3）</td>
-      <td style="text-align: center">120</td>
-      <td style="text-align: center">50</td>
-      <td style="text-align: center">320 MB（5%）</td>
+      <td style="text-align: center">268</td>
+      <td style="text-align: center">49</td>
+      <td style="text-align: center">318 MB（4.5%）</td>
     </tr>
     <tr>
       <td style="text-align: center">VSLAM</td>
       <td style="text-align: center">115</td>
       <td style="text-align: center">0</td>
-      <td style="text-align: center">682 MB（9.6%）</td>
+      <td style="text-align: center">437 MB（6.1%）</td>
     </tr>
     <tr>
       <td style="text-align: center">规控</td>
-      <td style="text-align: center">100</td>
+      <td style="text-align: center">107</td>
       <td style="text-align: center">0</td>
-      <td style="text-align: center">271 MB（3.8%）</td>
+      <td style="text-align: center">117 MB（1.6%）</td>
     </tr>
     <tr>
       <td style="text-align: center">其他（注4）</td>
       <td style="text-align: center">30</td>
       <td style="text-align: center">——</td>
-      <td style="text-align: center">——</td>
+      <td style="text-align: center">109 MB（1.4%）</td>
     </tr>
     <tr>
       <td style="text-align: center">总计</td>
-      <td style="text-align: center">365（45.6%）</td>
-      <td style="text-align: center">51</td>
-      <td style="text-align: center">1273 MB（18.4%）</td>
+      <td style="text-align: center">520（65.0%）</td>
+      <td style="text-align: center">49</td>
+      <td style="text-align: center">981 MB（13.5%）</td>
     </tr>
   </tbody>
 </table>
 
-<p>注1：X5总共8核CPU，总CPU为800%。</p>
+<p>注1：X5总共8核CPU@1500MHz，总CPU为800%。</p>
 
-<p>注2：采用8G版本RDK X5，可用内存大小6.9GB。统计内存时已建地图面积110㎡，关键帧数量461。</p>
+<p>注2：采用8G版本RDK X5，可用内存大小6.9GB（% 相对 6.9GB 计），<strong>地图面积 200㎡</strong>。统计进程的 RSS 数据，另整机系统占用（<code class="language-plaintext highlighter-rouge">free -m</code> used，含 kernel/桌面/工具）约 1429MB（25.3%）。</p>
 
 <p>注3：包含双目数据采集、双目深度估计算法、VIO、视觉语义障碍物识别算法和通用障碍物识别算法，<strong>图像采集频率6fps</strong>，gdc硬件resize。</p>
 
-<p>注4：包含自主探索、状态监控等功能。不包含rviz、ssh连接等调试工具。</p>
+<p>注4：包含自主探索（explore 15%）、状态监控（tros_stat_monitor 11%）、slam_relocalization_helper（4%）等功能。不包含 websocket、bridge、ros2launch 等工具进程（合计MEM占用约 194MB）。</p>
 
 <p>统计命令：</p>
 
 <ul>
   <li>
-    <p>CPU占用： ps -aux –sort=%cpu</p>
+    <p>CPU占用： <code class="language-plaintext highlighter-rouge">ps -eo pcpu,pmem,rss,args</code>（逐进程）</p>
   </li>
   <li>
-    <p>BPU占用： hrut_somstatus</p>
+    <p>BPU占用： <code class="language-plaintext highlighter-rouge">hrut_somstatus</code>（bpu0 ratio 列）</p>
   </li>
   <li>
-    <p>MEM占用： top -b -n 1 -o %MEM</p>
+    <p>MEM占用： <code class="language-plaintext highlighter-rouge">ps -eo rss</code>（逐进程 RSS，KB/1024=MB）+ <code class="language-plaintext highlighter-rouge">free -m</code>（整机系统 used）</p>
   </li>
 </ul>
 
@@ -633,12 +633,11 @@
 
 <h3 id="42-环境配置">4.2 环境配置</h3>
 
-<h4 id="配置cpu为性能模式和超频">配置CPU为性能模式和超频</h4>
+<h4 id="配置cpu为性能模式">配置CPU为性能模式</h4>
 
 <p>终端下执行以下命令：</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s2">"echo 1 &gt; /sys/devices/system/cpu/cpufreq/boost"</span> <span class="o">&gt;&gt;</span> ~/.bashrc 
-<span class="nb">echo</span> <span class="s2">"echo performance &gt; /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"</span> <span class="o">&gt;&gt;</span> ~/.bashrc 
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s2">"echo performance &gt; /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"</span> <span class="o">&gt;&gt;</span> ~/.bashrc 
 <span class="nb">echo</span> <span class="s2">"echo performance &gt; /sys/devices/system/cpu/cpufreq/policy0/scaling_governor"</span> <span class="o">&gt;&gt;</span> ~/.bashrc
 </code></pre></div></div>
 
@@ -721,10 +720,22 @@ yq <span class="nt">--version</span>
 
 <h3 id="44-安装移动solution">4.4 安装移动Solution</h3>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">mkdir</span> /userdata/vims 
-<span class="nb">mkdir</span> /userdata/rtabmap 
-<span class="nb">cd</span> /userdata/vims 
-wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.6.tar.gz 
+<p>下载移动Solution安装包后，请先校验安装包完整性（基于官方发布的 SHA-256 校验和，检测下载不完整或被篡改），校验通过后再解压到 <code class="language-plaintext highlighter-rouge">/userdata/vims/install</code>。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">mkdir</span> /userdata/vims
+<span class="nb">mkdir</span> /userdata/rtabmap
+<span class="nb">cd</span> /userdata/vims
+
+<span class="c"># 1) 先取官方基准校验和（KB 级小文件，不必下整包）</span>
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.6.tar.gz.sha256
+
+<span class="c"># 2) 下载安装包</span>
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.6.tar.gz
+
+<span class="c"># 3) 校验完整性：输出 "install-vims-v0.0.6.tar.gz: OK" 即通过；FAILED 则删除后重新下载</span>
+<span class="nb">sha256sum</span> <span class="nt">-c</span> install-vims-v0.0.6.tar.gz.sha256
+
+<span class="c"># 4) 校验通过后再解压（解压到 /userdata/vims/install）</span>
 <span class="nb">tar</span> <span class="nt">-zxvf</span> /userdata/vims/install-vims-v0.0.6.tar.gz <span class="nt">-C</span> /userdata/vims
 </code></pre></div></div>
 
@@ -1189,7 +1200,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash
 <span class="nb">mkdir</span> <span class="nt">-p</span> /userdata/rtabmap/ 
 <span class="c"># 删除地图文件</span>
-<span class="nb">rm</span> /userdata/rtabmap/office.db 
+<span class="nb">rm</span> /userdata/rtabmap/office.db<span class="k">*</span> 
 <span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
@@ -1577,13 +1588,16 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 
 <h3 id="版本号006">版本号：0.0.6</h3>
 
-<p>本版本主要围绕<strong>建图与导航的稳定性增强</strong>：</p>
+<p>本版本主要围绕<strong>建图与导航更稳、回环更可靠、避障更顺、更好用</strong>：</p>
 
 <ul>
-  <li><strong>建图 / 探索更稳</strong>：实现子图重连 + 子图自动清理 + 模式切换限制，探索目标只在自由区选点并滤除伪前沿，解决跨子图断连与累积误差，提升长时建图稳定与定位可靠；无地图时启动即自动建图并保护唯一子图，绑架检测更一致。</li>
-  <li><strong>导航顺滑、目标不丢失</strong>：采用外部目标快照 + 重发保护，避免 SLAM 维护流程丢失导航目标；速度上限提升、障碍响应更快（<code class="language-plaintext highlighter-rouge">max_vel_x</code> / <code class="language-plaintext highlighter-rouge">max_vel_theta</code> 可经 <code class="language-plaintext highlighter-rouge">params.yaml</code> 配置）。</li>
-  <li><strong>新增能力</strong>：新增 <code class="language-plaintext highlighter-rouge">tros_person_following</code> 跟人节点（目标丢失时蜂鸣告警）、Foxglove 调试看板。</li>
-  <li><strong>可靠性提升</strong>：按障碍物<strong>相对相机的位置</strong>判定是否在视野与量程内、并把低矮障碍分流到独立话题，避障更准确顺畅；costmap / controller 配置按预期生效；回环与重访更稳，定位跳变更少；下电 / 退出更稳，依赖升级提稳。</li>
+  <li><strong>定位更稳</strong>：VIO在反光、玻璃、长走廊、大白墙等若纹理场景下定位稳定性显著提升。对比0.0.5版本，在234个数据集的测试中，跑飞（轨迹首尾误差大于20m）率为 8.9%，降低约 43.6%，大幅位置跳变（单帧位置变化大于2m）概率为 1.3%，减少约 77%。</li>
+  <li><strong>建图更可靠</strong>：优化子图重连与重访，地图更一致，闭环稳定性更高。</li>
+  <li><strong>探索建图更高效</strong>：优化选点、减少伪前沿，自主探索建图更快更干净。</li>
+  <li><strong>避障更顺</strong>：低矮障碍分流、障碍感知更准，避障更流畅、漏碰误碰更少。</li>
+  <li><strong>目标不丢</strong>：导航目标在 SLAM 建图维护中不再被丢弃。</li>
+  <li><strong>稳定性修复</strong>：修复 rtabmap sqlite 清理与 <code class="language-plaintext highlighter-rouge">reduceGraph</code> 边界问题，SLAM 长时运行更稳。</li>
+  <li><strong>更好用</strong>：导航参数可配置、速度上限提升、无地图也能启动；修复 nav2 costmap/controller 配置不生效（rewrite 回退），导航参数真正起作用；新增 <code class="language-plaintext highlighter-rouge">tros_person_following</code> 跟人节点与 Foxglove 调试看板。</li>
 </ul>
 
 <h3 id="版本号005">版本号：0.0.5</h3>

@@ -209,27 +209,27 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 
 |功能|CPU占用（注1）|BPU占用（%）|MEM占用（注2）|
 | :---: | :---: | :---: | :---: |
-|环境感知（注3）|120|50|320 MB（5%）|
-|VSLAM|115|0|682 MB（9.6%）|
-|规控|100|0|271 MB（3.8%）|
-|其他（注4）|30|——|——|
-|总计|365（45.6%）|51|1273 MB（18.4%）|
+|环境感知（注3）|268|49|318 MB（4.5%）|
+|VSLAM|115|0|437 MB（6.1%）|
+|规控|107|0|117 MB（1.6%）|
+|其他（注4）|30|——|109 MB（1.4%）|
+|总计|520（65.0%）|49|981 MB（13.5%）|
 
-注1：X5总共8核CPU，总CPU为800%。
+注1：X5总共8核CPU@1500MHz，总CPU为800%。
 
-注2：采用8G版本RDK X5，可用内存大小6.9GB。统计内存时已建地图面积110㎡，关键帧数量461。
+注2：采用8G版本RDK X5，可用内存大小6.9GB（% 相对 6.9GB 计），**地图面积 200㎡**。统计进程的 RSS 数据，另整机系统占用（`free -m` used，含 kernel/桌面/工具）约 1429MB（25.3%）。
 
 注3：包含双目数据采集、双目深度估计算法、VIO、视觉语义障碍物识别算法和通用障碍物识别算法，**图像采集频率6fps**，gdc硬件resize。
 
-注4：包含自主探索、状态监控等功能。不包含rviz、ssh连接等调试工具。
+注4：包含自主探索（explore 15%）、状态监控（tros_stat_monitor 11%）、slam_relocalization_helper（4%）等功能。不包含 websocket、bridge、ros2launch 等工具进程（合计MEM占用约 194MB）。
 
 统计命令：
 
-- CPU占用： ps -aux --sort=%cpu
+- CPU占用： `ps -eo pcpu,pmem,rss,args`（逐进程）
 
-- BPU占用： hrut_somstatus
+- BPU占用： `hrut_somstatus`（bpu0 ratio 列）
 
-- MEM占用： top -b -n 1 -o %MEM
+- MEM占用： `ps -eo rss`（逐进程 RSS，KB/1024=MB）+ `free -m`（整机系统 used）
 
 ## 2. 套件清单
 
@@ -292,12 +292,11 @@ RDK X5已安装RDK OS系统镜像，已安装TROS并升级到最新版本。
 
 ### 4.2 环境配置
 
-#### 配置CPU为性能模式和超频
+#### 配置CPU为性能模式
 
 终端下执行以下命令：
 
 ```bash
-echo "echo 1 > /sys/devices/system/cpu/cpufreq/boost" >> ~/.bashrc 
 echo "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor" >> ~/.bashrc 
 echo "echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor" >> ~/.bashrc
 ```
@@ -379,11 +378,23 @@ yq --version
 
 ### 4.4 安装移动Solution
 
+下载移动Solution安装包后，请先校验安装包完整性（基于官方发布的 SHA-256 校验和，检测下载不完整或被篡改），校验通过后再解压到 `/userdata/vims/install`。
+
 ```bash
-mkdir /userdata/vims 
-mkdir /userdata/rtabmap 
-cd /userdata/vims 
-wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.6.tar.gz 
+mkdir /userdata/vims
+mkdir /userdata/rtabmap
+cd /userdata/vims
+
+# 1) 先取官方基准校验和（KB 级小文件，不必下整包）
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.6.tar.gz.sha256
+
+# 2) 下载安装包
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.6.tar.gz
+
+# 3) 校验完整性：输出 "install-vims-v0.0.6.tar.gz: OK" 即通过；FAILED 则删除后重新下载
+sha256sum -c install-vims-v0.0.6.tar.gz.sha256
+
+# 4) 校验通过后再解压（解压到 /userdata/vims/install）
 tar -zxvf /userdata/vims/install-vims-v0.0.6.tar.gz -C /userdata/vims
 ```
 
@@ -720,7 +731,7 @@ source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash
 mkdir -p /userdata/rtabmap/ 
 # 删除地图文件
-rm /userdata/rtabmap/office.db 
+rm /userdata/rtabmap/office.db* 
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
@@ -1034,12 +1045,15 @@ ros2 run myrobot_base myrobot_base
 
 ### 版本号：0.0.6
 
-本版本主要围绕**建图与导航的稳定性增强**：
+本版本主要围绕**建图与导航更稳、回环更可靠、避障更顺、更好用**：
 
-- **建图 / 探索更稳**：实现子图重连 + 子图自动清理 + 模式切换限制，探索目标只在自由区选点并滤除伪前沿，解决跨子图断连与累积误差，提升长时建图稳定与定位可靠；无地图时启动即自动建图并保护唯一子图，绑架检测更一致。
-- **导航顺滑、目标不丢失**：采用外部目标快照 + 重发保护，避免 SLAM 维护流程丢失导航目标；速度上限提升、障碍响应更快（`max_vel_x` / `max_vel_theta` 可经 `params.yaml` 配置）。
-- **新增能力**：新增 `tros_person_following` 跟人节点（目标丢失时蜂鸣告警）、Foxglove 调试看板。
-- **可靠性提升**：按障碍物**相对相机的位置**判定是否在视野与量程内、并把低矮障碍分流到独立话题，避障更准确顺畅；costmap / controller 配置按预期生效；回环与重访更稳，定位跳变更少；下电 / 退出更稳，依赖升级提稳。
+- **定位更稳**：VIO在反光、玻璃、长走廊、大白墙等若纹理场景下定位稳定性显著提升。对比0.0.5版本，在234个数据集的测试中，跑飞（轨迹首尾误差大于20m）率为 8.9%，降低约 43.6%，大幅位置跳变（单帧位置变化大于2m）概率为 1.3%，减少约 77%。
+- **建图更可靠**：优化子图重连与重访，地图更一致，闭环稳定性更高。
+- **探索建图更高效**：优化选点、减少伪前沿，自主探索建图更快更干净。
+- **避障更顺**：低矮障碍分流、障碍感知更准，避障更流畅、漏碰误碰更少。
+- **目标不丢**：导航目标在 SLAM 建图维护中不再被丢弃。
+- **稳定性修复**：修复 rtabmap sqlite 清理与 `reduceGraph` 边界问题，SLAM 长时运行更稳。
+- **更好用**：导航参数可配置、速度上限提升、无地图也能启动；修复 nav2 costmap/controller 配置不生效（rewrite 回退），导航参数真正起作用；新增 `tros_person_following` 跟人节点与 Foxglove 调试看板。
 
 ### 版本号：0.0.5
 
