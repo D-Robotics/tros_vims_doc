@@ -963,6 +963,84 @@ flowchart LR
     nav -->|costmap| follow
 ```
 
+### 7.7 语义地图
+
+本章节介绍语义地图功能。机器人在建图/导航过程中，将 AI 检测结果（ROI 点云，80 类 COCO 类别）通过贝叶斯 Log-Odds 方法持续写入一张 0.05m 分辨率的持久化语义栅格地图：每个网格记录“这里是什么物体”的置信度，随观测累积增强、随视野离开衰减，从而在 2D 占据地图之外维护一层“物体级”的环境理解。详细机制和代码实现参考 [semantic_map](https://github.com/D-Robotics/semantic_map)。
+
+#### 功能效果
+
+<!-- TODO: 语义地图效果视频（Foxglove 中物体色块 + 实例 ID 渲染），录制后替换此占位 -->
+
+语义地图在 Foxglove 中以物体色块（按语义类别着色）和实例 ID 标记渲染，支持通过服务查询“某个位置是什么物体”、“某类物体分布在哪些位置”：
+
+| 能力 | 说明 |
+| --- | --- |
+| 语义建图 | 建图阶段小步长稳定累积语义栅格，范围可达 3m；自动定时保存为 `.bin` + `.meta` 文件 |
+| 语义更新 | 导航阶段加载已建语义地图，大步长 + 视野内衰减快速响应环境变化 |
+| 标签查询 | `GetLabel`：查询任意世界坐标处的语义类别及置信度 |
+| 类别检索 | `FindClass`：查询某类物体（如椅子）占据的全部网格位置 |
+| 地图统计 | `GetMapStats`：总网格数、各类别网格数、地图边界 |
+| 物体实例 | `GetObject` / `GetAllObjects` / `GetObjectArea`：按实例 ID 查询物体位置与面积 |
+
+#### 运行示例
+
+语义地图随 solution 一起启动，由 `params.yaml` 中 `switch.run_semantic_map` 控制（也可用同名环境变量覆盖）。运行阶段自动派生：建图模式（`localization=False`）下为 mapping 阶段，定位模式（`localization=True`）下为 navigation 阶段，无需手动指定。
+
+##### （1）语义建图
+
+先按 [7.3 VSLAM建图](#73-vslam建图) 完成建图，启动命令中带上语义地图开关：
+
+```bash
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/install/local_setup.bash
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+run_semantic_map=True \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+```
+
+建图过程中语义地图随 ROI 检测在线累积，默认每 30s 自动保存（`save_path`，默认 `/maps/semantic_map`，生成 `.bin` 地图与 `.meta` 元数据）。建图完成后请确认保存文件存在，导航阶段将从同一路径加载。
+
+##### （2）导航阶段语义更新与查询
+
+按 [7.4 导航和避障](#74-导航和避障) 启动（`localization=True`），语义地图自动进入 navigation 阶段，加载已建地图并在机器人移动过程中在线更新。
+
+可视化（Foxglove 配置方法见 [4.8 使用 Foxglove 展示](#48-使用-foxglove-展示)）：在 3D 面板勾选以下话题即可看到物体色块与实例 ID；可视化话题为订阅门控发布，无客户端订阅时不产生开销：
+
+| 话题 | 内容 |
+| --- | --- |
+| `/semantic_map/label_map_colored` | 语义色块点云（按类别 RGB 着色） |
+| `/semantic_map/object_ids` | 物体实例 ID 标记 |
+
+命令行查询示例：
+
+```bash
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/install/local_setup.bash
+
+# 地图统计：总网格数、各类别数量、边界
+ros2 service call /semantic_map/get_map_stats semantic_map/srv/GetMapStats "{}"
+
+# 查询椅子（COCO class_id=56）占据的网格，threshold 为 log-odds 置信度阈值
+# 返回栅格索引，乘以分辨率 0.05 即得世界坐标（map 系，单位 m）
+ros2 service call /semantic_map/find_class semantic_map/srv/FindClass "{class_id: 56, threshold: 4.0}"
+
+# 查询某个世界坐标处的语义标签
+ros2 service call /semantic_map/get_label semantic_map/srv/GetLabel "{x: 1.0, y: 2.0}"
+```
+
+在 Foxglove 中也可以使用布局内置的 SemFindClass 面板发起 `FindClass` 查询（class_id / threshold 可编辑）。
+
+#### 资源占用
+
+X5 真机实测（生产形态：semantic_map 以组件装入 solution 容器，navigation 阶段，机器人全程真实点到点导航，60s 采样，单变量 A/B 对比）：
+
+| 指标 | 开启语义地图 | 关闭语义地图 | 差值（语义地图净成本） |
+| :---: | :---: | :---: | :---: |
+| solution 容器（单核%） | 214.96（max 263） | 204.34（max 238） | **+10.62 单核%** |
+| 整板占用（8 核换算） | — | — | **≈ +1.3pp** |
+
+同期导航（Nav2）、建图（rtabmap）等进程 CPU 差值 ≈0，VIO 里程计输出保持 ~40Hz 不受影响。语义地图内部单帧计算合计约 11.5ms（extract 2.18ms / update 0.06ms / witness 9.28ms，独立工作线程异步处理），不增加导航控制路径延时。完整测试方法、更多数据与英文报告见 [semantic_map README — 性能实测](https://github.com/D-Robotics/semantic_map#13-性能实测x5-真机-ab)。
+
 ## 8. 适配其他底盘
 
 本章节介绍将基于VIO算法的移动Solution套件迁移到其他底盘的方法（如自研底盘myrobot）。
