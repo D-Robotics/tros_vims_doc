@@ -135,115 +135,6 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
 | obstacle cells | 地图中障碍物区域的栅格数 |
 | known area | 地图中free和obstacle区域的总面积 |
 
-### 4.4 修改语义地图支持的物品类别
-
-语义地图只对**白名单**内的物品类别建图与识别；白名单外类别的检测结果在摄入时被直接丢弃（不生成格子、不创建实例、`get_map_stats` 中也不会出现）。白名单由 `class_whitelist` 参数控制，该参数位于 **semantic_map 功能包自己的配置文件**中（不在 `tros_vision_nav` 的 `params.yaml` 里）：
-
-```bash
-# 打开 semantic_map 配置文件
-vi `ros2 pkg prefix semantic_map --share`/config/semantic_map.yaml
-# 找到 class_whitelist 一行，改成需要支持的类别 ID
-```
-
-默认值（仅这 8 类进图，实测识别效果较好）：
-
-```yaml
-class_whitelist: [24, 25, 28, 39, 41, 56, 62, 75]
-```
-
-| class_id | 英文名称 | 中文名称 |
-| :---: | :---: | :---: |
-| 24 | backpack | 背包 |
-| 25 | umbrella | 雨伞 |
-| 28 | suitcase | 行李箱 |
-| 39 | bottle | 瓶子 |
-| 41 | cup | 杯子 |
-| 56 | chair | 椅子 |
-| 62 | tv | 电视 |
-| 75 | vase | 花瓶 |
-
-**如何修改：**
-
-- **增 / 减类别**：在数组里增删对应的 `class_id`。例如要额外识别 `potted plant`（58）和 `cell phone`（67），改成 `[24, 25, 28, 39, 41, 56, 58, 62, 67, 75]`。
-- **识别全部类别**：设为空数组 `class_whitelist: []`，关闭过滤（COCO 全部 80 类都进图）。
-
-> **重要**：`class_id` 采用 **COCO-80 连续序号（YOLO 顺序，从 0 开始）**，不是 pycocotools 官方稀疏 ID。完整 80 类对照如下：
-
-```
- 0 person          20 elephant        40 wine glass       60 dining table
- 1 bicycle         21 bear            41 cup              61 toilet
- 2 car             22 zebra           42 fork             62 tv
- 3 motorcycle      23 giraffe         43 knife            63 laptop
- 4 airplane        24 backpack        44 spoon            64 mouse
- 5 bus             25 umbrella        45 bowl             65 remote
- 6 train           26 handbag         46 banana           66 keyboard
- 7 truck           27 tie             47 apple            67 cell phone
- 8 boat            28 suitcase        48 sandwich         68 microwave
- 9 traffic light   29 frisbee         49 orange           69 oven
-10 fire hydrant    30 skis            50 broccoli         70 toaster
-11 stop sign       31 snowboard       51 carrot           71 sink
-12 parking meter   32 sports ball     52 hot dog          72 refrigerator
-13 bench           33 kite            53 pizza            73 book
-14 bird            34 baseball bat    54 donut            74 clock
-15 cat             35 baseball glove  55 cake             75 vase
-16 dog             36 skateboard      56 chair            76 scissors
-17 horse           37 surfboard       57 couch            77 teddy bear
-18 sheep           38 tennis racket   58 potted plant     78 hair drier
-19 cow             39 bottle          59 bed              79 toothbrush
-```
-
-**生效方式**：修改配置文件后需**重启语义地图节点**（或整套导航栈）才能生效（`class_whitelist` 在启动时读取）。已经建入地图的旧类别不会因新白名单被自动清除——如需一张只含新类别的干净地图，建议删除旧语义地图文件（`/userdata/semantic_map/semantic_map.*`）后重新建图。
-
-**验证**：重新建图后，用 `get_map_stats` 查询（命令见 4.5），检查 `present_class_names` 是否只包含白名单里的类别。
-
-### 4.5 语义地图查询命令
-
-语义地图支持的全部服务命令，按从宏观到细节排序（整张地图 → 按类别 → 单个物体实例 → 单个坐标点）：
-
-**1. 整张地图统计**——总网格数、各类别网格数、地图边界、地图中拥有的物品类别名称（如 bottle）：
-
-```bash
-ros2 service call /semantic_map/get_map_stats semantic_map/srv/GetMapStats "{}"
-```
-
-**2. 全部物体实例**——地图中每个物体实例的编号、类别、质心位置和最近看到时间：
-
-```bash
-ros2 service call /semantic_map/get_all_objects semantic_map/srv/GetAllObjects "{}"
-```
-
-**3. 按名称查一类的所有实例**——每个实例的质心位置 + 占据面积（名称大小写不敏感；threshold 取值 0~1，0 或不填 = 默认阈值）：
-
-```bash
-ros2 service call /semantic_map/find_objects_by_name semantic_map/srv/FindObjectsByName "{class_name: 'bottle'}"
-```
-
-**4. 按类别 ID 查一类的全部网格**——返回栅格索引，×0.05 m 分辨率即世界坐标：
-
-```bash
-ros2 service call /semantic_map/find_class semantic_map/srv/FindClass "{class_id: 56}"
-```
-
-**5. 查单个物体实例**——按类别 + 实例编号查质心位置和最近看到时间（实例编号可从上面第 2 / 3 条命令的返回中获得）：
-
-```bash
-ros2 service call /semantic_map/get_object semantic_map/srv/GetObject "{class_id: 56, object_id: 0}"
-```
-
-**6. 查单个物体实例的面积**——该实例占据的连通网格数：
-
-```bash
-ros2 service call /semantic_map/get_object_area semantic_map/srv/GetObjectArea "{class_id: 56, object_id: 0}"
-```
-
-**7. 查单个坐标点**——某个世界坐标（map 系，米）处是什么物品类别：
-
-```bash
-ros2 service call /semantic_map/get_label semantic_map/srv/GetLabel "{x: 1.0, y: 2.0}"
-```
-
-> `class_id` 为 COCO-80 连续序号，完整对照表见 4.4。
-
 ## 5. 导航
 ### 5.1 导航成功
 在RVIZ的Navigation 2 Panel上，Feedback的状态显示reached，表示导航任务成功完成：
@@ -453,11 +344,122 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml 
 ```
 
-## 9. SLAM 模式与子图管理说明
+## 9. 语义地图
+
+### 9.1 修改支持的物品类别
+
+语义地图只对**白名单**内的物品类别建图与识别；白名单外类别的检测结果在摄入时被直接丢弃（不生成格子、不创建实例、`get_map_stats` 中也不会出现）。白名单由 `class_whitelist` 参数控制，该参数位于 **semantic_map 功能包自己的配置文件**中（不在 `tros_vision_nav` 的 `params.yaml` 里）：
+
+```bash
+# 打开 semantic_map 配置文件
+vi `ros2 pkg prefix semantic_map --share`/config/semantic_map.yaml
+# 找到 class_whitelist 一行，改成需要支持的类别 ID
+```
+
+默认值（仅这 8 类进图，实测识别效果较好）：
+
+```yaml
+class_whitelist: [24, 25, 28, 39, 41, 56, 62, 75]
+```
+
+| class_id | 英文名称 | 中文名称 |
+| :---: | :---: | :---: |
+| 24 | backpack | 背包 |
+| 25 | umbrella | 雨伞 |
+| 28 | suitcase | 行李箱 |
+| 39 | bottle | 瓶子 |
+| 41 | cup | 杯子 |
+| 56 | chair | 椅子 |
+| 62 | tv | 电视 |
+| 75 | vase | 花瓶 |
+
+**如何修改：**
+
+- **增 / 减类别**：在数组里增删对应的 `class_id`。例如要额外识别 `potted plant`（58）和 `cell phone`（67），改成 `[24, 25, 28, 39, 41, 56, 58, 62, 67, 75]`。
+- **识别全部类别**：设为空数组 `class_whitelist: []`，关闭过滤（COCO 全部 80 类都进图）。
+
+> **重要**：`class_id` 采用 **COCO-80 连续序号（YOLO 顺序，从 0 开始）**，不是 pycocotools 官方稀疏 ID。完整 80 类对照如下：
+
+```
+ 0 person          20 elephant        40 wine glass       60 dining table
+ 1 bicycle         21 bear            41 cup              61 toilet
+ 2 car             22 zebra           42 fork             62 tv
+ 3 motorcycle      23 giraffe         43 knife            63 laptop
+ 4 airplane        24 backpack        44 spoon            64 mouse
+ 5 bus             25 umbrella        45 bowl             65 remote
+ 6 train           26 handbag         46 banana           66 keyboard
+ 7 truck           27 tie             47 apple            67 cell phone
+ 8 boat            28 suitcase        48 sandwich         68 microwave
+ 9 traffic light   29 frisbee         49 orange           69 oven
+10 fire hydrant    30 skis            50 broccoli         70 toaster
+11 stop sign       31 snowboard       51 carrot           71 sink
+12 parking meter   32 sports ball     52 hot dog          72 refrigerator
+13 bench           33 kite            53 pizza            73 book
+14 bird            34 baseball bat    54 donut            74 clock
+15 cat             35 baseball glove  55 cake             75 vase
+16 dog             36 skateboard      56 chair            76 scissors
+17 horse           37 surfboard       57 couch            77 teddy bear
+18 sheep           38 tennis racket   58 potted plant     78 hair drier
+19 cow             39 bottle          59 bed              79 toothbrush
+```
+
+**生效方式**：修改配置文件后需**重启语义地图节点**（或整套导航栈）才能生效（`class_whitelist` 在启动时读取）。已经建入地图的旧类别不会因新白名单被自动清除——如需一张只含新类别的干净地图，建议删除旧语义地图文件（`/userdata/semantic_map/semantic_map.*`）后重新建图。
+
+**验证**：重新建图后，用 `get_map_stats` 查询（命令见 9.2），检查 `present_class_names` 是否只包含白名单里的类别。
+
+### 9.2 查询命令
+
+语义地图支持的全部服务命令，按从宏观到细节排序（整张地图 → 按类别 → 单个物体实例 → 单个坐标点）：
+
+**1. 整张地图统计**——总网格数、各类别网格数、地图边界、地图中拥有的物品类别名称（如 bottle）：
+
+```bash
+ros2 service call /semantic_map/get_map_stats semantic_map/srv/GetMapStats "{}"
+```
+
+**2. 全部物体实例**——地图中每个物体实例的编号、类别、质心位置和最近看到时间：
+
+```bash
+ros2 service call /semantic_map/get_all_objects semantic_map/srv/GetAllObjects "{}"
+```
+
+**3. 按名称查一类的所有实例**——每个实例的质心位置 + 占据面积（名称大小写不敏感；threshold 取值 0~1，0 或不填 = 默认阈值）：
+
+```bash
+ros2 service call /semantic_map/find_objects_by_name semantic_map/srv/FindObjectsByName "{class_name: 'bottle'}"
+```
+
+**4. 按类别 ID 查一类的全部网格**——返回栅格索引，×0.05 m 分辨率即世界坐标：
+
+```bash
+ros2 service call /semantic_map/find_class semantic_map/srv/FindClass "{class_id: 56}"
+```
+
+**5. 查单个物体实例**——按类别 + 实例编号查质心位置和最近看到时间（实例编号可从上面第 2 / 3 条命令的返回中获得）：
+
+```bash
+ros2 service call /semantic_map/get_object semantic_map/srv/GetObject "{class_id: 56, object_id: 0}"
+```
+
+**6. 查单个物体实例的面积**——该实例占据的连通网格数：
+
+```bash
+ros2 service call /semantic_map/get_object_area semantic_map/srv/GetObjectArea "{class_id: 56, object_id: 0}"
+```
+
+**7. 查单个坐标点**——某个世界坐标（map 系，米）处是什么物品类别：
+
+```bash
+ros2 service call /semantic_map/get_label semantic_map/srv/GetLabel "{x: 1.0, y: 2.0}"
+```
+
+> `class_id` 为 COCO-80 连续序号，完整对照表见 9.1。
+
+## 10. SLAM 模式与子图管理说明
 
 **SLAM 模式与子图管理**是探索节点内置的长时 SLAM 自维护机制：在无人干预下自动在"建图/定位"两种模式间切换、自动新建与删除子图，控制长期运行中的关键帧冗余与子图膨胀。它解决的是机器人长期使用后地图越用越歪、定位越来越漂、冗余子图越积越多导致导航跑偏的问题；通过"熟悉区域转定位避免关键帧冗余、陌生区域转建图补覆盖、低价值子图自动清理"的自动调度，让机器人用得越久越熟悉环境，保持稳定可靠的陪伴导航体验，全程无需用户干预。
 
-### 9.1 这些功能解决什么问题
+### 10.1 这些功能解决什么问题
 
 长期探索过程中，视觉 SLAM 会面临两类不可避免的退化：
 
@@ -468,7 +470,7 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 
 > 以上两类自动行为都受同一总开关 `explore_en_longterm_update_map`（默认开启）控制；关闭后下述所有自动行为均不生效，退化到传统的先建图再定位的使用模式。
 
-### 9.2 SLAM 模式自动切换
+### 10.2 SLAM 模式自动切换
 
 SLAM 有两种工作模式：
 
@@ -479,7 +481,7 @@ SLAM 有两种工作模式：
 
 探索期间模式切换是**全自动**的，用户无需手动干预，核心规则如下：
 
-#### 9.2.1 定位 → 建图
+#### 10.2.1 定位 → 建图
 
 触发条件有以下几类（共 7 个触发点），任一满足即切回建图：
 
@@ -491,13 +493,13 @@ SLAM 有两种工作模式：
 | 4 | 未闭环轨迹过长 / 累积误差 | 未闭环轨迹长度 ≥ `search_loop_closure_thr`（**5.0**）× `unlc_traj_high_scale`（**4.0**）= 20 | 累积误差有放大风险，切回建图重置误差起点 |
 | 5 | 重定位失败或超时 | 重定位失败，或耗时超过 `relocating_timeout`（**30.0 s**） | 定位模式下重定位失败意味着现有地图无法匹配当前观测，切回建图重建 |
 | 6 | 重定位慢成功补建图 | 重定位成功但耗时 ≥ `relocating_warn_time_thr`（**10.0 s**） | 定位不够稳，切回建图并导航到缓存位姿补建图 |
-| 7 | 当前子图优化误差过大 | 优化误差比 > `slam_opt_error_thr`（**3.0**）立即删，或在 warn band（> `slam_opt_warn_thr`（**1.5**））连续累计 ≥ `delete_cur_map_opt_warn_count_thr`（**5**）次删 | 删除当前子图前会先切回建图重建该区域（详见 9.4.2「删除子图」） |
+| 7 | 当前子图优化误差过大 | 优化误差比 > `slam_opt_error_thr`（**3.0**）立即删，或在 warn band（> `slam_opt_warn_thr`（**1.5**））连续累计 ≥ `delete_cur_map_opt_warn_count_thr`（**5**）次删 | 删除当前子图前会先切回建图重建该区域（详见 10.4.2「删除子图」） |
 
 > **与"建图→定位"的区别**：这 7 个触发点是**任一满足即切换**（OR 关系），而"建图→定位"的 11 个条件需**全部满足**（AND 关系）。因此"定位→建图"更容易触发——只要任一异常出现就切回建图补齐，这是保守策略（宁可多建图也不要漂移）。
 >
 > **触发后的共同行为**：切回建图后会刷新 `mapping_start_time_`（重置"建图→定位"的计时器），即每次切回建图后要重新累计 `auto_localize_mapping_duration_thr`（180s）才可能再切定位。
 
-#### 9.2.2 建图 → 定位
+#### 10.2.2 建图 → 定位
 
 当满足"已建图足够久、地图面积足够大、当前位置与目标点附近关键帧密度达标、子图已连通"等条件时，自动切回定位模式以避免在已熟悉区域继续新增关键帧造成冗余、降低内存占用。具体需**同时满足以下 11 个条件**（缺一不可，任一不满足则**不切换**，部分条件不满足还会**重置建图计时器**导致"一直切不回定位"）：
 
@@ -515,7 +517,7 @@ SLAM 有两种工作模式：
 | 10 | 无进行中的模式切换请求 | `pending_slam_mode_ == UNKNOWN` | 有 pending 请求则不切换 |
 | 11 | 长期地图管理总开关开启 | `explore_en_longterm_update_map`（**true**） | 关闭则全部自动切换不生效 |
 
-> **最容易卡住的点**：条件 6/7（关键帧密度）。若机器人长期停留在关键帧稀疏区域，这两条会反复**重置 `mapping_start_time_`**，使条件 2 的"建图已持续 180s"永远从头算起，导致一直停在 MAPPING 切不回定位。排查见 9.5.3「什么时候该留心」。
+> **最容易卡住的点**：条件 6/7（关键帧密度）。若机器人长期停留在关键帧稀疏区域，这两条会反复**重置 `mapping_start_time_`**，使条件 2 的"建图已持续 180s"永远从头算起，导致一直停在 MAPPING 切不回定位。排查见 10.5.3「什么时候该留心」。
 >
 > **`mapping_start_time_` 的额外重置点**：从回环/重定位退出进入其它状态时，若当前在建图，也会重置 `mapping_start_time_`——即"建图→定位"的计时从上一次回环/重定位结束时刻起算。
 
@@ -537,7 +539,7 @@ SLAM 有两种工作模式：
 | `search_loop_closure_thr` | 5.0 | 未闭环轨迹长度基础阈值。定位模式下轨迹超过 `阈值 × unlc_traj_high_scale` 触发"定位→建图"重置误差 |
 | `unlc_traj_high_scale` | 4.0 | 未闭环轨迹长度的高档倍数。轨迹达 `search_loop_closure_thr × 该倍数` 时切回建图 |
 
-### 9.3 模式稳定条件与稳态
+### 10.3 模式稳定条件与稳态
 
 SLAM 模式是否"稳定"（长时间停留在某一模式而不频繁切换），取决于环境熟悉度与所处阶段：
 
@@ -551,15 +553,15 @@ SLAM 模式是否"稳定"（长时间停留在某一模式而不频繁切换）�
 
 **探索期不稳定是正常的**：首次建图与探索新区域阶段，模式会在建图与定位间往返，这是覆盖新区域、又在已覆盖区域避免关键帧冗余的正常过程，无需干预；随着探索完成会自然收敛到定位稳态。
 
-**无法切到定位的情况**：若场地很小、地图面积始终达不到 `auto_localize_map_area_thr`，或机器人长期停留在关键帧稀疏区域，SLAM 会持续停留在建图模式而无法切换到定位——这属于场地/参数不匹配，可参照本节 9.5「使用」与 9.6「调参建议」下调面积阈值或调整关键帧密度参数。
+**无法切到定位的情况**：若场地很小、地图面积始终达不到 `auto_localize_map_area_thr`，或机器人长期停留在关键帧稀疏区域，SLAM 会持续停留在建图模式而无法切换到定位——这属于场地/参数不匹配，可参照本节 10.5「使用」与 10.6「调参建议」下调面积阈值或调整关键帧密度参数。
 
 **总开关关闭时**：`explore_en_longterm_update_map=false` 下不进行任何自动切换，模式固定停留在启动时的模式（由 SLAM 启动配置决定）。
 
-### 9.4 子图自动管理
+### 10.4 子图自动管理
 
 子图管理包含两类自动行为，均仅在**建图模式**下生效（优化误差删除除外）：
 
-#### 9.4.1 新建子图（解决累积误差）
+#### 10.4.1 新建子图（解决累积误差）
 
 当某段轨迹长时间未能闭环、累积误差有增大风险时，自动新建一个子图，相当于"在此处重置累积误差的起点"，防止误差继续放大。触发条件如下：
 
@@ -573,7 +575,7 @@ SLAM 模式是否"稳定"（长时间停留在某一模式而不频繁切换）�
 >
 > **冷却机制**：`trigger_new_map_cooldown` 防止短时间内反复新建子图（每次新建后 30s 内不再触发），避免子图碎片化。
 
-#### 9.4.2 删除子图（清理冗余 / 异常子图）
+#### 10.4.2 删除子图（清理冗余 / 异常子图）
 
 自动删除两类"低价值"子图，触发条件如下：
 
@@ -586,13 +588,13 @@ SLAM 模式是否"稳定"（长时间停留在某一模式而不频繁切换）�
 
 > **并发保护**：同一时刻只允许一个删除请求在飞（`delete_submap_inflight_ids_` 互斥），删除期间拒绝切到定位模式（避免竞争）。删除失败会 `break` 本轮，等下一帧 slamInfo 重试。
 >
-> **调参方向**：子图频繁被删 → 增大 `delete_cur_map_opt_warn_count_thr`/减小 `delete_submap_kf_thr`/`delete_submap_area_thr` 让删除更难；断连子图残留 → 调小 `submap_disconnect_delete_timeout`（或置 0 关闭强制删，让断连子图靠规模判定保留）。详见 9.6「调参建议」。
+> **调参方向**：子图频繁被删 → 增大 `delete_cur_map_opt_warn_count_thr`/减小 `delete_submap_kf_thr`/`delete_submap_area_thr` 让删除更难；断连子图残留 → 调小 `submap_disconnect_delete_timeout`（或置 0 关闭强制删，让断连子图靠规模判定保留）。详见 10.6「调参建议」。
 
-### 9.5 使用 SLAM 模式与子图管理功能
+### 10.5 使用 SLAM 模式与子图管理功能
 
 SLAM 模式切换和子图管理都是探索节点自动完成的，用户只需启动运行，然后用下面这些手段去"看"它在做什么。
 
-#### 9.5.1 启动
+#### 10.5.1 启动
 
 打开RDK X5终端，运行如下命令，包含环境感知，VSLAM，导航，自主探索建图，rviz可视化：
 
@@ -610,7 +612,7 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 > 启动时使用`en_search_loop_closure=False`参数启动，可关闭探索时自动回环功能，通过自主探索进行测试。
 
-#### 9.5.2 看 SLAM 当前在哪个模式 + 子图在怎么变化
+#### 10.5.2 看 SLAM 当前在哪个模式 + 子图在怎么变化
 
 SLAM 模式、子图连通、地图面积等信息发布在 `/tros_diagnostics` 上。订阅它就能一眼看全：
 
@@ -628,16 +630,16 @@ unlc traj: 0.00, slam: LOCALIZATION | 9 connected 6/6 | wm: 621, map known area:
 
 | 片段 | 含义 |
 |------|------|
-| `unlc traj: 0.00` | 未闭环轨迹长度，是累积误差的指标；数值持续增长到阈值会触发新建子图或切回建图（详见 9.4.1「新建子图」） |
+| `unlc traj: 0.00` | 未闭环轨迹长度，是累积误差的指标；数值持续增长到阈值会触发新建子图或切回建图（详见 10.4.1「新建子图」） |
 | **`slam: LOCALIZATION`** | **SLAM 当前模式**，`MAPPING`=建图（地图还在长、还在新增关键帧），`LOCALIZATION`=定位（已熟悉区域不再新增关键帧，降低内存占用） |
 | **`9 connected 6/6`** | **当前子图 id=9**，已全连通；`6/6` = 连通子图数 / 子图组件总数。若显示 `not connected` 说明子图尚未全部连通，会触发切回建图去补连通 |
 | `wm: 621` | 工作内存关键帧数，反映当前子图观测密度 |
 | `map known area: 159.86 ㎡, free 138.89 ㎡` | 已知总面积 / 可通行面积；面积达到 `auto_localize_map_area_thr` 是自动切定位的条件之一 |
 | `cpu/mem/bpu` | 板端系统资源占用，与 SLAM 本身无关，用于判断是否资源吃紧 |
 
-**模式会来回切换是正常的**（详见 9.3「模式稳定条件与稳态」）：探索新区域时 `slam:` 是 `MAPPING`，区域成熟后切 `LOCALIZATION`，遇到陌生角落又切回 `MAPPING` 补齐。**看到 `slam:` 在两个值之间来回变不要以为出错了。** 跑久之后（环境已充分探索），它通常会**长期停在 `LOCALIZATION`**，偶尔短暂切回 `MAPPING` 又恢复——这就是期望的稳态。
+**模式会来回切换是正常的**（详见 10.3「模式稳定条件与稳态」）：探索新区域时 `slam:` 是 `MAPPING`，区域成熟后切 `LOCALIZATION`，遇到陌生角落又切回 `MAPPING` 补齐。**看到 `slam:` 在两个值之间来回变不要以为出错了。** 跑久之后（环境已充分探索），它通常会**长期停在 `LOCALIZATION`**，偶尔短暂切回 `MAPPING` 又恢复——这就是期望的稳态。
 
-**子图会增减也是正常的**：探索跑久了你会看到 `9 connected 6/6` 这段里的子图 id 变化、`6/6` 的分母（总子图数）有时变小——那就是自动删除在清理规模过小或断连的冗余子图（详见 9.4.2「删除子图」），是正常维护行为。
+**子图会增减也是正常的**：探索跑久了你会看到 `9 connected 6/6` 这段里的子图 id 变化、`6/6` 的分母（总子图数）有时变小——那就是自动删除在清理规模过小或断连的冗余子图（详见 10.4.2「删除子图」），是正常维护行为。
 
 > 想看每个子图的逐项明细（map_id / 关键帧数 / 面积），可直接 `ros2 topic echo /rtabmap/info --field submap_info`，每条对应一个子图。
 
@@ -659,19 +661,19 @@ ros2 topic echo /explore/status
 | `set to mapping mode success @ts: ...` | 切换成功回执 |
 | `delete submap 3 for optimization error @ts: ...` | 删除子图（优化误差/规模/断连，map_id 在消息里） |
 
-> `@ts:` 后是时间戳（Unix 秒），便于和 `/tros_diagnostics` 的采样对齐。排查"为什么一直 MAPPING 切不回定位"或"为什么频繁切回建图"时，先 `ros2 topic echo /explore/status` 看最近几条原因，再对照本节 9.5.3 表格定位。
+> `@ts:` 后是时间戳（Unix 秒），便于和 `/tros_diagnostics` 的采样对齐。排查"为什么一直 MAPPING 切不回定位"或"为什么频繁切回建图"时，先 `ros2 topic echo /explore/status` 看最近几条原因，再对照本节 10.5.3 表格定位。
 
-#### 9.5.3 什么时候该留心
+#### 10.5.3 什么时候该留心
 
-绝大多数情况下用户什么都不用做。留心以下几种"现象对不上预期"的情况，可对照下文 9.6「调参建议」：
+绝大多数情况下用户什么都不用做。留心以下几种"现象对不上预期"的情况，可对照下文 10.6「调参建议」：
 
 | 现象 | 通常意味着 | 怎么办 |
 |------|-----------|--------|
 | 探索跑很久，`slam:` 一直是 `MAPPING`，从不切定位 | 自动切定位需建图→定位的 11 个判定条件**全部满足**，常见卡点：① 地图面积/建图时长没到阈值（`auto_localize_map_area_thr`/`auto_localize_mapping_duration_thr`）；② 当前位置或导航 goal 附近关键帧长期过稀（条件 6/7 不满足会**重置** `mapping_start_time_`，计时器永远归零，永远切不了）；③ `all_maps_connected_==false`（有子图断连）；④ 卡在 `RELOCATING`/`LOOPCLOSING`/有 pending 切换 | 先看 `/tros_diagnostics` 的 `all_maps_connected` 是否 true、`kf` 密度是否够；若是关键帧过稀导致计时器反复重置，下调 `explore_kf_check_num_thr` 或检查是否总在稀疏区域打转；场地太小可下调 `auto_localize_map_area_thr`/`auto_localize_mapping_duration_thr` |
 | **地图频繁被删除**（`delete submap` 日志密集，子图数忽减忽增） | 删除阈值偏松：① 当前子图因优化误差超 `slam_opt_error_thr_` 或 warn 计数达标被删（当前子图优化误差删除）；② 非当前子图规模过小（kf<`delete_submap_kf_thr_` 或 area<`delete_submap_area_thr_`）或断连超时被强制删（非当前子图规模/断连删除） | 让删除更难触发：增大 warn 计数阈值 `delete_cur_map_opt_warn_count_thr`（连续累计更久才删当前子图）；减小 `delete_submap_kf_thr`/`delete_submap_area_thr` 让小子图也保留；断连超时删得太狠可调大 `submap_disconnect_delete_timeout_`（或置 0 关闭强制删）。对照 `/tros_diagnostics` 的 `delete submap` 日志确认是哪类删除 |
-| **地图错误**（地图扭曲/漂移/与实际不符、定位错位） | 多为 SLAM 累积误差或回环失败：① 长期 MAPPING 未切定位，误差累积；② 当前子图优化误差比持续高（`Loop/Optimization_max_error_ratio` > warn 阈值）却没删/没新建子图；③ 回环检测失败（loop_closure_rejection_reason 非 success）；④ 子图断连导致跨子图位姿不一致 | 先看 `/tros_diagnostics` 的 `opt_error_ratio`、`loop_closure` 是否 success；若误差持续高，确认是否触发了当前子图删除或新建子图；若是累积误差，按下文 9.6「调参建议」下调 `auto_localize_mapping_duration_thr` 更早切定位；严重错误建议删库重建（`rtabmap.db`） |
+| **地图错误**（地图扭曲/漂移/与实际不符、定位错位） | 多为 SLAM 累积误差或回环失败：① 长期 MAPPING 未切定位，误差累积；② 当前子图优化误差比持续高（`Loop/Optimization_max_error_ratio` > warn 阈值）却没删/没新建子图；③ 回环检测失败（loop_closure_rejection_reason 非 success）；④ 子图断连导致跨子图位姿不一致 | 先看 `/tros_diagnostics` 的 `opt_error_ratio`、`loop_closure` 是否 success；若误差持续高，确认是否触发了当前子图删除或新建子图；若是累积误差，按下文 10.6「调参建议」下调 `auto_localize_mapping_duration_thr` 更早切定位；严重错误建议删库重建（`rtabmap.db`） |
 
-### 9.6 调参建议
+### 10.6 调参建议
 
 默认参数适用于多数中等规模室内场景。如遇以下情况可按方向调整：
 
@@ -686,7 +688,7 @@ ros2 topic echo /explore/status
 
 > 调参原则：一次只改一个参数，观察一轮探索效果后再决定是否继续调整。子图相关阈值改动对地图连贯性影响较大，建议小步调整。
 
-### 9.7 小结
+### 10.7 小结
 
 核心认知只需三点：
 
@@ -696,8 +698,8 @@ ros2 topic echo /explore/status
 
 ---
 
-## 10. 单模块运行命令
-### 10.1 运行时指定配置文件
+## 11. 单模块运行命令
+### 11.1 运行时指定配置文件
 
 **使用场景：**
 - 需要使用自定义配置文件（如修改了算法参数、标定参数）运行完整Solution。
@@ -715,7 +717,7 @@ YAML_CONFIG_FILE=/userdata/params.yaml \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
-### 10.2 只启动rviz
+### 11.2 只启动rviz
 
 **使用场景：**
 - 仅需要查看机器人状态、地图、轨迹等可视化信息，而不需要运行实际的感知或导航算法。
@@ -730,7 +732,7 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ros2 run rviz2 rviz2 -d `ros2 pkg prefix tros_vision_nav`/share/tros_vision_nav/params/nav.rviz
 ```
 
-### 10.3 只启动导航
+### 11.3 只启动导航
 
 **使用场景：**
 - 已有预先构建好的地图，仅需运行导航和避障功能，而不启动感知、VSLAM等其他模块。
@@ -748,7 +750,7 @@ localization=True log_level_nav=info LAUNCH_FILE="nav.launch.py" \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
-### 10.4 只启动自主探索
+### 11.4 只启动自主探索
 
 **使用场景：**
 - 需要在未知环境中自动探索建图，而无需启动完整的导航系统。
@@ -766,7 +768,7 @@ LAUNCH_PACKAGE=tros_frontier_exploration LAUNCH_FILE="explore.launch.py" \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
-### 10.5 只启动底盘和双目深度估计
+### 11.5 只启动底盘和双目深度估计
 
 **使用场景：**
 - 仅需要验证双目相机工作正常、深度估计功能可用，而不启动其他模块。
@@ -781,7 +783,7 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 stereonet_pub_web=True run_pcl2grid=False run_rviz=False run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False mipi_image_framerate=20.0 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
-### 10.6 只启动通用障碍物识别
+### 11.6 只启动通用障碍物识别
 
 **使用场景：**
 - 需要单独测试或调试通用障碍物识别算法的效果。
@@ -798,7 +800,7 @@ LAUNCH_FILE="pcl_obstacle_det.launch.py" use_composition=False \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
-### 10.7 只启动语义目标识别
+### 11.7 只启动语义目标识别
 
 **使用场景：**
 - 需要单独测试或调试语义目标识别算法（如识别特定物体类别）的效果。
