@@ -994,7 +994,7 @@ run_semantic_map=True \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
-语义地图在建图过程中实时更新，并**变化即存**——地图有增/删变化时最迟约 1 秒内自动落盘（无变化时不写盘），保存为 `/userdata/semantic_map.*`（与 rtabmap 建图数据目录同级），导航阶段自动加载。
+语义地图在建图过程中实时更新、变化即存，导航阶段自动加载。
 
 #### 查询使用
 
@@ -1005,14 +1005,11 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 - **命令行**：
 
 ```bash
-# 某个世界坐标（map 系，米）处是什么物体
-ros2 service call /semantic_map/get_label semantic_map/srv/GetLabel "{x: 1.0, y: 2.0}"
-
-# 某类物体占据的全部网格位置（返回栅格索引，×0.05 m 即世界坐标）
-ros2 service call /semantic_map/find_class semantic_map/srv/FindClass "{class_id: 56}"
-
 # 地图统计：总网格数、各类别网格数、地图边界、地图中拥有的物品类别名称（如 bottle）
 ros2 service call /semantic_map/get_map_stats semantic_map/srv/GetMapStats "{}"
+
+# 某个世界坐标（map 系，米）处是什么物体
+ros2 service call /semantic_map/get_label semantic_map/srv/GetLabel "{x: 1.0, y: 2.0}"
 
 # 按名称查该类全部物体实例：各自质心位置 + 面积（名称大小写不敏感；threshold 取值 0~1，0 或不填 = 默认阈值）
 ros2 service call /semantic_map/find_objects_by_name semantic_map/srv/FindObjectsByName "{class_name: 'bottle'}"

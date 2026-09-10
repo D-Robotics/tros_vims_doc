@@ -135,6 +135,115 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
 | obstacle cells | 地图中障碍物区域的栅格数 |
 | known area | 地图中free和obstacle区域的总面积 |
 
+### 4.4 修改语义地图支持的物品类别
+
+语义地图只对**白名单**内的物品类别建图与识别；白名单外类别的检测结果在摄入时被直接丢弃（不生成格子、不创建实例、`get_map_stats` 中也不会出现）。白名单由 `class_whitelist` 参数控制，该参数位于 **semantic_map 功能包自己的配置文件**中（不在 `tros_vision_nav` 的 `params.yaml` 里）：
+
+```bash
+# 打开 semantic_map 配置文件
+vi `ros2 pkg prefix semantic_map --share`/config/semantic_map.yaml
+# 找到 class_whitelist 一行，改成需要支持的类别 ID
+```
+
+默认值（仅这 8 类进图，实测识别效果较好）：
+
+```yaml
+class_whitelist: [24, 25, 28, 39, 41, 56, 62, 75]
+```
+
+| class_id | 英文名称 | 中文名称 |
+| :---: | :---: | :---: |
+| 24 | backpack | 背包 |
+| 25 | umbrella | 雨伞 |
+| 28 | suitcase | 行李箱 |
+| 39 | bottle | 瓶子 |
+| 41 | cup | 杯子 |
+| 56 | chair | 椅子 |
+| 62 | tv | 电视 |
+| 75 | vase | 花瓶 |
+
+**如何修改：**
+
+- **增 / 减类别**：在数组里增删对应的 `class_id`。例如要额外识别 `potted plant`（58）和 `cell phone`（67），改成 `[24, 25, 28, 39, 41, 56, 58, 62, 67, 75]`。
+- **识别全部类别**：设为空数组 `class_whitelist: []`，关闭过滤（COCO 全部 80 类都进图）。
+
+> **重要**：`class_id` 采用 **COCO-80 连续序号（YOLO 顺序，从 0 开始）**，不是 pycocotools 官方稀疏 ID。完整 80 类对照如下：
+
+```
+ 0 person          20 elephant        40 wine glass       60 dining table
+ 1 bicycle         21 bear            41 cup              61 toilet
+ 2 car             22 zebra           42 fork             62 tv
+ 3 motorcycle      23 giraffe         43 knife            63 laptop
+ 4 airplane        24 backpack        44 spoon            64 mouse
+ 5 bus             25 umbrella        45 bowl             65 remote
+ 6 train           26 handbag         46 banana           66 keyboard
+ 7 truck           27 tie             47 apple            67 cell phone
+ 8 boat            28 suitcase        48 sandwich         68 microwave
+ 9 traffic light   29 frisbee         49 orange           69 oven
+10 fire hydrant    30 skis            50 broccoli         70 toaster
+11 stop sign       31 snowboard       51 carrot           71 sink
+12 parking meter   32 sports ball     52 hot dog          72 refrigerator
+13 bench           33 kite            53 pizza            73 book
+14 bird            34 baseball bat    54 donut            74 clock
+15 cat             35 baseball glove  55 cake             75 vase
+16 dog             36 skateboard      56 chair            76 scissors
+17 horse           37 surfboard       57 couch            77 teddy bear
+18 sheep           38 tennis racket   58 potted plant     78 hair drier
+19 cow             39 bottle          59 bed              79 toothbrush
+```
+
+**生效方式**：修改配置文件后需**重启语义地图节点**（或整套导航栈）才能生效（`class_whitelist` 在启动时读取）。已经建入地图的旧类别不会因新白名单被自动清除——如需一张只含新类别的干净地图，建议删除旧语义地图文件（`/userdata/semantic_map/semantic_map.*`）后重新建图。
+
+**验证**：重新建图后，用 `get_map_stats` 查询（命令见 4.5），检查 `present_class_names` 是否只包含白名单里的类别。
+
+### 4.5 语义地图查询命令
+
+语义地图支持的全部服务命令，按从宏观到细节排序（整张地图 → 按类别 → 单个物体实例 → 单个坐标点）：
+
+**1. 整张地图统计**——总网格数、各类别网格数、地图边界、地图中拥有的物品类别名称（如 bottle）：
+
+```bash
+ros2 service call /semantic_map/get_map_stats semantic_map/srv/GetMapStats "{}"
+```
+
+**2. 全部物体实例**——地图中每个物体实例的编号、类别、质心位置和最近看到时间：
+
+```bash
+ros2 service call /semantic_map/get_all_objects semantic_map/srv/GetAllObjects "{}"
+```
+
+**3. 按名称查一类的所有实例**——每个实例的质心位置 + 占据面积（名称大小写不敏感；threshold 取值 0~1，0 或不填 = 默认阈值）：
+
+```bash
+ros2 service call /semantic_map/find_objects_by_name semantic_map/srv/FindObjectsByName "{class_name: 'bottle'}"
+```
+
+**4. 按类别 ID 查一类的全部网格**——返回栅格索引，×0.05 m 分辨率即世界坐标：
+
+```bash
+ros2 service call /semantic_map/find_class semantic_map/srv/FindClass "{class_id: 56}"
+```
+
+**5. 查单个物体实例**——按类别 + 实例编号查质心位置和最近看到时间（实例编号可从上面第 2 / 3 条命令的返回中获得）：
+
+```bash
+ros2 service call /semantic_map/get_object semantic_map/srv/GetObject "{class_id: 56, object_id: 0}"
+```
+
+**6. 查单个物体实例的面积**——该实例占据的连通网格数：
+
+```bash
+ros2 service call /semantic_map/get_object_area semantic_map/srv/GetObjectArea "{class_id: 56, object_id: 0}"
+```
+
+**7. 查单个坐标点**——某个世界坐标（map 系，米）处是什么物品类别：
+
+```bash
+ros2 service call /semantic_map/get_label semantic_map/srv/GetLabel "{x: 1.0, y: 2.0}"
+```
+
+> `class_id` 为 COCO-80 连续序号，完整对照表见 4.4。
+
 ## 5. 导航
 ### 5.1 导航成功
 在RVIZ的Navigation 2 Panel上，Feedback的状态显示reached，表示导航任务成功完成：
