@@ -994,7 +994,7 @@ run_semantic_map=True \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
-语义地图在建图过程中实时更新，并自动保存到与 rtabmap 建图数据相同的位置（`/userdata/rtabmap/`），导航阶段自动加载。
+语义地图在建图过程中实时更新，并**变化即存**——地图有增/删变化时最迟约 1 秒内自动落盘（无变化时不写盘），保存为 `/userdata/semantic_map.*`（与 rtabmap 建图数据目录同级），导航阶段自动加载。
 
 #### 查询使用
 
