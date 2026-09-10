@@ -994,7 +994,7 @@ run_semantic_map=True \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
-语义地图在建图过程中实时更新、变化即存，导航阶段自动加载。
+语义地图在建图过程中实时更新、变化即存。
 
 #### 查询使用
 
