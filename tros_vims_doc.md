@@ -971,7 +971,7 @@ flowchart LR
 
 <!-- TODO: 语义地图效果视频（Foxglove 中物体色块 + 实例 ID 渲染），录制后替换此占位 -->
 
-语义地图在 Foxglove 中以物体色块（按语义类别着色）和实例 ID 标记渲染，支持通过服务查询“某个位置是什么物体”、“某类物体分布在哪些位置”：
+语义地图在 Foxglove 中以物体色块（按语义类别着色）和实例 ID 标记渲染，支持通过服务查询“某个位置是什么物体”、“某类物体分布在哪些位置”、“某类物体有哪几个、各在什么位置、各占多大”：
 
 | 能力 | 说明 |
 | --- | --- |
@@ -981,6 +981,7 @@ flowchart LR
 | 类别检索 | `FindClass`：查询某类物体（如椅子）占据的全部网格位置 |
 | 地图统计 | `GetMapStats`：总网格数、各类别网格数、地图边界 |
 | 物体实例 | `GetObject` / `GetAllObjects` / `GetObjectArea`：按实例 ID 查询物体位置与面积 |
+| 名称查询 | `FindObjectsByName`：按物品名称（如 “bottle”）查询该类全部物体实例的质心位置与各自占据的格子数 |
 
 #### 运行示例
 
@@ -1026,9 +1027,13 @@ ros2 service call /semantic_map/find_class semantic_map/srv/FindClass "{class_id
 
 # 查询某个世界坐标处的语义标签
 ros2 service call /semantic_map/get_label semantic_map/srv/GetLabel "{x: 1.0, y: 2.0}"
+
+# 按名称查询该类全部物体实例：返回每个实例的质心（map 系，米）与占据格子数
+# 名称大小写不敏感；threshold 省略（或 ≤0）时自动使用配置的 query_threshold（默认 4.0）
+ros2 service call /semantic_map/find_objects_by_name semantic_map/srv/FindObjectsByName "{class_name: 'bottle'}"
 ```
 
-在 Foxglove 中也可以使用布局内置的 SemFindClass 面板发起 `FindClass` 查询（class_id / threshold 可编辑）。
+在 Foxglove 中也可以使用布局内置的 SemFindClass / SemFindObj 面板分别发起 `FindClass`（class_id / threshold 可编辑）与 `FindObjectsByName`（class_name / threshold 可编辑）查询。
 
 #### 资源占用
 
