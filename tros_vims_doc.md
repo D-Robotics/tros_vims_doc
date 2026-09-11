@@ -179,7 +179,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 1. 未知环境下自主探索建图 — 自动搜索地图边界frontier并导航前往，用户零干预下完成地图构建任务。
 2. 回环检测(loop closure)触发 — 自动触发回环检测，提升定位精度和地图质量。
 3. 重定位(relocating)策略 — 丢失定位时自动触发重定位策略，加速机器人恢复定位。
-4. SLAM模式切换 — mapping/localization模式自动切换，实现Lifelong SLAM。详见 [FAQ - SLAM 模式与子图管理说明](faq.html#10-slam-模式与子图管理说明)。
+4. SLAM模式切换 — mapping/localization模式自动切换，实现Lifelong SLAM。详见 [FAQ - SLAM 模式与子图管理说明](faq.html#9-slam-模式与子图管理说明)。
 5. 脱困(trapped recovery) — 自动识别机器人是否被困，被困时自动脱困。
 
 未知环境下探索建图：
@@ -982,6 +982,8 @@ flowchart LR
 | 62 | tv | 电视 |
 | 75 | vase | 花瓶 |
 
+如需增删支持的物品类别（或改为识别全部 80 类），见 [FAQ - 修改支持的物品类别](faq.html#111-修改支持的物品类别)。
+
 #### 启动
 
 建图 / 导航的启动命令（见 [7.3 VSLAM建图](#73-vslam建图) / [7.4 导航和避障](#74-导航和避障)）中加上 `run_semantic_map=True` 即启用，语义地图随定位开关自动进入建图或导航阶段：
@@ -1014,6 +1016,8 @@ ros2 service call /semantic_map/get_label semantic_map/srv/GetLabel "{x: 1.0, y:
 # 按名称查该类全部物体实例：各自质心位置 + 面积（名称大小写不敏感；threshold 取值 0~1，0 或不填 = 默认阈值）
 ros2 service call /semantic_map/find_objects_by_name semantic_map/srv/FindObjectsByName "{class_name: 'bottle'}"
 ```
+
+以上为常用三条；全部 7 个查询命令（含按类别 ID 查全部网格、查单个实例等）见 [FAQ - 语义地图查询命令](faq.html#112-查询命令)。
 
 ## 8. 适配其他底盘
 
