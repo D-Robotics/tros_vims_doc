@@ -66,9 +66,10 @@
     .content ul, .content ol { margin: 0 0 12px; padding-left: 28px; }
     .content li { margin: 4px 0; }
     .content code { background: #f6f8fa; padding: 2px 5px; border-radius: 3px; font-size: 85%; }
-    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; position: relative; }
+    .content .code-wrapper { position: relative; margin: 0 0 12px; }
+    .content pre {  background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0; }
     .content pre code { background: none; padding: 0; font-size: 100%; }
-    .content pre .copy-btn {
+    .content .code-wrapper .copy-btn {
       position: absolute;
       top: 6px;
       right: 6px;
@@ -84,9 +85,9 @@
       transition: opacity 0.15s;
       z-index: 1;
     }
-    .content pre:hover .copy-btn { opacity: 1; }
-    .content pre .copy-btn:hover { background: #d1d5da; }
-    .content pre .copy-btn.copied { background: #28a745; color: #fff; border-color: #28a745; }
+    .content .code-wrapper:hover .copy-btn { opacity: 1; }
+    .content .code-wrapper .copy-btn:hover { background: #d1d5da; }
+    .content .code-wrapper .copy-btn.copied { background: #28a745; color: #fff; border-color: #28a745; }
     .content table { border-collapse: collapse; width: 100%; margin: 0 0 12px; }
     .content th, .content td { border: 1px solid #dfe2e5; padding: 8px 12px; text-align: left; }
     .content th { background: #f6f8fa; font-weight: 600; }
@@ -176,6 +177,10 @@
     document.querySelectorAll('.content pre').forEach(function(pre) {
       if (pre.classList.contains('mermaid') || !pre.querySelector('code')) return;
       var btn = document.createElement('button');
+      var wrapper = document.createElement('div');
+      wrapper.className = 'code-wrapper';
+      pre.parentElement.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
       btn.className = 'copy-btn';
       btn.textContent = '复制';
       btn.addEventListener('click', function() {
@@ -189,7 +194,7 @@
           }, 2000);
         });
       });
-      pre.appendChild(btn);
+      wrapper.appendChild(btn);
     });
     // click picture to enlarge it（lightbox）
     var overlay = document.createElement('div');
