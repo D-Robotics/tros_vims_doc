@@ -963,6 +963,62 @@ flowchart LR
     nav -->|costmap| follow
 ```
 
+### 7.7 语义地图
+
+<img src="images/vims_semantic_map.gif" width="900">
+
+语义地图在 Foxglove 中以物体色块（按语义类别着色）和实例 ID 标记渲染，支持按物品名称查询物体。
+
+目前实测识别效果较好、纳入语义地图的物品类别如下（`class_id` 为连续 COCO-80 序号）：
+
+| class_id | 英文名称 | 中文名称 |
+| :---: | :---: | :---: |
+| 24 | backpack | 背包 |
+| 25 | umbrella | 雨伞 |
+| 28 | suitcase | 行李箱 |
+| 39 | bottle | 瓶子 |
+| 41 | cup | 杯子 |
+| 56 | chair | 椅子 |
+| 62 | tv | 电视 |
+| 75 | vase | 花瓶 |
+
+如需增删支持的物品类别（或改为识别全部 80 类），见 [FAQ - 修改支持的物品类别](faq.html#111-修改支持的物品类别)。
+
+#### 启动
+
+建图 / 导航的启动命令（见 [7.3 VSLAM建图](#73-vslam建图) / [7.4 导航和避障](#74-导航和避障)）中加上 `run_semantic_map=True` 即启用，语义地图随定位开关自动进入建图或导航阶段：
+
+```bash
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/install/local_setup.bash
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+run_semantic_map=True \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+```
+
+语义地图在建图过程中实时更新、变化即存。
+
+#### 查询使用
+
+- **Foxglove 面板**：布局面板 **SemFindObj** 中填入物品名称（如 `{"class_name": "bottle"}`），点击 **Call service**，Response 即列出该类每一个实例——在哪里（质心坐标，map 系，米）、占多大（面积，平方米）。置信度阈值 `threshold` 取值 0~1，不填即用默认阈值（实际生效值见 Response 的 `threshold_used`）：
+
+<img src="images/vims_semantic_map_findobj_panel.png" width="400">
+
+- **命令行**：
+
+```bash
+# 地图统计：总网格数、各类别网格数、地图边界、地图中拥有的物品类别名称（如 bottle）
+ros2 service call /semantic_map/get_map_stats semantic_map/srv/GetMapStats "{}"
+
+# 某个世界坐标（map 系，米）处是什么物体
+ros2 service call /semantic_map/get_label semantic_map/srv/GetLabel "{x: 1.0, y: 2.0}"
+
+# 按名称查该类全部物体实例：各自质心位置 + 面积（名称大小写不敏感；threshold 取值 0~1，0 或不填 = 默认阈值）
+ros2 service call /semantic_map/find_objects_by_name semantic_map/srv/FindObjectsByName "{class_name: 'bottle'}"
+```
+
+以上为常用三条；全部 7 个查询命令（含按类别 ID 查全部网格、查单个实例等）见 [FAQ - 语义地图查询命令](faq.html#112-查询命令)。
+
 ## 8. 适配其他底盘
 
 本章节介绍将基于VIO算法的移动Solution套件迁移到其他底盘的方法（如自研底盘myrobot）。
