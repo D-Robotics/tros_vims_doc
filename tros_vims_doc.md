@@ -286,7 +286,7 @@ RDK X5已安装RDK OS系统镜像，已安装TROS并升级到最新版本。
 | V0.0.6 | 2.5.2 |
 | V0.0.5 | 2.5.2 |
 
-移动Solution套件版本发布记录请查看[版本发布记录](#9-版本发布记录)章节。查看版本方法参考[软件配置](#4-软件配置)章节。
+移动Solution套件版本发布记录请查看[版本发布记录](#9-版本发布记录)章节。查看版本方法参考[查看软件版本号](#47-查看软件版本号)章节。
 
 查看当前TROS版本命令：`apt show tros-humble`，详细参考[查看当前TROS版本](https://developer.d-robotics.cc/tros_doc/Quick_start/install_tros#%E6%9F%A5%E7%9C%8B%E5%BD%93%E5%89%8Dtrosb%E7%89%88%E6%9C%AC)。
 
