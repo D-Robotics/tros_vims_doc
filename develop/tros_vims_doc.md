@@ -903,7 +903,7 @@ ros2 launch tros_person_following tros_person_following.launch.py enable_perc_re
 停止后机器人取消当前导航目标、停止旋转搜索，原地不动。
 
 > **提示**
-除了使用 Foxglove ，也可以使用命令行开启跟随： ros2 service call /enable_follow std_srvs/srv/SetBool "{data: true}"
+除了使用 Foxglove，也可以使用命令行开启跟随：`ros2 service call /enable_follow std_srvs/srv/SetBool "{data: true}"`
 >
 
 #### 跟随状态机
