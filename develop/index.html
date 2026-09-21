@@ -991,7 +991,7 @@ RVIZ上，将坐标系设置为base_footprint，勾选PclObstacle，移动底盘
     <p><strong>方法一（动态生效）</strong>：可直接在终端中执行上述 <code class="language-plaintext highlighter-rouge">run tf2_ros static_transform_publisher</code> 命令，标定参数将立即生效。该方式适用于临时调试，重启后失效。</p>
   </li>
   <li>
-    <p><strong>方法二（永久生效）</strong>：修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的–roll和–pitch设置旋转矩阵，使用Camera Height（–z）设置robot_to_camera_z：</p>
+    <p><strong>方法二（永久生效）</strong>：修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的<code class="language-plaintext highlighter-rouge">--roll</code>和<code class="language-plaintext highlighter-rouge">--pitch</code>设置旋转矩阵，使用Camera Height（<code class="language-plaintext highlighter-rouge">--z</code>）设置robot_to_camera_z：</p>
   </li>
 </ul>
 

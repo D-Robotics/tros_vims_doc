@@ -579,7 +579,7 @@ RDK终端将会打印如下标定结果信息：
 
 - **方法一（动态生效）**：可直接在终端中执行上述 `run tf2_ros static_transform_publisher` 命令，标定参数将立即生效。该方式适用于临时调试，重启后失效。
   
-- **方法二（永久生效）**：修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的--roll和--pitch设置旋转矩阵，使用Camera Height（--z）设置robot_to_camera_z：
+- **方法二（永久生效）**：修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的`--roll`和`--pitch`设置旋转矩阵，使用Camera Height（`--z`）设置robot_to_camera_z：
 
 ```bash
 # 打开配置文件
