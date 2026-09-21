@@ -622,6 +622,7 @@ RVIZ上，将坐标系设置为base_link/base_footprint，勾选PclObstacle。�
 
 ```bash
 # 打开配置文件
+source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 # 使用标定结果设置 rtabmap_Grid_MaxObstacleHeight max_obstacle_height
@@ -1004,6 +1005,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 打开配置文件
 ```bash
+source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash 
 vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 ```
