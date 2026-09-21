@@ -1194,7 +1194,7 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
     <tr>
       <td><strong>地图错误</strong>（地图扭曲/漂移/与实际不符、定位错位）</td>
       <td>多为 SLAM 累积误差或回环失败：① 长期 MAPPING 未切定位，误差累积；② 当前子图优化误差比持续高（<code class="language-plaintext highlighter-rouge">Loop/Optimization_max_error_ratio</code> &gt; warn 阈值）却没删/没新建子图；③ 回环检测失败（loop_closure_rejection_reason 非 success）；④ 子图断连导致跨子图位姿不一致</td>
-      <td>先看 <code class="language-plaintext highlighter-rouge">/tros_diagnostics</code> 的 <code class="language-plaintext highlighter-rouge">opt_error_ratio</code>、<code class="language-plaintext highlighter-rouge">loop_closure</code> 是否 success；若误差持续高，确认是否触发了当前子图删除或新建子图；若是累积误差，按下文 9.6「调参建议」下调 <code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code> 更早切定位；严重错误建议删库重建（<code class="language-plaintext highlighter-rouge">rtabmap.db</code>）</td>
+      <td>先看 <code class="language-plaintext highlighter-rouge">/tros_diagnostics</code> 的 <code class="language-plaintext highlighter-rouge">opt_error_ratio</code>、<code class="language-plaintext highlighter-rouge">loop_closure</code> 是否 success；若误差持续高，确认是否触发了当前子图删除或新建子图；若是累积误差，按下文 9.6「调参建议」下调 <code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code> 更早切定位；严重错误建议删库重建（<code class="language-plaintext highlighter-rouge">office.db</code>）</td>
     </tr>
   </tbody>
 </table>
