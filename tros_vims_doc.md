@@ -1056,21 +1056,21 @@ ros2 run myrobot_base myrobot_base
 
 ### 9.1 环境准备
 
-工具为纯Python包，无需ROS编译，环境要求 python3 + rclpy + PyYAML + ROS 2 CLI（`ros2`）。在机器人端使用：
+工具已随移动Solution一起编译安装（按[软件配置](#4-软件配置)章节安装后即包含），无需单独获取和编译。环境要求 python3 + rclpy + PyYAML + ROS 2 CLI（`ros2`）。在机器人端使用：
 
 ```bash
 source /opt/ros/humble/setup.bash
 source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash
-git clone https://github.com/D-Robotics/ViMS_offline.git /userdata/ViMS_offline  # 已克隆过可跳过
-cd /userdata/ViMS_offline
 ```
+
+source 环境后即可使用安装好的`vims_offline`命令（与`ros2 run vims_offline vims_offline ...`等价）。
 
 > 标定是前置条件：录制依赖机器人已完成的标定（相机内参/外参，`camera_link→imu_link` 等硬件绑定TF来自标定结果）。未标定或标定过期的机器人先参考[外参标定](#6-外参标定)章节完成标定。
 
 ### 9.2 子命令与参数
 
-所有功能通过 `python3 -m vims_offline <子命令>` 调用，共3个子命令：
+所有功能通过 `vims_offline <子命令>` 调用，共3个子命令：
 
 |子命令|功能|
 | :---: | --- |
@@ -1114,7 +1114,7 @@ cd /userdata/ViMS_offline
 子码流（VIO用）以jpeg编码，主码流与IMU照录原始数据；子流体积大幅缩小，回放时VIO内部软解码：
 
 ```bash
-python3 -m vims_offline record -o /userdata/recordings -n my_session
+vims_offline record -o /userdata/recordings -n my_session
 # Ctrl-C 停止；结束时打印会话目录，如 /userdata/recordings/my_session_20260922_093000
 ```
 
@@ -1164,15 +1164,15 @@ ros2 tros_bag interval /userdata/recordings/my_session_<时间戳>/bag
 
 ```bash
 # 按 profile 回放（depth / vio / rtabmap / full）
-python3 -m vims_offline replay /userdata/recordings/my_session_<时间戳> \
+vims_offline replay /userdata/recordings/my_session_<时间戳> \
     --profile vio --run-dir /userdata/replay_runs
 
 # 半速回放 rtabmap 建图
-python3 -m vims_offline replay /userdata/recordings/my_session_<时间戳> \
+vims_offline replay /userdata/recordings/my_session_<时间戳> \
     --profile rtabmap --rate 0.5 --run-dir /userdata/replay_runs
 
 # 查看可用回放 profile
-python3 -m vims_offline list-profiles
+vims_offline list-profiles
 ```
 
 回放能力profile（`config/replay_modules.yaml`，可直接编辑或新增）：
@@ -1191,7 +1191,7 @@ python3 -m vims_offline list-profiles
 **单参数调试覆盖（`--launch-arg`）**：不改任何params文件、临时覆盖个别参数的最高优先级通道，写成`--launch-arg NAME:=VALUE`（或`NAME=VALUE`），可重复传多个。优先级：`--launch-arg` > profile/录制开关 > params.yaml。例如临时开VIO详细日志：
 
 ```bash
-python3 -m vims_offline replay /userdata/recordings/my_session_<时间戳> \
+vims_offline replay /userdata/recordings/my_session_<时间戳> \
     --profile vio --launch-arg vio_log_level:=info
 ```
 
@@ -1215,7 +1215,7 @@ python3 -m vims_offline replay /userdata/recordings/my_session_<时间戳> \
 
 已知限制：rtabmap/full回放开头约3秒可能出现TF extrapolation告警（VIO第一条odom→base_link TF落后于bag首帧），属瞬态，不影响建图结果。
 
-所有可调项都在`config/`下（无需改代码）：
+所有可调项都是配置文件，随包安装在`$(ros2 pkg prefix vims_offline --share)/config/`下（无需改代码，改配置即可）：
 
 - `record_topics_jpeg.yaml`——录制topic集合（子码流jpeg编码）
 - `record_modules.yaml`——录制自动拉起系统的模块开关
