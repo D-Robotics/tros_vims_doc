@@ -1061,8 +1061,9 @@ ros2 run myrobot_base myrobot_base
 ```bash
 source /opt/ros/humble/setup.bash
 source /opt/tros/humble/local_setup.bash
-source /path/to/solution/install/local_setup.bash
-cd /path/to/ViMS_offline
+source /userdata/vims/install/local_setup.bash
+git clone https://github.com/D-Robotics/ViMS_offline.git /userdata/ViMS_offline  # 已克隆过可跳过
+cd /userdata/ViMS_offline
 ```
 
 > 标定是前置条件：录制依赖机器人已完成的标定（相机内参/外参，`camera_link→imu_link` 等硬件绑定TF来自标定结果）。未标定或标定过期的机器人先参考[外参标定](#6-外参标定)章节完成标定。
@@ -1082,8 +1083,8 @@ cd /path/to/ViMS_offline
 |参数|默认值|说明|
 | :---: | :---: | --- |
 |`-o, --output-dir`|当前目录|录制会话的根目录|
-|`-n, --session-name`|时间戳命名|会话名（会话目录名）|
-|`--topics-config FILE`|`config/record_topics_jpeg.yaml`|录制topic集合。指向`config/record_topics.yaml`录raw nv12原始子码流（无损但体积大）|
+|`-n, --session-name`|`session_<时间戳>`|会话名。会话目录名始终拼上录制时间戳（录制开始时刻，格式`YYYYmmdd_HHMMSS`）：指定`-n my_session` → `my_session_<时间戳>`；不指定 → `session_<时间戳>`。同秒重录同名会因目录已存在报错|
+|`--topics-config FILE`|`config/record_topics_jpeg.yaml`|录制topic集合（子码流jpeg编码）|
 |`--record-switches FILE`|`config/record_modules.yaml`|录制时自动拉起系统的模块开关|
 |`--tf-config FILE`|`config/static_tf.yaml`|要捕获的静态TF列表|
 |`--max-cache-size MB`|100|录制缓存大小。出现"Message dropped"告警（缓存满丢消息）时调大，500已验证无丢帧，代价是内存|
@@ -1110,19 +1111,14 @@ cd /path/to/ViMS_offline
 
 ### 9.3 数据录制
 
-**JPEG模式（默认）**：子码流（VIO用）以jpeg编码，主码流与IMU照录原始数据；子流体积大幅缩小，回放时VIO内部软解码：
+子码流（VIO用）以jpeg编码，主码流与IMU照录原始数据；子流体积大幅缩小，回放时VIO内部软解码：
 
 ```bash
-python3 -m vims_offline record -o /path/to/save/recordings -n my_session
-# Ctrl-C 停止；结束时打印会话目录
+python3 -m vims_offline record -o /userdata/recordings -n my_session
+# Ctrl-C 停止；结束时打印会话目录，如 /userdata/recordings/my_session_20260922_093000
 ```
 
-**raw模式**：子码流也以原始nv12录制（不编码），体积大，用于需要无损图像的分析：
-
-```bash
-python3 -m vims_offline record -o /path/to/save/recordings -n my_session \
-    --topics-config config/record_topics.yaml
-```
+指定`-n my_session`时会话目录为`my_session_<时间戳>`；不指定`-n`则为`session_<时间戳>`（时间戳为录制开始时刻，格式`YYYYmmdd_HHMMSS`）。后文回放/质量检查示例中的`my_session_<时间戳>`请替换为录制结束时打印的实际会话目录名。
 
 > 注意：录制中一旦出现"Message dropped"告警，说明缓存已满、正在丢消息！立即停止录制，加`--max-cache-size 500`重录。丢过帧的bag回放时会有时间空洞，可用[9.4](#94-录制数据质量检查)的质量检查确认。
 
@@ -1149,7 +1145,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 录制完成后用`tros_bag interval`统计各topic的消息间隔（帧率是否稳定、有没有丢帧）：
 
 ```bash
-ros2 tros_bag interval /path/to/save/recordings/my_session/bag
+ros2 tros_bag interval /userdata/recordings/my_session_<时间戳>/bag
 ```
 
 输出每个topic的消息数与相邻消息间隔的min/mean/max，并在bag目录旁生成`bag_interval_plots/interval_scatter.png`散点图。
@@ -1168,12 +1164,12 @@ ros2 tros_bag interval /path/to/save/recordings/my_session/bag
 
 ```bash
 # 按 profile 回放（depth / vio / rtabmap / full）
-python3 -m vims_offline replay /path/to/save/recordings/my_session \
-    --profile vio --run-dir /path/to/save/replay_runs
+python3 -m vims_offline replay /userdata/recordings/my_session_<时间戳> \
+    --profile vio --run-dir /userdata/replay_runs
 
 # 半速回放 rtabmap 建图
-python3 -m vims_offline replay /path/to/save/recordings/my_session \
-    --profile rtabmap --rate 0.5 --run-dir /path/to/save/replay_runs
+python3 -m vims_offline replay /userdata/recordings/my_session_<时间戳> \
+    --profile rtabmap --rate 0.5 --run-dir /userdata/replay_runs
 
 # 查看可用回放 profile
 python3 -m vims_offline list-profiles
@@ -1195,20 +1191,11 @@ python3 -m vims_offline list-profiles
 **单参数调试覆盖（`--launch-arg`）**：不改任何params文件、临时覆盖个别参数的最高优先级通道，写成`--launch-arg NAME:=VALUE`（或`NAME=VALUE`），可重复传多个。优先级：`--launch-arg` > profile/录制开关 > params.yaml。例如临时开VIO详细日志：
 
 ```bash
-python3 -m vims_offline replay /path/to/save/recordings/my_session \
+python3 -m vims_offline replay /userdata/recordings/my_session_<时间戳> \
     --profile vio --launch-arg vio_log_level:=info
 ```
 
-要点：NAME用launch扁平参数名（如`vio_log_level`、`rtabmap_args`），不是YAML点路径（带点的键会被直接报错拒绝）；NAME必须是run_launch.sh认识的参数名，否则启动时会提示该覆盖无效果；`YAML_CONFIG_FILE`等受管变量无法覆盖；空值无法表达。
-
-**nv12原始流回灌**：回放默认强制`vio.sub_from_compressed_image=true`（JPEG模式录制的bag只有jpeg编码的子码流，VIO需内部软解码）。若录制用的是raw模式，bag里是原始双目topic，必须把该开关压回false，VIO才会订阅原始流：
-
-```bash
-python3 -m vims_offline replay /path/to/save/recordings/my_session \
-    --profile vio --launch-arg vio_sub_from_compressed_image:=False
-```
-
-注意布尔值用大写`True`/`False`（与params.yaml拼写一致，launch链按此大小写敏感匹配）。
+要点：NAME用launch扁平参数名（如`vio_log_level`、`rtabmap_args`），不是YAML点路径（带点的键会被直接报错拒绝）；NAME必须是run_launch.sh认识的参数名，否则启动时会提示该覆盖无效果；`YAML_CONFIG_FILE`等受管变量无法覆盖；空值无法表达；布尔值用大写`True`/`False`（与params.yaml拼写一致，launch链按此大小写敏感匹配）。
 
 ### 9.6 回放如何保证单一数据源与统一时基
 
@@ -1219,7 +1206,7 @@ python3 -m vims_offline replay /path/to/save/recordings/my_session \
 - `switch.run_static_tf=false` + ViMS_offline自己的static_transform_publisher进程回放录制的TF——值与tf_static.yaml一致
 - `switch.run_bag_player=true`——rosbag2 Player以组件形式加载进tros_container，与VIO同进程（intra-process零拷贝）
 - `switch.use_sim_time=true` + `vio.use_sim_time=true`——Player的50Hz `/clock`（bag时间）驱动整个系统。墙钟/bag时间混用会让VIO的陈旧IMU守卫静默丢弃所有bag消息、rtabmap的TF buffer拒绝bag时间戳的查询
-- `vio.sub_from_compressed_image=true`——JPEG bag没有原始双目topic，VIO内部解码jpeg流（raw模式录制的bag需用`--launch-arg`覆盖，见[9.5](#95-数据回放)）
+- `vio.sub_from_compressed_image=true`——JPEG bag没有原始双目topic，VIO内部解码jpeg流
 - `rtabmap.rtabmap_args=--delete_db_on_start`——每次回放只从bag建图，绝不续建机器人上的live库
 
 另外，`run_slam=true`时bag Player不随容器组一起加载：bringup先等`tros_tf_listener`（map→odom TF，rtabmap初始化即发布），其退出后再加载Player（20秒超时防死锁兜底）。没有这道门控，bag会在组件链还在加载时开播，rtabmap因TF查询早于自身buffer而拒绝每次更新。
@@ -1230,7 +1217,7 @@ python3 -m vims_offline replay /path/to/save/recordings/my_session \
 
 所有可调项都在`config/`下（无需改代码）：
 
-- `record_topics.yaml` / `record_topics_jpeg.yaml`——录制topic集合
+- `record_topics_jpeg.yaml`——录制topic集合（子码流jpeg编码）
 - `record_modules.yaml`——录制自动拉起系统的模块开关
 - `static_tf.yaml`——要捕获的静态TF列表
 - `replay_modules.yaml`——回放模块profile
