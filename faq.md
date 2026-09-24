@@ -76,7 +76,7 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 
 
 ## 3. 双目相机和深度估计
-双目相机相关问题参考[双目MIPI图像采集](https://developer.d-robotics.cc/tros_doc/quick_demo/demo_sensor#%E5%8F%8C%E7%9B%AEmipi%E5%9B%BE%E5%83%8F%E9%87%87%E9%9B%86)。
+双目相机相关问题参考[双目MIPI图像采集](https://developer.d-robotics.cc/tros_doc/quick_demo/demo_sensor#%E5%8F%8C%E7%9B%AE-mipi-%E5%9B%BE%E5%83%8F%E9%87%87%E9%9B%86)。
 深度估计相关问题参考[双目深度算法](https://developer.d-robotics.cc/tros_doc/boxs/spatial/hobot_stereonet)。
 
 ## 4. 地图
