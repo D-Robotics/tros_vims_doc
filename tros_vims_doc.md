@@ -878,7 +878,7 @@ ros2 launch tros_person_following tros_person_following.launch.py enable_perc_re
 
 | 参数 | 默认 | 说明 |
 | :---: | :---: | --- |
-| `follow_distance_min` / `follow_distance_max` | 1.5 / 2.0 | 跟随距离带（m）：停车 / withhold / 跟随 |
+| `follow_distance_min` / `follow_distance_max` | 1.8 / 2.0 | 跟随距离带（m）：停车 / withhold / 跟随 |
 | `target_filter_confidence_thr` / `select_min_confidence` | 0.5 / 0.7 | 目标过滤 / 选择的置信度门槛 |
 
 ##### （3）启停跟随请求
