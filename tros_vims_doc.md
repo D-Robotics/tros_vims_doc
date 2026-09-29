@@ -870,7 +870,8 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```bash
 source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash
-ros2 launch tros_person_following tros_person_following.launch.py enable_perc_render:=True
+ros2 launch tros_person_following tros_person_following.launch.py enable_perc_render:=True follow_distance_min:=1.5 follow_distance_max:=2.0
+
 ```
 
 常用启动参数（可用 `ros2 launch ... <参数>:=<值>` 覆盖）：
