@@ -117,7 +117,7 @@ currently:      speed 0.14      turn 0.28
 平移速度为0.14m/s
 经过标记地面关键点:p1 -> p2 -> p3 -> p4 进行数据采集(可以沿着绿色线的路径行走)
 途径每个关键点需要原地左右旋转30 °采集5s再继续运动
-打开WEB可视化界面(web端打开:http://ip:8000, 其中ip:为RKD-X5的ip), 确保机器人运动的过程中所有Apriltag的角点都在视野内。
+打开WEB可视化界面(web端打开:http://ip:8000, 其中ip:为RDK-X5的ip), 确保机器人运动的过程中所有Apriltag的角点都在视野内。
 
 移动完成后，停止录包。
 
@@ -150,7 +150,7 @@ ros2 launch camera_extrinsic_calibration camera_extrinsic_calibration.launch.py 
 ```
 
 ### 更新标定参数
-修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的--x --y --z --roll --pitch --yaw分别进行设置：
+修改配置文件中calibration的参数，使用log中run tf2_ros static_transform_publisher提示的`--x --y --z --roll --pitch --yaw`分别进行设置：
 
 ```bash
 # 打开配置文件

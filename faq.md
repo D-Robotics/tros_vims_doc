@@ -76,7 +76,7 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 
 
 ## 3. 双目相机和深度估计
-双目相机相关问题参考[双目MIPI图像采集](https://developer.d-robotics.cc/tros_doc/quick_demo/demo_sensor#%E5%8F%8C%E7%9B%AEmipi%E5%9B%BE%E5%83%8F%E9%87%87%E9%9B%86)。
+双目相机相关问题参考[双目MIPI图像采集](https://developer.d-robotics.cc/tros_doc/quick_demo/demo_sensor#%E5%8F%8C%E7%9B%AE-mipi-%E5%9B%BE%E5%83%8F%E9%87%87%E9%9B%86)。
 深度估计相关问题参考[双目深度算法](https://developer.d-robotics.cc/tros_doc/boxs/spatial/hobot_stereonet)。
 
 ## 4. 地图
@@ -93,7 +93,7 @@ SLAM 2D地图：白色区域表示无障碍物，黑色区域表示障碍物区�
 
 SLAM 3D地图和2D地图之间的关系：3D地图通过卡高度阈值去除地面，Z轴（地面高度方向，对应右手坐标系的Z轴）投影到地面后得到2D地图，用于下游的导航和避障任务。
 
-导航代价地图和SLAM 2D地图之间的关系：SLAM 2D地图作为导航代价地图中的静态障碍物层，同时叠加障碍物识别算法提取的低矮障碍物，最终的到用于导航和避障的导航代价地图。
+导航代价地图和SLAM 2D地图之间的关系：SLAM 2D地图作为导航代价地图中的静态障碍物层，同时叠加障碍物识别算法提取的低矮障碍物，最终得到用于导航和避障的导航代价地图。
 
 | SLAM 3D地图 | SLAM 2D地图 | 导航代价地图 |
 | :---: | :---: | :---: |
@@ -560,7 +560,7 @@ ros2 topic echo /explore/status
 |------|-----------|--------|
 | 探索跑很久，`slam:` 一直是 `MAPPING`，从不切定位 | 自动切定位需建图→定位的 11 个判定条件**全部满足**，常见卡点：① 地图面积/建图时长没到阈值（`auto_localize_map_area_thr`/`auto_localize_mapping_duration_thr`）；② 当前位置或导航 goal 附近关键帧长期过稀（条件 6/7 不满足会**重置** `mapping_start_time_`，计时器永远归零，永远切不了）；③ `all_maps_connected_==false`（有子图断连）；④ 卡在 `RELOCATING`/`LOOPCLOSING`/有 pending 切换 | 先看 `/tros_diagnostics` 的 `all_maps_connected` 是否 true、`kf` 密度是否够；若是关键帧过稀导致计时器反复重置，下调 `explore_kf_check_num_thr` 或检查是否总在稀疏区域打转；场地太小可下调 `auto_localize_map_area_thr`/`auto_localize_mapping_duration_thr` |
 | **地图频繁被删除**（`delete submap` 日志密集，子图数忽减忽增） | 删除阈值偏松：① 当前子图因优化误差超 `slam_opt_error_thr_` 或 warn 计数达标被删（当前子图优化误差删除）；② 非当前子图规模过小（kf<`delete_submap_kf_thr_` 或 area<`delete_submap_area_thr_`）或断连超时被强制删（非当前子图规模/断连删除） | 让删除更难触发：增大 warn 计数阈值 `delete_cur_map_opt_warn_count_thr`（连续累计更久才删当前子图）；减小 `delete_submap_kf_thr`/`delete_submap_area_thr` 让小子图也保留；断连超时删得太狠可调大 `submap_disconnect_delete_timeout_`（或置 0 关闭强制删）。对照 `/tros_diagnostics` 的 `delete submap` 日志确认是哪类删除 |
-| **地图错误**（地图扭曲/漂移/与实际不符、定位错位） | 多为 SLAM 累积误差或回环失败：① 长期 MAPPING 未切定位，误差累积；② 当前子图优化误差比持续高（`Loop/Optimization_max_error_ratio` > warn 阈值）却没删/没新建子图；③ 回环检测失败（loop_closure_rejection_reason 非 success）；④ 子图断连导致跨子图位姿不一致 | 先看 `/tros_diagnostics` 的 `opt_error_ratio`、`loop_closure` 是否 success；若误差持续高，确认是否触发了当前子图删除或新建子图；若是累积误差，按下文 9.6「调参建议」下调 `auto_localize_mapping_duration_thr` 更早切定位；严重错误建议删库重建（`rtabmap.db`） |
+| **地图错误**（地图扭曲/漂移/与实际不符、定位错位） | 多为 SLAM 累积误差或回环失败：① 长期 MAPPING 未切定位，误差累积；② 当前子图优化误差比持续高（`Loop/Optimization_max_error_ratio` > warn 阈值）却没删/没新建子图；③ 回环检测失败（loop_closure_rejection_reason 非 success）；④ 子图断连导致跨子图位姿不一致 | 先看 `/tros_diagnostics` 的 `opt_error_ratio`、`loop_closure` 是否 success；若误差持续高，确认是否触发了当前子图删除或新建子图；若是累积误差，按下文 9.6「调参建议」下调 `auto_localize_mapping_duration_thr` 更早切定位；严重错误建议删库重建（`office.db`） |
 
 ### 9.6 调参建议
 
