@@ -1385,7 +1385,8 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash
-ros2 launch tros_person_following tros_person_following.launch.py enable_perc_render:<span class="o">=</span>True
+ros2 launch tros_person_following tros_person_following.launch.py enable_perc_render:<span class="o">=</span>True follow_distance_min:<span class="o">=</span>1.5 follow_distance_max:<span class="o">=</span>2.0
+
 </code></pre></div></div>
 
 <p>常用启动参数（可用 <code class="language-plaintext highlighter-rouge">ros2 launch ... &lt;参数&gt;:=&lt;值&gt;</code> 覆盖）：</p>
