@@ -66,9 +66,17 @@
     .content ul, .content ol { margin: 0 0 12px; padding-left: 28px; }
     .content li { margin: 4px 0; }
     .content code { background: #f6f8fa; padding: 2px 5px; border-radius: 3px; font-size: 85%; }
-    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 12px; position: relative; }
+    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0; }
     .content pre code { background: none; padding: 0; font-size: 100%; }
-    .content pre .copy-btn {
+    .content .code-wrapper {
+      position: relative;
+      margin: 0 0 12px;
+      background: #f6f8fa;
+      border-radius: 6px;
+      padding-right: 64px;  
+    }
+    .content .code-wrapper pre { background: transparent; border-radius: 0; }    
+    .content .code-wrapper .copy-btn {
       position: absolute;
       top: 6px;
       right: 6px;
@@ -84,9 +92,9 @@
       transition: opacity 0.15s;
       z-index: 1;
     }
-    .content pre:hover .copy-btn { opacity: 1; }
-    .content pre .copy-btn:hover { background: #d1d5da; }
-    .content pre .copy-btn.copied { background: #28a745; color: #fff; border-color: #28a745; }
+    .content .code-wrapper:hover .copy-btn { opacity: 1; }
+    .content .code-wrapper .copy-btn:hover { background: #d1d5da; }
+    .content .code-wrapper .copy-btn.copied { background: #28a745; color: #fff; border-color: #28a745; }
     .content table { border-collapse: collapse; width: 100%; margin: 0 0 12px; }
     .content th, .content td { border: 1px solid #dfe2e5; padding: 8px 12px; text-align: left; }
     .content th { background: #f6f8fa; font-weight: 600; }
@@ -216,7 +224,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 </ol>
 
 <h2 id="3-双目相机和深度估计">3. 双目相机和深度估计</h2>
-<p>双目相机相关问题参考<a href="https://developer.d-robotics.cc/tros_doc/quick_demo/demo_sensor#%E5%8F%8C%E7%9B%AEmipi%E5%9B%BE%E5%83%8F%E9%87%87%E9%9B%86">双目MIPI图像采集</a>。
+<p>双目相机相关问题参考<a href="https://developer.d-robotics.cc/tros_doc/quick_demo/demo_sensor#%E5%8F%8C%E7%9B%AE-mipi-%E5%9B%BE%E5%83%8F%E9%87%87%E9%9B%86">双目MIPI图像采集</a>。
 深度估计相关问题参考<a href="https://developer.d-robotics.cc/tros_doc/boxs/spatial/hobot_stereonet">双目深度算法</a>。</p>
 
 <h2 id="4-地图">4. 地图</h2>
@@ -233,7 +241,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 
 <p>SLAM 3D地图和2D地图之间的关系：3D地图通过卡高度阈值去除地面，Z轴（地面高度方向，对应右手坐标系的Z轴）投影到地面后得到2D地图，用于下游的导航和避障任务。</p>
 
-<p>导航代价地图和SLAM 2D地图之间的关系：SLAM 2D地图作为导航代价地图中的静态障碍物层，同时叠加障碍物识别算法提取的低矮障碍物，最终的到用于导航和避障的导航代价地图。</p>
+<p>导航代价地图和SLAM 2D地图之间的关系：SLAM 2D地图作为导航代价地图中的静态障碍物层，同时叠加障碍物识别算法提取的低矮障碍物，最终得到用于导航和避障的导航代价地图。</p>
 
 <table>
   <thead>
@@ -1186,7 +1194,7 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
     <tr>
       <td><strong>地图错误</strong>（地图扭曲/漂移/与实际不符、定位错位）</td>
       <td>多为 SLAM 累积误差或回环失败：① 长期 MAPPING 未切定位，误差累积；② 当前子图优化误差比持续高（<code class="language-plaintext highlighter-rouge">Loop/Optimization_max_error_ratio</code> &gt; warn 阈值）却没删/没新建子图；③ 回环检测失败（loop_closure_rejection_reason 非 success）；④ 子图断连导致跨子图位姿不一致</td>
-      <td>先看 <code class="language-plaintext highlighter-rouge">/tros_diagnostics</code> 的 <code class="language-plaintext highlighter-rouge">opt_error_ratio</code>、<code class="language-plaintext highlighter-rouge">loop_closure</code> 是否 success；若误差持续高，确认是否触发了当前子图删除或新建子图；若是累积误差，按下文 9.6「调参建议」下调 <code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code> 更早切定位；严重错误建议删库重建（<code class="language-plaintext highlighter-rouge">rtabmap.db</code>）</td>
+      <td>先看 <code class="language-plaintext highlighter-rouge">/tros_diagnostics</code> 的 <code class="language-plaintext highlighter-rouge">opt_error_ratio</code>、<code class="language-plaintext highlighter-rouge">loop_closure</code> 是否 success；若误差持续高，确认是否触发了当前子图删除或新建子图；若是累积误差，按下文 9.6「调参建议」下调 <code class="language-plaintext highlighter-rouge">auto_localize_mapping_duration_thr</code> 更早切定位；严重错误建议删库重建（<code class="language-plaintext highlighter-rouge">office.db</code>）</td>
     </tr>
   </tbody>
 </table>
@@ -1433,6 +1441,10 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
     document.querySelectorAll('.content pre').forEach(function(pre) {
       if (pre.classList.contains('mermaid') || !pre.querySelector('code')) return;
       var btn = document.createElement('button');
+      var wrapper = document.createElement('div');
+      wrapper.className = 'code-wrapper';
+      pre.parentElement.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
       btn.className = 'copy-btn';
       btn.textContent = '复制';
       btn.addEventListener('click', function() {
@@ -1446,7 +1458,7 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
           }, 2000);
         });
       });
-      pre.appendChild(btn);
+      wrapper.appendChild(btn);
     });
     // click picture to enlarge it（lightbox）
     var overlay = document.createElement('div');
