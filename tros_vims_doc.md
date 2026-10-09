@@ -1046,7 +1046,7 @@ ros2 run myrobot_base myrobot_base
 
 ## 9. 版本发布记录
 
-### 版本号：0.0.6
+### 版本号：0.0.6 (2026-09-30)
 
 本版本主要围绕**建图与导航更稳、回环更可靠、避障更顺、更好用**：
 
@@ -1056,9 +1056,10 @@ ros2 run myrobot_base myrobot_base
 - **避障更顺**：低矮障碍分流、障碍感知更准，避障更流畅、漏碰误碰更少。
 - **目标不丢**：导航目标在 SLAM 建图维护中不再被丢弃。
 - **稳定性修复**：修复 rtabmap sqlite 清理与 `reduceGraph` 边界问题，SLAM 长时运行更稳。
-- **更好用**：导航参数可配置、速度上限提升、无地图也能启动；修复 nav2 costmap/controller 配置不生效（rewrite 回退），导航参数真正起作用；新增 `tros_person_following` 跟人节点与 Foxglove 调试看板。
+- **更好用**：导航参数可配置、速度上限提升、无地图也能启动；修复 nav2 costmap/controller 配置不生效（rewrite 回退），导航参数真正起作用。
+- **人机交互**：新增 `tros_person_following` 跟人节点与 Foxglove 调试看板。
 
-### 版本号：0.0.5
+### 版本号：0.0.5 (2026-07-20)
 
 初始版本。
 
