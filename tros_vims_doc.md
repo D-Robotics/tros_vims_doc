@@ -200,6 +200,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 |运行时latency统计工具|统计时间窗口内功能模块的latency，包括模块的输出帧率，输入、处理和输出的平均、最大和最小延迟等数据，用于识别和优化系统pipeline的latency瓶颈。|
 |rviz hud|将机器人的关键行为和系统状态信息，以overlay的形式在rviz上渲染。|
 |数据trigger & recorder|用于路径规划时自动触发录制系统状态数据，通过离线回放数据定位问题，支持录制触发前的数据（影子模式）。|
+|[离线录制/回放工具（ViMS_offline）](#111-离线数据录制与回放vims_offline)|录制最小传感器源topic集合并导出硬件绑定静态TF；离线按profile选定模块组合回放，用于问题复现与算法评测。|
 
 | rviz hud（左上区域） | 离线回放trigger自动录制的数据 |
 | :---: | :---: |
@@ -1068,3 +1069,58 @@ ros2 run myrobot_base myrobot_base
 详见 [FAQ](faq.html)。
 
 如有问题，请[提issue](https://github.com/D-Robotics/tros_vims_doc/issues)。
+
+## 11. 附录
+
+### 11.1 离线数据录制与回放（ViMS_offline）
+
+ViMS_offline 是移动Solution的离线数据录制/回放工具：在机器人端录制最小传感器源topic集合（rosbag2/mcap）并导出硬件绑定的静态TF（标定外参）；离线回放时按profile选定模块组合拉起系统。
+
+典型用途：
+
+- **现场问题离线复现**：录制现场数据，回开发环境反复回放定位问题
+- **算法评测**：同一份数据在不同参数/算法版本下回放对比（VIO轨迹、建图效果等）
+- **数据留存**：只录传感器源数据（7个topic），体积远小于全量录制
+
+> 详细使用说明参考 [FAQ 离线数据录制与回放（ViMS_offline）](faq.html#11-离线数据录制与回放vims_offline)章节。
+
+#### 11.1.1 数据录制
+
+子码流（VIO用）以jpeg编码，主码流与IMU照录原始数据；子流体积大幅缩小，回放时VIO内部软解码：
+
+```bash
+vims_offline record -o /userdata/recordings -n my_session
+# Ctrl-C 停止；结束时打印会话目录，如 /userdata/recordings/my_session_20260922_093000
+```
+
+指定`-n my_session`时会话目录为`my_session_<时间戳>`；不指定`-n`则为`session_<时间戳>`（时间戳为录制开始时刻，格式`YYYYmmdd_HHMMSS`）。
+
+**录制操作流程**：启动录制后，浏览器打开`机器人IP:8000`（web端实时预览）确认看到相机图像，**另开一个终端**（同样source好环境）用键盘遥控移动小车采集数据：
+
+```bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+# 键位：i 前进 / , 后退 / j 左转 / l 右转 / k 停止
+# 速度调节：q/z 增大/减小最大速度（每次±10%），w/x 只调平移速度，e/c 只调转弯速度
+```
+
+遥控采集时注意速度平稳、转弯缓慢——按 `z` 将平移速度降至约 0.3 m/s 后再开始采集。剧烈运动容易造成图像模糊/丢帧，影响回放时VIO/rtabmap的效果。采集完成后回到录制终端Ctrl-C停止。
+
+录制完成的会话目录结构（录制后不可变）：
+
+```
+<output>/<session>/
+├── bag/               # rosbag2 (mcap) — 7个传感器源topic
+├── tf_static.yaml     # 录制开始时捕获的硬件绑定静态TF
+└── session_info.yaml  # 元信息（时间、topic列表、大小）
+```
+
+#### 11.1.2 数据回放
+
+```bash
+# 按 profile 回放（depth / vio / rtabmap / full）
+# 原速回放 rtabmap 建图
+vims_offline replay /userdata/recordings/my_session_<时间戳> \
+    --profile rtabmap --rate 1.0 --run-dir /userdata/replay_runs
+```
+
+详细用法——[查看可用回放 profile 与回放能力profile](faq.html#116-回放能力profile)、[单参数调试覆盖（`--launch-arg`）](faq.html#117-单参数调试覆盖--launch-arg)、回放输出目录说明等——详见 [FAQ 离线数据录制与回放（ViMS_offline）](faq.html#11-离线数据录制与回放vims_offline)。
