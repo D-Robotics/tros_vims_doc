@@ -1402,6 +1402,300 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
+<h2 id="11-离线数据录制与回放vims_offline">11. 离线数据录制与回放（ViMS_offline）</h2>
+
+<p>本章节是使用手册<a href="tros_vims_doc.html#111-离线数据录制与回放vims_offline">附录 11.1 离线数据录制与回放（ViMS_offline）</a>的配套参考，覆盖环境准备、子命令与参数、回放能力profile、录制数据质量检查、单参数调试覆盖以及回放的实现细节。</p>
+
+<h3 id="111-环境准备">11.1 环境准备</h3>
+
+<p>工具已随移动Solution一起编译安装（按<a href="tros_vims_doc.html#4-软件配置">软件配置</a>章节安装后即包含），无需单独获取和编译。环境要求 python3 + rclpy + PyYAML + ROS 2 CLI（<code class="language-plaintext highlighter-rouge">ros2</code>）。在机器人端使用：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/ros/humble/setup.bash
+<span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/install/local_setup.bash
+</code></pre></div></div>
+
+<p>source 环境后即可使用安装好的<code class="language-plaintext highlighter-rouge">vims_offline</code>命令（与<code class="language-plaintext highlighter-rouge">ros2 run vims_offline vims_offline ...</code>等价）。</p>
+
+<blockquote>
+  <p>标定是前置条件：录制依赖机器人已完成的标定（相机内参/外参，<code class="language-plaintext highlighter-rouge">camera_link→imu_link</code> 等硬件绑定TF来自标定结果）。未标定或标定过期的机器人先参考<a href="tros_vims_doc.html#6-外参标定">外参标定</a>章节完成标定。</p>
+</blockquote>
+
+<h3 id="112-子命令与参数">11.2 子命令与参数</h3>
+
+<p>所有功能通过 <code class="language-plaintext highlighter-rouge">vims_offline &lt;子命令&gt;</code> 调用，共3个子命令：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">子命令</th>
+      <th>功能</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">record</code></td>
+      <td>录制数据会话：最小传感器源topic集（rosbag2/mcap）+ 捕获静态TF</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">replay</code></td>
+      <td>回放录制会话：按profile选定模块组合拉起系统，含空闲检测与报告</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">list-profiles</code></td>
+      <td>列出可用的回放profile</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>record 参数：</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">参数</th>
+      <th style="text-align: center">默认值</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">-o, --output-dir</code></td>
+      <td style="text-align: center">当前目录</td>
+      <td>录制会话的根目录</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">-n, --session-name</code></td>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">session_&lt;时间戳&gt;</code></td>
+      <td>会话名。会话目录名始终拼上录制时间戳（录制开始时刻，格式<code class="language-plaintext highlighter-rouge">YYYYmmdd_HHMMSS</code>）：指定<code class="language-plaintext highlighter-rouge">-n my_session</code> → <code class="language-plaintext highlighter-rouge">my_session_&lt;时间戳&gt;</code>；不指定 → <code class="language-plaintext highlighter-rouge">session_&lt;时间戳&gt;</code>。同秒重录同名会因目录已存在报错</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--topics-config FILE</code></td>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">config/record_topics_jpeg.yaml</code></td>
+      <td>录制topic集合（子码流jpeg编码）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--record-switches FILE</code></td>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">config/record_modules.yaml</code></td>
+      <td>录制时自动拉起系统的模块开关</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--tf-config FILE</code></td>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">config/static_tf.yaml</code></td>
+      <td>要捕获的静态TF列表</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--max-cache-size MB</code></td>
+      <td style="text-align: center">100</td>
+      <td>录制缓存大小。出现”Message dropped”告警（缓存满丢消息）时调大，500已验证无丢帧，代价是内存</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--base-params FILE</code></td>
+      <td style="text-align: center">tros_vision_nav安装目录params.yaml</td>
+      <td>参数基准文件。默认用tros_vision_nav安装目录下的params.yaml；换机器人/标定件后参数不同时，可通过该参数指定自定义params.yaml（如修改了标定参数的副本），原文件不被修改</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--launch-arg NAME:=VALUE</code></td>
+      <td style="text-align: center">无</td>
+      <td>单参数调试覆盖，以环境变量方式传给run_launch.sh（优先于配置），可重复传多个</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>replay 参数：</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">参数</th>
+      <th style="text-align: center">默认值</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">session_dir</code>（位置参数）</td>
+      <td style="text-align: center">必填</td>
+      <td>录制会话目录（需含<code class="language-plaintext highlighter-rouge">bag/</code> + <code class="language-plaintext highlighter-rouge">tf_static.yaml</code>），永远不会被修改</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--profile</code></td>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">full</code></td>
+      <td>回放profile，见<a href="#116-回放能力profile">回放能力profile</a></td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--rate</code></td>
+      <td style="text-align: center">1.0</td>
+      <td>回放倍率（0.5即半速）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--run-dir</code></td>
+      <td style="text-align: center">当前目录</td>
+      <td>回放运行根目录，每次回放生成<code class="language-plaintext highlighter-rouge">&lt;session&gt;_&lt;profile&gt;_&lt;时间戳&gt;/</code>（含参数副本与回放报告）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--base-params FILE</code></td>
+      <td style="text-align: center">tros_vision_nav安装目录params.yaml</td>
+      <td>参数基准文件，同record：默认用tros_vision_nav安装目录下的params.yaml，可指定自定义params.yaml（如修改了标定参数的副本）；建议与录制时用同一份</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--launch-arg NAME:=VALUE</code></td>
+      <td style="text-align: center">无</td>
+      <td>最高优先级调试覆盖（压过profile开关与参数文件），可重复传多个；NAME用launch扁平参数名，不能带点号</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--modules-config FILE</code></td>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">config/replay_modules.yaml</code></td>
+      <td>回放模块profile配置，可自行编辑或新增profile</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>list-profiles 参数：</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">参数</th>
+      <th style="text-align: center">默认值</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">--modules-config FILE</code></td>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">config/replay_modules.yaml</code></td>
+      <td>profile配置文件</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>另外，录制会话目录永远不会被修改；每次回放写自己的<code class="language-plaintext highlighter-rouge">&lt;session&gt;_&lt;profile&gt;_&lt;时间戳&gt;/</code>目录，内含<code class="language-plaintext highlighter-rouge">params_offline.yaml</code>（本次运行的完整参数副本）和<code class="language-plaintext highlighter-rouge">replay_report.yaml</code>（状态、耗时、开关、空闲检测）。</p>
+
+<p>后文回放/质量检查示例中的<code class="language-plaintext highlighter-rouge">my_session_&lt;时间戳&gt;</code>请替换为录制结束时打印的实际会话目录名。</p>
+
+<blockquote>
+  <p>注意：录制中一旦出现”Message dropped”告警，说明缓存已满、正在丢消息！立即停止录制，加<code class="language-plaintext highlighter-rouge">--max-cache-size 500</code>重录。丢过帧的bag回放时会有时间空洞，可用<a href="#113-录制数据质量检查">录制数据质量检查</a>确认。</p>
+</blockquote>
+
+<h3 id="113-录制数据质量检查">11.3 录制数据质量检查</h3>
+
+<p>录制完成后用<code class="language-plaintext highlighter-rouge">tros_bag interval</code>统计各topic的消息间隔（帧率是否稳定、有没有丢帧）：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ros2 tros_bag interval /userdata/recordings/my_session_&lt;时间戳&gt;/bag
+</code></pre></div></div>
+
+<p>输出每个topic的消息数与相邻消息间隔的min/mean/max，并在bag目录旁生成<code class="language-plaintext highlighter-rouge">bag_interval_plots/interval_scatter.png</code>散点图。</p>
+
+<p>判读基准（正常值）：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">topic</th>
+      <th style="text-align: center">期望间隔</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">/imu_data</code></td>
+      <td style="text-align: center">mean ≈ 5ms（200Hz）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">双目子流（sub_image_combine_*）</td>
+      <td style="text-align: center">≈ 125ms（8Hz）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">主图流（image_combine_*）</td>
+      <td style="text-align: center">≈ 167ms（6Hz）</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>丢帧特征：mean接近期望的两倍（如子流mean 250ms = 每隔一帧丢一帧），或min/max异常离散。发现丢帧时按<a href="#112-子命令与参数">子命令与参数</a>中<code class="language-plaintext highlighter-rouge">--max-cache-size</code>的说明调大缓存后重录。</p>
+
+<h3 id="114-回放如何保证单一数据源与统一时基">11.4 回放如何保证单一数据源与统一时基</h3>
+
+<p>以下强制离线开关写入每次回放的参数副本（代码级固定，不可配置）：</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">robot.robot_base=none</code>——不加载底盘：回放绝不驱动机器人</li>
+  <li><code class="language-plaintext highlighter-rouge">switch.run_mipi_cam=false</code>——真实相机保持关闭；bag Player是唯一的图像/IMU发布者</li>
+  <li><code class="language-plaintext highlighter-rouge">switch.run_static_tf=false</code> + ViMS_offline自己的static_transform_publisher进程回放录制的TF——值与tf_static.yaml一致</li>
+  <li><code class="language-plaintext highlighter-rouge">switch.run_bag_player=true</code>——rosbag2 Player以组件形式加载进tros_container，与VIO同进程（intra-process零拷贝）</li>
+  <li><code class="language-plaintext highlighter-rouge">switch.use_sim_time=true</code> + <code class="language-plaintext highlighter-rouge">vio.use_sim_time=true</code>——Player的50Hz <code class="language-plaintext highlighter-rouge">/clock</code>（bag时间）驱动整个系统。墙钟/bag时间混用会让VIO的陈旧IMU守卫静默丢弃所有bag消息、rtabmap的TF buffer拒绝bag时间戳的查询</li>
+  <li><code class="language-plaintext highlighter-rouge">vio.sub_from_compressed_image=true</code>——JPEG bag没有原始双目topic，VIO内部解码jpeg流</li>
+  <li><code class="language-plaintext highlighter-rouge">rtabmap.rtabmap_args=--delete_db_on_start</code>——每次回放只从bag建图，绝不续建机器人上的live库</li>
+</ul>
+
+<p>另外，<code class="language-plaintext highlighter-rouge">run_slam=true</code>时bag Player不随容器组一起加载：bringup先等<code class="language-plaintext highlighter-rouge">tros_tf_listener</code>（map→odom TF，rtabmap初始化即发布），其退出后再加载Player（20秒超时防死锁兜底）。没有这道门控，bag会在组件链还在加载时开播，rtabmap因TF查询早于自身buffer而拒绝每次更新。</p>
+
+<h3 id="115-已知限制与配置文件">11.5 已知限制与配置文件</h3>
+
+<p>已知限制：rtabmap/full回放开头约3秒可能出现TF extrapolation告警（VIO第一条odom→base_link TF落后于bag首帧），属瞬态，不影响建图结果。</p>
+
+<p>所有可调项都是配置文件，随包安装在<code class="language-plaintext highlighter-rouge">$(ros2 pkg prefix vims_offline --share)/config/</code>下（无需改代码，改配置即可）：</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">record_topics_jpeg.yaml</code>——录制topic集合（子码流jpeg编码）</li>
+  <li><code class="language-plaintext highlighter-rouge">record_modules.yaml</code>——录制自动拉起系统的模块开关</li>
+  <li><code class="language-plaintext highlighter-rouge">static_tf.yaml</code>——要捕获的静态TF列表</li>
+  <li><code class="language-plaintext highlighter-rouge">replay_modules.yaml</code>——回放模块profile</li>
+</ul>
+
+<h3 id="116-回放能力profile">11.6 回放能力profile</h3>
+
+<p>查看可用回放 profile：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vims_offline list-profiles
+</code></pre></div></div>
+
+<p>回放能力profile（<code class="language-plaintext highlighter-rouge">config/replay_modules.yaml</code>，可直接编辑或新增）：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">profile</th>
+      <th>启动模块</th>
+      <th>已验证输出</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">depth</code></td>
+      <td>双目 + stereonet</td>
+      <td><code class="language-plaintext highlighter-rouge">/StereoNetNode/stereonet_depth</code>（mono16，约6fps）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">vio</code></td>
+      <td>+ VIO</td>
+      <td><code class="language-plaintext highlighter-rouge">/odom</code>（约40Hz）、odom→base_link TF</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">rtabmap</code></td>
+      <td>+ 分割/深度过滤 + rtabmap</td>
+      <td><code class="language-plaintext highlighter-rouge">/map</code>占据栅格（每次全新建库）</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code class="language-plaintext highlighter-rouge">full</code></td>
+      <td>+ 导航/探索</td>
+      <td>以上全部 + nav2容器</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>注意：需要图像的profile里<code class="language-plaintext highlighter-rouge">run_stereo</code>必须保持true——stereonet链承载图像管线；rtabmap profile要求<code class="language-plaintext highlighter-rouge">run_mask_depth</code>和<code class="language-plaintext highlighter-rouge">run_perc</code>同时打开（深度过滤节点把深度图与AI分割结果做精确时间同步，缺一个rtabmap就断粮）。</p>
+
+<h3 id="117-单参数调试覆盖launch-arg">11.7 单参数调试覆盖（–launch-arg）</h3>
+
+<p>不改任何params文件、临时覆盖个别参数的最高优先级通道，写成<code class="language-plaintext highlighter-rouge">--launch-arg NAME:=VALUE</code>（或<code class="language-plaintext highlighter-rouge">NAME=VALUE</code>），可重复传多个。优先级：<code class="language-plaintext highlighter-rouge">--launch-arg</code> &gt; profile/录制开关 &gt; params.yaml。例如临时开VIO详细日志：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vims_offline replay /userdata/recordings/my_session_&lt;时间戳&gt; <span class="se">\</span>
+    <span class="nt">--profile</span> vio <span class="nt">--launch-arg</span> vio_log_level:<span class="o">=</span>info
+</code></pre></div></div>
+
+<p>要点：NAME用launch扁平参数名（如<code class="language-plaintext highlighter-rouge">vio_log_level</code>、<code class="language-plaintext highlighter-rouge">rtabmap_args</code>），不是YAML点路径（带点的键会被直接报错拒绝）；NAME必须是run_launch.sh认识的参数名，否则启动时会提示该覆盖无效果；<code class="language-plaintext highlighter-rouge">YAML_CONFIG_FILE</code>等受管变量无法覆盖；空值无法表达；布尔值用大写<code class="language-plaintext highlighter-rouge">True</code>/<code class="language-plaintext highlighter-rouge">False</code>（与params.yaml拼写一致，launch链按此大小写敏感匹配）。</p>
+
     </main>
   </div>
   <script>

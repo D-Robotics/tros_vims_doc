@@ -458,6 +458,10 @@
       <td style="text-align: center">数据trigger &amp; recorder</td>
       <td>用于路径规划时自动触发录制系统状态数据，通过离线回放数据定位问题，支持录制触发前的数据（影子模式）。</td>
     </tr>
+    <tr>
+      <td style="text-align: center"><a href="#111-离线数据录制与回放vims_offline">离线录制/回放工具（ViMS_offline）</a></td>
+      <td>录制最小传感器源topic集合并导出硬件绑定静态TF；离线按profile选定模块组合回放，用于问题复现与算法评测。</td>
+    </tr>
   </tbody>
 </table>
 
@@ -1621,6 +1625,61 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 <p>详见 <a href="faq.html">FAQ</a>。</p>
 
 <p>如有问题，请<a href="https://github.com/D-Robotics/tros_vims_doc/issues">提issue</a>。</p>
+
+<h2 id="11-附录">11. 附录</h2>
+
+<h3 id="111-离线数据录制与回放vims_offline">11.1 离线数据录制与回放（ViMS_offline）</h3>
+
+<p>ViMS_offline 是移动Solution的离线数据录制/回放工具：在机器人端录制最小传感器源topic集合（rosbag2/mcap）并导出硬件绑定的静态TF（标定外参）；离线回放时按profile选定模块组合拉起系统。</p>
+
+<p>典型用途：</p>
+
+<ul>
+  <li><strong>现场问题离线复现</strong>：录制现场数据，回开发环境反复回放定位问题</li>
+  <li><strong>算法评测</strong>：同一份数据在不同参数/算法版本下回放对比（VIO轨迹、建图效果等）</li>
+  <li><strong>数据留存</strong>：只录传感器源数据（7个topic），体积远小于全量录制</li>
+</ul>
+
+<blockquote>
+  <p>详细使用说明参考 <a href="faq.html#11-离线数据录制与回放vims_offline">FAQ 离线数据录制与回放（ViMS_offline）</a>章节。</p>
+</blockquote>
+
+<h4 id="1111-数据录制">11.1.1 数据录制</h4>
+
+<p>子码流（VIO用）以jpeg编码，主码流与IMU照录原始数据；子流体积大幅缩小，回放时VIO内部软解码：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vims_offline record <span class="nt">-o</span> /userdata/recordings <span class="nt">-n</span> my_session
+<span class="c"># Ctrl-C 停止；结束时打印会话目录，如 /userdata/recordings/my_session_20260922_093000</span>
+</code></pre></div></div>
+
+<p>指定<code class="language-plaintext highlighter-rouge">-n my_session</code>时会话目录为<code class="language-plaintext highlighter-rouge">my_session_&lt;时间戳&gt;</code>；不指定<code class="language-plaintext highlighter-rouge">-n</code>则为<code class="language-plaintext highlighter-rouge">session_&lt;时间戳&gt;</code>（时间戳为录制开始时刻，格式<code class="language-plaintext highlighter-rouge">YYYYmmdd_HHMMSS</code>）。</p>
+
+<p><strong>录制操作流程</strong>：启动录制后，浏览器打开<code class="language-plaintext highlighter-rouge">机器人IP:8000</code>（web端实时预览）确认看到相机图像，<strong>另开一个终端</strong>（同样source好环境）用键盘遥控移动小车采集数据：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ros2 run teleop_twist_keyboard teleop_twist_keyboard
+<span class="c"># 键位：i 前进 / , 后退 / j 左转 / l 右转 / k 停止</span>
+<span class="c"># 速度调节：q/z 增大/减小最大速度（每次±10%），w/x 只调平移速度，e/c 只调转弯速度</span>
+</code></pre></div></div>
+
+<p>遥控采集时注意速度平稳、转弯缓慢——按 <code class="language-plaintext highlighter-rouge">z</code> 将平移速度降至约 0.3 m/s 后再开始采集。剧烈运动容易造成图像模糊/丢帧，影响回放时VIO/rtabmap的效果。采集完成后回到录制终端Ctrl-C停止。</p>
+
+<p>录制完成的会话目录结构（录制后不可变）：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;output&gt;/&lt;session&gt;/
+├── bag/               # rosbag2 (mcap) — 7个传感器源topic
+├── tf_static.yaml     # 录制开始时捕获的硬件绑定静态TF
+└── session_info.yaml  # 元信息（时间、topic列表、大小）
+</code></pre></div></div>
+
+<h4 id="1112-数据回放">11.1.2 数据回放</h4>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 按 profile 回放（depth / vio / rtabmap / full）</span>
+<span class="c"># 原速回放 rtabmap 建图</span>
+vims_offline replay /userdata/recordings/my_session_&lt;时间戳&gt; <span class="se">\</span>
+    <span class="nt">--profile</span> rtabmap <span class="nt">--rate</span> 1.0 <span class="nt">--run-dir</span> /userdata/replay_runs
+</code></pre></div></div>
+
+<p>详细用法——<a href="faq.html#116-回放能力profile">查看可用回放 profile 与回放能力profile</a>、<a href="faq.html#117-单参数调试覆盖--launch-arg">单参数调试覆盖（<code class="language-plaintext highlighter-rouge">--launch-arg</code>）</a>、回放输出目录说明等——详见 <a href="faq.html#11-离线数据录制与回放vims_offline">FAQ 离线数据录制与回放（ViMS_offline）</a>。</p>
 
 
     </main>
