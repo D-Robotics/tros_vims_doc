@@ -179,7 +179,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 1. 未知环境下自主探索建图 — 自动搜索地图边界frontier并导航前往，用户零干预下完成地图构建任务。
 2. 回环检测(loop closure)触发 — 自动触发回环检测，提升定位精度和地图质量。
 3. 重定位(relocating)策略 — 丢失定位时自动触发重定位策略，加速机器人恢复定位。
-4. SLAM模式切换 — mapping/localization模式自动切换，实现Lifelong SLAM。详见 [FAQ - SLAM 模式与子图管理说明](faq.html#9-slam-模式与子图管理说明)。
+4. SLAM模式切换 — mapping/localization模式自动切换，实现Lifelong SLAM。详见 [SLAM 模式与子图管理深度指南](guides/slam_modes.html)。
 5. 脱困(trapped recovery) — 自动识别机器人是否被困，被困时自动脱困。
 
 未知环境下探索建图：
@@ -325,17 +325,21 @@ echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ~/.bashrc
 
 RDK X5 的 aic8800 WiFi 模块默认开启省电模式（信标间隔内休眠），会引入链路延迟抖动，长时间运行还可能触发路由器（AP）转发表异常，导致开发板与局域网内个别设备断连（其余设备仍可互ping）。进行SLAM建图、NFS挂载开发板文件系统等对链路稳定性敏感的操作前，建议关闭。
 
-在RDK X5上执行以下命令，立即生效并持久化（重启、重新关联WiFi后仍有效）：
+在RDK X5上执行以下命令。省电标志会被多条路径重新打开，需分层关闭（重新关联/漫游、接口 down/up 均不产生 udev 事件，udev 规则只覆盖开机时的接口注册）：
 
 ```bash
-# 立即关闭软件省电
+# 1. 立即关闭软件省电
 iw dev wlan0 set power_save off
 
-# 持久化：驱动级省电开关（下次加载模块生效，即重启后生效）
+# 2. 持久化：NM 连接级（覆盖 NM 自管的关联/重连——NM 每次激活时都会重新下发）
+nmcli connection modify "<WiFi连接名>" 802-11-wireless.powersave 2
+
+# 3. 持久化：驱动内部省电开关（仅模块加载时生效；注意：不控制 `iw` 报告的软件标志）
 printf "# disable aic8800 wifi power saving (stability for NFS-over-WiFi + AP FDB)\noptions aic8800_fdrv ps_on=N\n" > /etc/modprobe.d/aic8800-ps-off.conf
 
-# 持久化：udev规则，WiFi重新关联后自动关闭软件省电
-printf "ACTION==\"add|change\", SUBSYSTEM==\"net\", KERNEL==\"wlan0\", TEST==\"iw\", RUN+=\"/sbin/iw dev wlan0 set power_save off\"\n" > /etc/udev/rules.d/70-wlan0-powersave-off.rules
+# 4. 持久化：udev 规则（开机接口注册时刻兜底；勿加 TEST——TEST 相对 sysfs 设备目录解析，
+#    TEST=="iw" 检查 /sys/.../net/wlan0/iw 恒不存在，规则永不匹配）
+printf "ACTION==\"add\", SUBSYSTEM==\"net\", KERNEL==\"wlan0\", RUN+=\"/sbin/iw dev wlan0 set power_save off\"\n" > /etc/udev/rules.d/70-wlan0-powersave-off.rules
 ```
 
 验证当前省电状态（应输出 `Power save: off`）：
@@ -348,6 +352,7 @@ iw dev wlan0 get power_save
 > 1. 若提示找不到 `iw`，确认其路径（RDK X5 上为 `/sbin/iw`）。
 > 2. 关闭省电会增加 WiFi 模块功耗（约零点几瓦），对 X5 供电和散热无影响；使用电池供电的移动场景需自行权衡。
 > 3. 该驱动还提供深度省电参数 `dpsm`（默认已关闭 `N`），无需处理。
+> 4. 残余缺口：wpa_supplicant 自主漫游、手工 `ifconfig wlan0 down/up` 等绕过 NM 的路径可能将标志重新打开；长时间运行前建议复查一次上面的验证命令。
 
 ### 4.3 安装依赖
 
@@ -520,7 +525,7 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
 ### 6.1 相机和底盘外参标定（粗标定）
 
 本章节介绍不依赖标定治具的情况下，实现相机和底盘之间x, y, z, roll, pitch外参的快速粗标定。
-此方法无法标定yaw角，如果相机和底盘之间yaw角较大，或者对标定精度有极高要求，请参考[相机和底盘外参标定（高精度标定）](calibration.html)进行标定。
+此方法无法标定yaw角，如果相机和底盘之间yaw角较大，或者对标定精度有极高要求，请参考[相机和底盘外参标定（高精度标定）](guides/calibration.html)进行标定。
 
 简单、快速的粗标定能够满足基本使用需求，建议采用此标定方法。
 
@@ -966,6 +971,70 @@ flowchart LR
     nav -->|costmap| follow
 ```
 
+### 7.7 自主巡逻
+
+本章节介绍如何使用已有地图进行自主巡逻（patrol）：机器人对地图中全部可达自由点进行**单轮走访**。
+
+自主巡逻为移动巡视类应用提供底座行为——用一台移动机器人按点位序列巡视，替代多个固定监控点。结合场景可实现的能力：
+
+| 场景 | 能力 | 巡逻的用法 |
+|------|------|-----------|
+| 全屋移动监控 | 一台机器人覆盖全屋各区域，消除固定监控点的视角死角 | 发起全图巡逻，走访全程相机视野覆盖各区域，配合远程图像查看实现移动巡视 |
+| 重点区域看护 | 对老人房、宠物活动区等特定区域高频巡视 | 发起区域巡逻，只走访重点区域，单轮时间短、可重复发起 |
+| 定时/离家值守 | 无人在家或夜间时段按计划自动巡视 | 巡逻通过service发起和停止，上层应用（定时任务、语音助手等）可按计划调用 |
+
+> **提示** 
+> 巡逻本身完成"走访"这一移动行为；巡视中的异常发现（人员、宠物等检测）可结合solution已有的感知能力，告警推送等由上层应用实现。
+>
+
+与自主探索建图不同：自主探索面向未知区域持续扩展地图，自主巡逻只走访已知地图内的自由点，不扩展地图。
+
+#### 巡逻效果
+
+机器人自主巡逻过程如下（候选点走访、到访标记与实时避障）：
+
+<img src="images/vims_patrol.gif" width="900">
+
+> 完整巡逻效果视频：[vims_patrol.mp4](https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/images/vims_patrol.mp4)
+
+#### 启动solution
+
+在 RDK X5 终端运行如下命令，与[7.4 导航和避障](#74-导航和避障)启动命令一致：
+
+```bash
+source /opt/tros/humble/local_setup.bash
+source /userdata/vims/install/local_setup.bash
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
+run_rviz=False run_foxglove=True \
+bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+```
+
+> **注意** 
+巡逻依赖已有地图：需先按[7.3 VSLAM建图](#73-vslam建图)完成建图，且地图面积需大于参数 `free_pool_map_area_thr`（默认20.0 m²）。面积过小或无自由点可访时，发起巡逻会立即结束并发布终态 `EXHAUSTED`。
+>
+
+#### 发起和停止巡逻
+
+在 Foxglove 中可发起/停止巡逻，观察巡逻候选点、走访过程、进度与结果（Foxglove 连接与 layout 导入方法见 [4.8 使用 Foxglove 展示](#48-使用-foxglove-展示)）。
+
+面板布局如下（图中标注与下文控件说明（1）-（3）对应）：
+
+<img src="images/fg_patrol_panel.png" width="600">
+
+1. `StartPatrol`面板启动巡逻 service 。
+2. `StopPatrol` 面板停止巡逻 service。
+3. `/explore/search_status` 面板显示当前巡逻进度与结果。
+
+> **提示** 
+> - 巡逻进度：进行中 `PATROL:n/N t:m/M`（已走访n个/共N个候选点，已耗时 m 秒，时间限制 M 秒）。
+> - 巡逻结果：正常结束 `EXHAUSTED`；时间预算耗尽 `TIMEOUT`；手动停止 `CANCELLED`。
+> - Foxglove中左侧区域地图上会展示走访过程中的marker特写（绿色方块=已到访、红色方块=到访失败、橙色方块=临时取消走访、黄色球形=候选池/待走访）。
+>
+
+#### 参数和配置
+
+巡逻相关参数（如时间限制、巡逻采样点密度、定点巡逻等）与 service 接口字段的完整说明见 [自主巡逻深度指南](guides/patrol.html)。参数修改方式同4.6（编辑 `params.yaml` 后重新启动solution）。
+
 ## 8. 适配其他底盘
 
 本章节介绍将基于VIO算法的移动Solution套件迁移到其他底盘的方法（如自研底盘myrobot）。
@@ -1082,7 +1151,7 @@ ViMS_offline 是移动Solution的离线数据录制/回放工具：在机器人�
 - **算法评测**：同一份数据在不同参数/算法版本下回放对比（VIO轨迹、建图效果等）
 - **数据留存**：只录传感器源数据（7个topic），体积远小于全量录制
 
-> 详细使用说明参考 [FAQ 离线数据录制与回放（ViMS_offline）](faq.html#11-离线数据录制与回放vims_offline)章节。
+> 详细使用说明（环境准备、子命令与参数、质量检查、回放profile、单参数调试覆盖等）参考 [离线数据录制与回放深度指南](guides/vims_offline.html)。
 
 #### 11.1.1 数据录制
 
@@ -1123,4 +1192,4 @@ vims_offline replay /userdata/recordings/my_session_<时间戳> \
     --profile rtabmap --rate 1.0 --run-dir /userdata/replay_runs
 ```
 
-详细用法——[查看可用回放 profile 与回放能力profile](faq.html#116-回放能力profile)、[单参数调试覆盖（`--launch-arg`）](faq.html#117-单参数调试覆盖--launch-arg)、回放输出目录说明等——详见 [FAQ 离线数据录制与回放（ViMS_offline）](faq.html#11-离线数据录制与回放vims_offline)。
+详细用法——[查看可用回放 profile 与回放能力profile](guides/vims_offline.html#6-回放能力profile)、[单参数调试覆盖（`--launch-arg`）](guides/vims_offline.html#7-单参数调试覆盖--launch-arg)、回放输出目录说明等——详见 [离线数据录制与回放深度指南](guides/vims_offline.html)。

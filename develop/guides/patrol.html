@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自主巡逻（patrol）深度指南 - 地瓜机器人视觉移动Solution</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: #24292e;
+      background: #fff;
+    }
+    .container {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      gap: 30px;
+    }
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      border-right: 1px solid #e1e4e8;
+      padding-right: 20px;
+    }
+    .sidebar h3 {
+      font-size: 14px;
+      color: #586069;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e1e4e8;
+    }
+    .sidebar ul { list-style: none; padding-left: 0; }
+    .sidebar li { margin: 4px 0; }
+    .sidebar a {
+      color: #0366d6;
+      text-decoration: none;
+      font-size: 13px;
+      line-height: 1.4;
+      display: block;
+      padding: 2px 0;
+    }
+    .sidebar a:hover { text-decoration: underline; }
+    .sidebar .toc-h2 { font-weight: 600; }
+    .sidebar .toc-h3 { padding-left: 16px; font-weight: 400; color: #586069; }
+    .sidebar .toc-h3 a { color: #586069; }
+    .sidebar .toc-h3 a:hover { color: #0366d6; }
+    .content {
+      flex: 1;
+      min-width: 0;
+      max-width: 900px;
+    }
+    .content h1 { font-size: 28px; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
+    .content h2 { font-size: 22px; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e1e4e8; }
+    .content h3 { font-size: 18px; margin: 20px 0 10px; }
+    .content h4 { font-size: 16px; margin: 16px 0 8px; }
+    .content p { margin: 0 0 12px; }
+    .content ul, .content ol { margin: 0 0 12px; padding-left: 28px; }
+    .content li { margin: 4px 0; }
+    .content code { background: #f6f8fa; padding: 2px 5px; border-radius: 3px; font-size: 85%; }
+    .content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 0; }
+    .content pre code { background: none; padding: 0; font-size: 100%; }
+    .content .code-wrapper {
+      position: relative;
+      margin: 0 0 12px;
+      background: #f6f8fa;
+      border-radius: 6px;
+      padding-right: 64px;  
+    }
+    .content .code-wrapper pre { background: transparent; border-radius: 0; }    
+    .content .code-wrapper .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      background: #e1e4e8;
+      border: 1px solid #d1d5da;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #24292e;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 1;
+    }
+    .content .code-wrapper:hover .copy-btn { opacity: 1; }
+    .content .code-wrapper .copy-btn:hover { background: #d1d5da; }
+    .content .code-wrapper .copy-btn.copied { background: #28a745; color: #fff; border-color: #28a745; }
+    .content table { border-collapse: collapse; width: 100%; margin: 0 0 12px; }
+    .content th, .content td { border: 1px solid #dfe2e5; padding: 8px 12px; text-align: left; }
+    .content th { background: #f6f8fa; font-weight: 600; }
+    .content img { max-width: 100%; }
+    .content td img { max-width: none; }
+    .content blockquote { border-left: 4px solid #dfe2e5; padding: 8px 16px; color: #586069; margin: 0 0 12px; background: #f6f8fa; }
+    .content a { color: #0366d6; text-decoration: none; }
+    .content a:hover { text-decoration: underline; }
+    .content img { cursor: zoom-in; }
+    .content .mermaid svg { cursor: zoom-in; }
+    .img-lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s;
+      cursor: zoom-out;
+    }
+    .img-lightbox.open { opacity: 1; visibility: visible; }
+    .img-lightbox img {
+      max-width: 92vw;
+      max-height: 92vh;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+      transform: scale(0.96);
+      transition: transform 0.2s ease;
+    }
+    .img-lightbox.open img { transform: scale(1); }
+    .inline-toc { display: none; }
+    @media (max-width: 900px) {
+      .container { flex-direction: column; }
+      .sidebar { width: 100%; position: static; max-height: none; border-right: none; border-bottom: 1px solid #e1e4e8; padding-right: 0; padding-bottom: 16px; }
+      .inline-toc { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <aside class="sidebar">
+      <h3>目录</h3>
+      <ul id="toc"></ul>
+    </aside>
+    <main class="content">
+      <h1 id="自主巡逻patrol深度指南">自主巡逻（patrol）深度指南</h1>
+
+<blockquote>
+  <p>快速上手见主手册 <a href="../index.html#77-自主巡逻">7.7 自主巡逻</a>。本页是自主巡逻的接口、参数与行为完整参考；主手册只保留跑通所需最小集，本页为唯一权威源。</p>
+</blockquote>
+
+<h2 id="1-功能与行为">1. 功能与行为</h2>
+
+<h3 id="11-任务生命周期">1.1 任务生命周期</h3>
+
+<p>发起 → 建候选池 → 逐点走访 → 终态：</p>
+
+<ol>
+  <li><strong>请求合法性检查</strong>：<code class="language-plaintext highlighter-rouge">search_radius &lt; 0</code> 直接拒绝（定向导航是自主搜索专属）；原地旋转（spin）任务运行中拒绝；已有任务运行中返回幂等成功（不中断当前任务）。</li>
+  <li><strong>候选池生成</strong>：地图（包围盒）面积 ≥ <code class="language-plaintext highlighter-rouge">free_pool_map_area_thr</code> 才建池——方格采样全图自由点，经关键帧约束过滤（只保留真实观察过的区域）和 Nav2 路径验证（规划不达的点剔除，仅可视化）。<strong>图过小或池为空 → 直接进入终态 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code></strong>。</li>
+  <li><strong>走访循环</strong>：全图巡逻按”距机器人实时位姿就近”选点，区域巡逻按池生成序；每个候选点导航前往，到访/失败/取消后处理下一个。</li>
+  <li><strong>终态</strong>：见 1.2 状态表。</li>
+</ol>
+
+<h3 id="12-状态话题-exploresearch_status">1.2 状态话题 /explore/search_status</h3>
+
+<p>消息类型 <code class="language-plaintext highlighter-rouge">tros_frontier_exploration/msg/StringStamped</code>，QoS 为 transient_local——<strong>新订阅者立即收到最新一条状态</strong>，无需等待下次发布。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>状态</th>
+      <th>含义</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">IDLE</code></td>
+      <td>空闲（无任务）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">PATROL:n/N</code></td>
+      <td>巡逻进行中：已处理 n 个 / 共 N 个候选点</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">SPINNING:scan_blindspot[:n/N]</code></td>
+      <td>原地旋转扫描盲区（候选点间盲区补扫），旋转结束自动恢复走访；变体 <code class="language-plaintext highlighter-rouge">SPINNING:escape_obstacle</code>（脱困旋转）、<code class="language-plaintext highlighter-rouge">SPINNING:find_frontier</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">WAITING_SUBMAP_FLOW: waited=Ns</code></td>
+      <td>子图回访/建图（submapLinkFlow）接管控制期间巡逻挂起，每 5s 心跳；flow 结束后自动重选目标继续</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">EXHAUSTED</code></td>
+      <td>单轮走访完成（全部候选点处理完）；地图过小或无自由点时发起后立即以此终态结束</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TIMEOUT</code></td>
+      <td>时间预算耗尽</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CANCELLED:agent_stop</code></td>
+      <td>调用 <code class="language-plaintext highlighter-rouge">stop_patrol</code>（或 <code class="language-plaintext highlighter-rouge">stop_search</code>）停止</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TRAPPED</code></td>
+      <td>机器人被困，恢复策略无效</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>附加规则：</p>
+
+<ul>
+  <li>进行中与终态消息附带时间进度 <code class="language-plaintext highlighter-rouge">t:elapsed/budget</code>（已用秒 / 预算秒）。<code class="language-plaintext highlighter-rouge">elapsed</code> 略超 <code class="language-plaintext highlighter-rouge">budget</code> 属正常现象（末个目标跨越预算边界时），可作为诊断信号。</li>
+  <li><code class="language-plaintext highlighter-rouge">WAITING_SUBMAP_FLOW</code> 与 <code class="language-plaintext highlighter-rouge">SPINNING:*</code> 的等待时间<strong>计入</strong>时间预算。</li>
+  <li>同一话题同时服务自主搜索（search）：搜索任务会发布 <code class="language-plaintext highlighter-rouge">SEARCHING:FREE:n/N</code>、<code class="language-plaintext highlighter-rouge">NAVIGATING</code>/<code class="language-plaintext highlighter-rouge">NAVIGATED</code>/<code class="language-plaintext highlighter-rouge">NAV_FAILED</code> 等额外状态，本页只列巡逻相关。</li>
+</ul>
+
+<p><strong>终态统计字段</strong>：终态消息附加走访统计，实测示例：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EXHAUSTED t:287/510 ok:6 fail:0 cancel:3 notsent:0 sent:9 pool:8 unvisited:0
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>字段</th>
+      <th>含义</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ok</code></td>
+      <td>到访成功数</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">fail</code></td>
+      <td>导航真失败数</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">cancel</code></td>
+      <td>取消数——含恢复策略（脱困旋转重发、子图回访抢占等）取消后重发的目标，因此<strong>可能大于池规模</strong></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">notsent</code></td>
+      <td>已选中但未发出（导航服务忙）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">sent</code></td>
+      <td>发出且得到结果的目标数，恒等式 <code class="language-plaintext highlighter-rouge">ok + fail + cancel == sent</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">pool</code></td>
+      <td>候选池总数</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">unvisited</code></td>
+      <td>未走访数（= 池内仍合格的候选点）</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="13-时间预算timeout">1.3 时间预算（timeout）</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>请求 <code class="language-plaintext highlighter-rouge">timeout</code> 取值</th>
+      <th>行为</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">&gt; 0</code></td>
+      <td>按指定值执行</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">&lt;= 0</code></td>
+      <td>按候选池规模自适应：<code class="language-plaintext highlighter-rouge">clamp(30 + 60 × N, 180, 900)</code> 秒（N 为池内候选点数）</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>预算耗尽发布终态 <code class="language-plaintext highlighter-rouge">TIMEOUT</code>，已走访部分不回滚（统计随终态发布）。</p>
+
+<h3 id="14-与其他任务的互斥">1.4 与其他任务的互斥</h3>
+
+<ul>
+  <li><strong>与原地旋转（spin）互斥</strong>：spin 运行中发起巡逻被拒绝（响应消息 <code class="language-plaintext highlighter-rouge">spin running, wait spin_status DONE</code>）。</li>
+  <li><strong>与自主搜索（search）、点导航互斥</strong>：已有任务运行时发起巡逻返回<strong>幂等成功</strong>（<code class="language-plaintext highlighter-rouge">already running</code>），当前任务继续执行——需要按新参数巡逻时，先 <code class="language-plaintext highlighter-rouge">stop_patrol</code> 停止当前任务。</li>
+  <li><code class="language-plaintext highlighter-rouge">stop_patrol</code> 与 <code class="language-plaintext highlighter-rouge">stop_search</code> 共用同一取消通道，停止的都是”当前运行中的任务”。</li>
+</ul>
+
+<h2 id="2-接口参考">2. 接口参考</h2>
+
+<h3 id="21-explorestart_patrol">2.1 /explore/start_patrol</h3>
+
+<p>类型 <code class="language-plaintext highlighter-rouge">tros_frontier_exploration/srv/SearchGoal</code>：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>字段</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">target_pose</code></td>
+      <td>PoseStamped</td>
+      <td>巡逻中心（map 坐标系）。全图巡逻（radius=0）时该坐标不参与选点（按机器人实时位姿就近取点），可填 0,0；区域巡逻时 <code class="language-plaintext highlighter-rouge">pose.position</code> 为圆心</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">search_radius</code></td>
+      <td>float64</td>
+      <td><code class="language-plaintext highlighter-rouge">0</code>=全图巡逻；<code class="language-plaintext highlighter-rouge">&gt;0</code>=区域巡逻（候选裁剪到中心半径圆盘内，按池生成序走访）；<code class="language-plaintext highlighter-rouge">&lt;0</code> 拒绝，响应消息 <code class="language-plaintext highlighter-rouge">patrol requires search_radius &gt;= 0 (0=whole map, &gt;0=area)</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">timeout</code></td>
+      <td>float64</td>
+      <td>时间预算（秒），见 1.3</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">nav_purpose</code></td>
+      <td>string</td>
+      <td>巡逻不使用（自主搜索定向导航专用），留空</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>响应：<code class="language-plaintext highlighter-rouge">success</code> + <code class="language-plaintext highlighter-rouge">message</code>（<code class="language-plaintext highlighter-rouge">search started</code>=已启动；<code class="language-plaintext highlighter-rouge">already running (idempotent, ...)</code>=幂等成功）。</p>
+
+<h3 id="22-explorestop_patrol">2.2 /explore/stop_patrol</h3>
+
+<p>类型 <code class="language-plaintext highlighter-rouge">std_srvs/srv/SetBool</code>，<code class="language-plaintext highlighter-rouge">data</code> 字段无语义（取值任意）。停止后机器人取消当前导航目标、原地停止；未在巡逻时返回 <code class="language-plaintext highlighter-rouge">success=true</code>（message <code class="language-plaintext highlighter-rouge">not running</code>）。</p>
+
+<h3 id="23-exploreget_search_result">2.3 /explore/get_search_result</h3>
+
+<p>类型 <code class="language-plaintext highlighter-rouge">tros_frontier_exploration/srv/SearchResult</code>：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>字段</th>
+      <th>类型</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">success</code></td>
+      <td>bool</td>
+      <td>已有/曾有结果即为 true</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">reason</code></td>
+      <td>string</td>
+      <td>任务状态：<code class="language-plaintext highlighter-rouge">running</code>（进行中）/ <code class="language-plaintext highlighter-rouge">exhausted</code> / <code class="language-plaintext highlighter-rouge">timeout</code> 等</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">goals_completed</code></td>
+      <td>int32</td>
+      <td>已处理目标数</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">elapsed_time</code></td>
+      <td>float64</td>
+      <td>任务用时（秒）</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="24-可视化">2.4 可视化</h3>
+
+<p>巡逻候选点与走访结果的 Foxglove marker 通道（颜色/形状/话题）见主手册 <a href="../index.html#foxglove效果展示">Foxglove效果展示</a>。</p>
+
+<h2 id="3-参数参考">3. 参数参考</h2>
+
+<p>参数位于 <code class="language-plaintext highlighter-rouge">params.yaml</code> 的 explore 段，修改后重启 solution 生效（同主手册 4.6）：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>参数</th>
+      <th>默认值</th>
+      <th>单位/口径</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">free_pool_map_area_thr</code></td>
+      <td>20.0</td>
+      <td>m²（包围盒估算）</td>
+      <td>建池门槛：地图面积低于该值不生成候选池，发起巡逻立即 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">free_pool_cell_size</code></td>
+      <td>3.0</td>
+      <td>m</td>
+      <td>采样方格边长（控制巡逻点密度）：每方格取最大 free 连通域质心作为候选</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">free_pool_max_goals</code></td>
+      <td>20</td>
+      <td>个</td>
+      <td>候选池上限：超限按最远点采样（FPS，保证截断后均匀覆盖全图）截取，直接限制单轮巡逻点数与时长</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">free_pool_min_area_ratio</code></td>
+      <td>2.0</td>
+      <td>系数</td>
+      <td>候选盘最小连通 free 面积 = ratio × π × robot_radius²，过滤碎小 free 区域</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">free_pool_kf_radius</code></td>
+      <td>1.0</td>
+      <td>m（经验值待校准）</td>
+      <td>关键帧约束半径：候选点该半径内关键帧数（mapGraph 节点位姿 = 机器人真实驶过观察过的位置）≥ <code class="language-plaintext highlighter-rouge">free_pool_kf_min_count</code> 才合格——防止 costmap 投影外推产生的”从未驶过区域”假 free 点；<code class="language-plaintext highlighter-rouge">&lt;=0</code> 禁用</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">free_pool_kf_min_count</code></td>
+      <td>1</td>
+      <td>个</td>
+      <td>关键帧约束的最少关键帧数</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>除参数外，候选池生成还会做 <strong>Nav2 路径验证</strong>（从机器人当前位置规划不到的点被剔除，仅以灰色 marker 可视化）。</p>
+
+<h2 id="4-进阶用法">4. 进阶用法</h2>
+
+<ul>
+  <li><strong>多轮巡逻</strong>：本接口为单轮语义，需要再巡一轮时在终态后重新发起。</li>
+  <li><strong>重点区域看护</strong>：区域巡逻（小半径）池小、单轮快，适合上层按计划高频重复发起。</li>
+  <li><strong>上层集成</strong>：巡逻通过 service 发起/停止、进度经话题发布——定时任务、语音助手等上层应用可按计划调用 <code class="language-plaintext highlighter-rouge">start_patrol</code> 并监听 <code class="language-plaintext highlighter-rouge">search_status</code> 终态。巡逻的产出是”走访”行为与状态统计；巡视中的异常发现可结合 solution 已有感知话题，告警推送等由上层应用实现。</li>
+</ul>
+
+<h2 id="5-问题排查">5. 问题排查</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>现象</th>
+      <th>可能原因</th>
+      <th>处置</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>发起立即 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code></td>
+      <td>地图面积 &lt; <code class="language-plaintext highlighter-rouge">free_pool_map_area_thr</code>，或无自由点可访</td>
+      <td>先按主手册 7.3 完成建图；确认地图范围</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">PATROL:n/N</code> 长时间不推进</td>
+      <td>处于 <code class="language-plaintext highlighter-rouge">WAITING_SUBMAP_FLOW</code>（子图回访接管）或 <code class="language-plaintext highlighter-rouge">SPINNING:*</code></td>
+      <td>属正常等待，观察状态串即可；长时间卡住再抓 explore 节点日志</td>
+    </tr>
+    <tr>
+      <td>终态 <code class="language-plaintext highlighter-rouge">TIMEOUT</code> 且 <code class="language-plaintext highlighter-rouge">unvisited &gt; 0</code></td>
+      <td>预算小于池规模所需（或等待占用过多预算）</td>
+      <td>显式传大 <code class="language-plaintext highlighter-rouge">timeout</code>，或调小 <code class="language-plaintext highlighter-rouge">free_pool_max_goals</code></td>
+    </tr>
+    <tr>
+      <td>响应 <code class="language-plaintext highlighter-rouge">success=true</code> 但机器人不动</td>
+      <td>幂等成功——已有任务在运行</td>
+      <td>先 <code class="language-plaintext highlighter-rouge">stop_patrol</code>，再按新参数发起</td>
+    </tr>
+    <tr>
+      <td>候选点明显偏少</td>
+      <td>关键帧约束过滤（<code class="language-plaintext highlighter-rouge">free_pool_kf_radius</code>）或 Nav2 路径验证剔除</td>
+      <td>新建图区域先让机器人驶过；必要时临时调小/禁用 <code class="language-plaintext highlighter-rouge">free_pool_kf_radius</code> 观察</td>
+    </tr>
+  </tbody>
+</table>
+
+    </main>
+  </div>
+  <script>
+  (function() {
+    var toc = document.getElementById('toc');
+    var content = document.querySelector('.content');
+    var headings = content.querySelectorAll('h2, h3');
+    headings.forEach(function(h) {
+      if (!h.id) h.id = h.textContent.trim().replace(/[^\w\u4e00-\u9fff]+/g, '-').replace(/^-|-$/g, '');
+      var li = document.createElement('li');
+      li.className = h.tagName.toLowerCase() === 'h2' ? 'toc-h2' : 'toc-h3';
+      var a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = h.textContent;
+      li.appendChild(a);
+      toc.appendChild(li);
+    });
+  })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>
+  (function() {
+    // Convert Jekyll-rendered <pre><code class="language-mermaid"> to <pre class="mermaid">
+    document.querySelectorAll('code.language-mermaid').forEach(function(code) {
+      var pre = code.parentElement;
+      var div = document.createElement('pre');
+      div.className = 'mermaid';
+      div.textContent = code.textContent;
+      pre.parentElement.replaceChild(div, pre);
+    });
+    mermaid.initialize({startOnLoad:true, theme:'default'});
+  })();
+  </script>
+  <script>
+  (function() {
+    // 给代码块添加复制按钮
+    document.querySelectorAll('.content pre').forEach(function(pre) {
+      if (pre.classList.contains('mermaid') || !pre.querySelector('code')) return;
+      var btn = document.createElement('button');
+      var wrapper = document.createElement('div');
+      wrapper.className = 'code-wrapper';
+      pre.parentElement.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
+      btn.className = 'copy-btn';
+      btn.textContent = '复制';
+      btn.addEventListener('click', function() {
+        var code = pre.querySelector('code');
+        navigator.clipboard.writeText(code ? code.textContent : pre.textContent).then(function() {
+          btn.textContent = '已复制';
+          btn.classList.add('copied');
+          setTimeout(function() {
+            btn.textContent = '复制';
+            btn.classList.remove('copied');
+          }, 2000);
+        });
+      });
+      wrapper.appendChild(btn);
+    });
+    // click picture to enlarge it（lightbox）
+    var overlay = document.createElement('div');
+    overlay.className = 'img-lightbox';
+    var big = document.createElement('img');
+    overlay.appendChild(big);
+    document.body.appendChild(overlay);
+
+    function close() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    overlay.addEventListener('click', close);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') close();
+    });
+
+    document.querySelector('.content').addEventListener('click', function(e) {
+      var img = e.target.closest('img');
+      if (img && !img.closest('a')) {
+        big.src = img.src;
+        big.alt = img.alt || '';
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        return;
+      }
+      // mermaid 图表放大
+      var svg = e.target.closest('.mermaid svg');
+      if (svg) {
+        var clone = svg.cloneNode(true);
+        clone.setAttribute('style', 'background: white;');
+        var svgStr = new XMLSerializer().serializeToString(clone);
+        big.src = URL.createObjectURL(new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'}));
+        big.alt = '';
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

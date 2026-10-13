@@ -406,7 +406,7 @@
   <li>未知环境下自主探索建图 — 自动搜索地图边界frontier并导航前往，用户零干预下完成地图构建任务。</li>
   <li>回环检测(loop closure)触发 — 自动触发回环检测，提升定位精度和地图质量。</li>
   <li>重定位(relocating)策略 — 丢失定位时自动触发重定位策略，加速机器人恢复定位。</li>
-  <li>SLAM模式切换 — mapping/localization模式自动切换，实现Lifelong SLAM。详见 <a href="faq.html#9-slam-模式与子图管理说明">FAQ - SLAM 模式与子图管理说明</a>。</li>
+  <li>SLAM模式切换 — mapping/localization模式自动切换，实现Lifelong SLAM。详见 <a href="guides/slam_modes.html">SLAM 模式与子图管理深度指南</a>。</li>
   <li>脱困(trapped recovery) — 自动识别机器人是否被困，被困时自动脱困。</li>
 </ol>
 
@@ -674,16 +674,20 @@
 
 <p>RDK X5 的 aic8800 WiFi 模块默认开启省电模式（信标间隔内休眠），会引入链路延迟抖动，长时间运行还可能触发路由器（AP）转发表异常，导致开发板与局域网内个别设备断连（其余设备仍可互ping）。进行SLAM建图、NFS挂载开发板文件系统等对链路稳定性敏感的操作前，建议关闭。</p>
 
-<p>在RDK X5上执行以下命令，立即生效并持久化（重启、重新关联WiFi后仍有效）：</p>
+<p>在RDK X5上执行以下命令。省电标志会被多条路径重新打开，需分层关闭（重新关联/漫游、接口 down/up 均不产生 udev 事件，udev 规则只覆盖开机时的接口注册）：</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 立即关闭软件省电</span>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 1. 立即关闭软件省电</span>
 iw dev wlan0 <span class="nb">set </span>power_save off
 
-<span class="c"># 持久化：驱动级省电开关（下次加载模块生效，即重启后生效）</span>
+<span class="c"># 2. 持久化：NM 连接级（覆盖 NM 自管的关联/重连——NM 每次激活时都会重新下发）</span>
+nmcli connection modify <span class="s2">"&lt;WiFi连接名&gt;"</span> 802-11-wireless.powersave 2
+
+<span class="c"># 3. 持久化：驱动内部省电开关（仅模块加载时生效；注意：不控制 `iw` 报告的软件标志）</span>
 <span class="nb">printf</span> <span class="s2">"# disable aic8800 wifi power saving (stability for NFS-over-WiFi + AP FDB)</span><span class="se">\n</span><span class="s2">options aic8800_fdrv ps_on=N</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;</span> /etc/modprobe.d/aic8800-ps-off.conf
 
-<span class="c"># 持久化：udev规则，WiFi重新关联后自动关闭软件省电</span>
-<span class="nb">printf</span> <span class="s2">"ACTION==</span><span class="se">\"</span><span class="s2">add|change</span><span class="se">\"</span><span class="s2">, SUBSYSTEM==</span><span class="se">\"</span><span class="s2">net</span><span class="se">\"</span><span class="s2">, KERNEL==</span><span class="se">\"</span><span class="s2">wlan0</span><span class="se">\"</span><span class="s2">, TEST==</span><span class="se">\"</span><span class="s2">iw</span><span class="se">\"</span><span class="s2">, RUN+=</span><span class="se">\"</span><span class="s2">/sbin/iw dev wlan0 set power_save off</span><span class="se">\"\n</span><span class="s2">"</span> <span class="o">&gt;</span> /etc/udev/rules.d/70-wlan0-powersave-off.rules
+<span class="c"># 4. 持久化：udev 规则（开机接口注册时刻兜底；勿加 TEST——TEST 相对 sysfs 设备目录解析，</span>
+<span class="c">#    TEST=="iw" 检查 /sys/.../net/wlan0/iw 恒不存在，规则永不匹配）</span>
+<span class="nb">printf</span> <span class="s2">"ACTION==</span><span class="se">\"</span><span class="s2">add</span><span class="se">\"</span><span class="s2">, SUBSYSTEM==</span><span class="se">\"</span><span class="s2">net</span><span class="se">\"</span><span class="s2">, KERNEL==</span><span class="se">\"</span><span class="s2">wlan0</span><span class="se">\"</span><span class="s2">, RUN+=</span><span class="se">\"</span><span class="s2">/sbin/iw dev wlan0 set power_save off</span><span class="se">\"\n</span><span class="s2">"</span> <span class="o">&gt;</span> /etc/udev/rules.d/70-wlan0-powersave-off.rules
 </code></pre></div></div>
 
 <p>验证当前省电状态（应输出 <code class="language-plaintext highlighter-rouge">Power save: off</code>）：</p>
@@ -697,6 +701,7 @@ iw dev wlan0 <span class="nb">set </span>power_save off
     <li>若提示找不到 <code class="language-plaintext highlighter-rouge">iw</code>，确认其路径（RDK X5 上为 <code class="language-plaintext highlighter-rouge">/sbin/iw</code>）。</li>
     <li>关闭省电会增加 WiFi 模块功耗（约零点几瓦），对 X5 供电和散热无影响；使用电池供电的移动场景需自行权衡。</li>
     <li>该驱动还提供深度省电参数 <code class="language-plaintext highlighter-rouge">dpsm</code>（默认已关闭 <code class="language-plaintext highlighter-rouge">N</code>），无需处理。</li>
+    <li>残余缺口：wpa_supplicant 自主漫游、手工 <code class="language-plaintext highlighter-rouge">ifconfig wlan0 down/up</code> 等绕过 NM 的路径可能将标志重新打开；长时间运行前建议复查一次上面的验证命令。</li>
   </ol>
 </blockquote>
 
@@ -904,7 +909,7 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
 <h3 id="61-相机和底盘外参标定粗标定">6.1 相机和底盘外参标定（粗标定）</h3>
 
 <p>本章节介绍不依赖标定治具的情况下，实现相机和底盘之间x, y, z, roll, pitch外参的快速粗标定。
-此方法无法标定yaw角，如果相机和底盘之间yaw角较大，或者对标定精度有极高要求，请参考<a href="calibration.html">相机和底盘外参标定（高精度标定）</a>进行标定。</p>
+此方法无法标定yaw角，如果相机和底盘之间yaw角较大，或者对标定精度有极高要求，请参考<a href="guides/calibration.html">相机和底盘外参标定（高精度标定）</a>进行标定。</p>
 
 <p>简单、快速的粗标定能够满足基本使用需求，建议采用此标定方法。</p>
 
@@ -1521,6 +1526,102 @@ ros2 launch tros_person_following tros_person_following.launch.py enable_perc_re
     nav --&gt;|costmap| follow
 </code></pre>
 
+<h3 id="77-自主巡逻">7.7 自主巡逻</h3>
+
+<p>本章节介绍如何使用已有地图进行自主巡逻（patrol）：机器人对地图中全部可达自由点进行<strong>单轮走访</strong>。</p>
+
+<p>自主巡逻为移动巡视类应用提供底座行为——用一台移动机器人按点位序列巡视，替代多个固定监控点。结合场景可实现的能力：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>场景</th>
+      <th>能力</th>
+      <th>巡逻的用法</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>全屋移动监控</td>
+      <td>一台机器人覆盖全屋各区域，消除固定监控点的视角死角</td>
+      <td>发起全图巡逻，走访全程相机视野覆盖各区域，配合远程图像查看实现移动巡视</td>
+    </tr>
+    <tr>
+      <td>重点区域看护</td>
+      <td>对老人房、宠物活动区等特定区域高频巡视</td>
+      <td>发起区域巡逻，只走访重点区域，单轮时间短、可重复发起</td>
+    </tr>
+    <tr>
+      <td>定时/离家值守</td>
+      <td>无人在家或夜间时段按计划自动巡视</td>
+      <td>巡逻通过service发起和停止，上层应用（定时任务、语音助手等）可按计划调用</td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p><strong>提示</strong> 
+巡逻本身完成”走访”这一移动行为；巡视中的异常发现（人员、宠物等检测）可结合solution已有的感知能力，告警推送等由上层应用实现。</p>
+
+</blockquote>
+
+<p>与自主探索建图不同：自主探索面向未知区域持续扩展地图，自主巡逻只走访已知地图内的自由点，不扩展地图。</p>
+
+<h4 id="巡逻效果">巡逻效果</h4>
+
+<p>机器人自主巡逻过程如下（候选点走访、到访标记与实时避障）：</p>
+
+<p><img src="images/vims_patrol.gif" width="900" /></p>
+
+<blockquote>
+  <p>完整巡逻效果视频：<a href="https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/images/vims_patrol.mp4">vims_patrol.mp4</a></p>
+</blockquote>
+
+<h4 id="启动solution-2">启动solution</h4>
+
+<p>在 RDK X5 终端运行如下命令，与<a href="#74-导航和避障">7.4 导航和避障</a>启动命令一致：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/install/local_setup.bash
+<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="se">\</span>
+<span class="nv">run_rviz</span><span class="o">=</span>False <span class="nv">run_foxglove</span><span class="o">=</span>True <span class="se">\</span>
+bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
+</code></pre></div></div>
+
+<blockquote>
+  <p><strong>注意</strong> 
+巡逻依赖已有地图：需先按<a href="#73-vslam建图">7.3 VSLAM建图</a>完成建图，且地图面积需大于参数 <code class="language-plaintext highlighter-rouge">free_pool_map_area_thr</code>（默认20.0 m²）。面积过小或无自由点可访时，发起巡逻会立即结束并发布终态 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code>。</p>
+
+</blockquote>
+
+<h4 id="发起和停止巡逻">发起和停止巡逻</h4>
+
+<p>在 Foxglove 中可发起/停止巡逻，观察巡逻候选点、走访过程、进度与结果（Foxglove 连接与 layout 导入方法见 <a href="#48-使用-foxglove-展示">4.8 使用 Foxglove 展示</a>）。</p>
+
+<p>面板布局如下（图中标注与下文控件说明（1）-（3）对应）：</p>
+
+<p><img src="images/fg_patrol_panel.png" width="600" /></p>
+
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">StartPatrol</code>面板启动巡逻 service 。</li>
+  <li><code class="language-plaintext highlighter-rouge">StopPatrol</code> 面板停止巡逻 service。</li>
+  <li><code class="language-plaintext highlighter-rouge">/explore/search_status</code> 面板显示当前巡逻进度与结果。</li>
+</ol>
+
+<blockquote>
+  <p><strong>提示</strong></p>
+  <ul>
+    <li>巡逻进度：进行中 <code class="language-plaintext highlighter-rouge">PATROL:n/N t:m/M</code>（已走访n个/共N个候选点，已耗时 m 秒，时间限制 M 秒）。</li>
+    <li>巡逻结果：正常结束 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code>；时间预算耗尽 <code class="language-plaintext highlighter-rouge">TIMEOUT</code>；手动停止 <code class="language-plaintext highlighter-rouge">CANCELLED</code>。</li>
+    <li>Foxglove中左侧区域地图上会展示走访过程中的marker特写（绿色方块=已到访、红色方块=到访失败、橙色方块=临时取消走访、黄色球形=候选池/待走访）。</li>
+  </ul>
+
+</blockquote>
+
+<h4 id="参数和配置">参数和配置</h4>
+
+<p>巡逻相关参数（如时间限制、巡逻采样点密度、定点巡逻等）与 service 接口字段的完整说明见 <a href="guides/patrol.html">自主巡逻深度指南</a>。参数修改方式同4.6（编辑 <code class="language-plaintext highlighter-rouge">params.yaml</code> 后重新启动solution）。</p>
+
 <h2 id="8-适配其他底盘">8. 适配其他底盘</h2>
 
 <p>本章节介绍将基于VIO算法的移动Solution套件迁移到其他底盘的方法（如自研底盘myrobot）。
@@ -1641,7 +1742,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 </ul>
 
 <blockquote>
-  <p>详细使用说明参考 <a href="faq.html#11-离线数据录制与回放vims_offline">FAQ 离线数据录制与回放（ViMS_offline）</a>章节。</p>
+  <p>详细使用说明（环境准备、子命令与参数、质量检查、回放profile、单参数调试覆盖等）参考 <a href="guides/vims_offline.html">离线数据录制与回放深度指南</a>。</p>
 </blockquote>
 
 <h4 id="1111-数据录制">11.1.1 数据录制</h4>
@@ -1679,7 +1780,7 @@ vims_offline replay /userdata/recordings/my_session_&lt;时间戳&gt; <span clas
     <span class="nt">--profile</span> rtabmap <span class="nt">--rate</span> 1.0 <span class="nt">--run-dir</span> /userdata/replay_runs
 </code></pre></div></div>
 
-<p>详细用法——<a href="faq.html#116-回放能力profile">查看可用回放 profile 与回放能力profile</a>、<a href="faq.html#117-单参数调试覆盖--launch-arg">单参数调试覆盖（<code class="language-plaintext highlighter-rouge">--launch-arg</code>）</a>、回放输出目录说明等——详见 <a href="faq.html#11-离线数据录制与回放vims_offline">FAQ 离线数据录制与回放（ViMS_offline）</a>。</p>
+<p>详细用法——<a href="guides/vims_offline.html#6-回放能力profile">查看可用回放 profile 与回放能力profile</a>、<a href="guides/vims_offline.html#7-单参数调试覆盖--launch-arg">单参数调试覆盖（<code class="language-plaintext highlighter-rouge">--launch-arg</code>）</a>、回放输出目录说明等——详见 <a href="guides/vims_offline.html">离线数据录制与回放深度指南</a>。</p>
 
 
     </main>
