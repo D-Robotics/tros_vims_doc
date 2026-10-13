@@ -198,7 +198,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 |标定工具|双目相机内参标定；相机和机器人底盘外参标定。|
 |轨迹规划算法分析工具|可视化DWB轨迹规划算法的计算过程和结果，用于优化轨迹规划算法功能。|
 |运行时latency统计工具|统计时间窗口内功能模块的latency，包括模块的输出帧率，输入、处理和输出的平均、最大和最小延迟等数据，用于识别和优化系统pipeline的latency瓶颈。|
-|rviz hud|将机器人的关键行为和系统状态信息，以overlay的形式在rviz上渲染。|
+|rviz hud|将机器人的关键行为和系统状态信息，以overlay的形式在rviz上渲染。需启动时带`run_rviz=True`（默认`run_foxglove=True`时不启动）；hud信息来源为`/tros_diagnostics`话题，Foxglove模式下可订阅该话题查看同等信息。|
 |在线数据trigger & recorder|用于路径规划时自动触发录制系统状态数据，通过离线回放数据定位问题，支持录制触发前的数据（影子模式）。|
 |[离线录制/回放工具（ViMS_offline）](#111-离线数据录制与回放vims_offline)|录制最小传感器源topic集合并导出硬件绑定静态TF；离线按profile选定模块组合回放，用于问题复现与算法评测。|
 
@@ -222,7 +222,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 
 注3：包含双目数据采集、双目深度估计算法、VIO、视觉语义障碍物识别算法和通用障碍物识别算法，**图像采集频率6fps**，gdc硬件resize。
 
-注4：包含自主探索（explore 15%）、状态监控（tros_stat_monitor 11%）、slam_relocalization_helper（4%）等功能。不包含 websocket、bridge、ros2launch 等工具进程（合计MEM占用约 194MB）。
+注4：包含自主探索（explore 15%）、状态监控（tros_stat_monitor 11%）、slam_relocalization_helper（4%）等功能。不包含 websocket、bridge、ros2launch 等工具进程（合计MEM占用约 194MB）。可视化开关影响板端进程组成：`run_rviz=True` 时板端额外运行 rviz2 进程，`run_foxglove=True`（默认）时板端运行 foxglove_bridge 进程。
 
 统计命令：
 
@@ -467,7 +467,7 @@ source /userdata/vims/install/local_setup.bash
 ls `ros2 pkg prefix tros_vision_nav --share`/params/vims-foxglove-layout.json
 ```
 
-4. RDK X5上运行如下命令，启动foxglove bridge：
+4. RDK X5上运行如下命令，启动foxglove bridge（若已启动solution，foxglove bridge会随栈自动启动，请跳过本步——重复启动会因8765端口被占用而失败）：
 
 ```bash
 source /opt/tros/humble/local_setup.bash
@@ -481,9 +481,10 @@ ros2 run foxglove_bridge foxglove_bridge
 
 连接成功后，RDK X5运行foxglove bridge的终端会输出`publishing connection graph`日志信息。
 
-> **提示** 
-- 移动solution支持使用rviz和foxglove进行数据可视化，启动时使用`run_rviz`和`run_foxglove`参数进行开关。
-- 例如启动时`run_rviz=False run_foxglove=True`表示使用foxglove进行数据可视化，将会自动启动 foxglove bridge 。`run_rviz=True run_foxglove=False`表示使用rviz进行数据可视化。
+> **提示**
+- 移动solution支持使用rviz和foxglove进行数据可视化，启动时使用`run_rviz`和`run_foxglove`参数进行开关。`params.yaml`中默认`run_rviz=False run_foxglove=True`，即默认使用Foxglove并自动启动foxglove bridge。
+- 例如启动时`run_rviz=False run_foxglove=True`表示使用foxglove进行数据可视化，将会自动启动 foxglove bridge 。`run_rviz=True run_foxglove=False`表示使用rviz进行数据可视化（本手册各示例命令均按此方式显式指定）。
+- 单独调试rviz显示配置的方法，参考FAQ「只启动rviz」章节。
 >
 
 
@@ -563,7 +564,7 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 ```bash
 source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash 
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml stereonet_pub_web=True run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False pcl_process_mode=1 pcl_in_pcl_frame_id=camera_link pcl_out_pcl_frame_id=camera_link pcl_filter_max_x=1.0 pcl_filter_max_y=0.5 pcl_filter_min_y=-0.5 pcl_filter_min_z=-1.0 max_obstacle_height=2.0 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml stereonet_pub_web=True run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False pcl_process_mode=1 pcl_in_pcl_frame_id=camera_link pcl_out_pcl_frame_id=camera_link pcl_filter_max_x=1.0 pcl_filter_max_y=0.5 pcl_filter_min_y=-0.5 pcl_filter_min_z=-1.0 max_obstacle_height=2.0 run_rviz=True run_foxglove=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 此时PC打开WEB浏览器（chrome/firefox/edge）输入 http://IP:8000（IP为RDK IP地址），能够查看到相机画面。
@@ -602,7 +603,7 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 ```bash
 source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash 
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml stereonet_pub_web=True pcl_en_debug=True run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False pcl_filter_max_y=0.5 pcl_filter_min_y=-0.5 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml stereonet_pub_web=True pcl_en_debug=True run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False pcl_filter_max_y=0.5 pcl_filter_min_y=-0.5 run_rviz=True run_foxglove=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 终端输出如下log，说明标定正确：
@@ -641,7 +642,7 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 ```bash
 source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml stereonet_pub_web=True run_nav=False run_explore=False rtabmap_Grid_3D="'true'" bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml stereonet_pub_web=True run_nav=False run_explore=False rtabmap_Grid_3D="'true'" run_rviz=True run_foxglove=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 RVIZ上打开障碍物点云的渲染，如下图：
@@ -703,7 +704,7 @@ RVIZ上打开障碍物点云的渲染，如下图：
 ```bash
 source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml odom_type=vio stereonet_pub_web=True run_pcl2grid=False run_rviz=True run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml odom_type=vio stereonet_pub_web=True run_pcl2grid=False run_rviz=True run_foxglove=False run_perc=False run_slam=False run_nav=False run_explore=False run_mask_depth=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 #### 配置RVIZ
@@ -738,8 +739,8 @@ source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash
 mkdir -p /userdata/rtabmap/ 
 # 删除地图文件
-rm /userdata/rtabmap/office.db* 
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+rm /userdata/rtabmap/office.db*
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml run_rviz=True run_foxglove=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 > **提示** 
@@ -798,7 +799,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```bash
 source /opt/tros/humble/local_setup.bash
 source /userdata/vims/install/local_setup.bash
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml run_rviz=True run_foxglove=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 > **提示** 
@@ -831,7 +832,7 @@ source /userdata/vims/install/local_setup.bash
 
 ros2 run tf2_ros static_transform_publisher --frame-id base_link --child-frame-id base_footprint --z -0.0 &
 
-YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml rtabmap_Grid_3D="'true'" rtabmap_Grid_MaxObstacleHeight="'0.75'" run_pcl2grid=False run_nav=False run_explore=False localization=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
+YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml rtabmap_Grid_3D="'true'" rtabmap_Grid_MaxObstacleHeight="'0.75'" run_pcl2grid=False run_nav=False run_explore=False localization=False run_rviz=True run_foxglove=False bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 ```
 

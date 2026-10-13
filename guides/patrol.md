@@ -185,7 +185,7 @@ patrol 没有名为 SUCCESS 的状态——成功就是上表判定式（`EXHAUS
 
 ### 2.4 可视化
 
-巡逻候选点与走访结果的 Foxglove marker 通道（颜色/形状/话题）见主手册 [Foxglove效果展示](../index.html#foxglove效果展示)。
+巡逻候选点与走访结果的 Foxglove marker 通道（颜色/形状/话题）见主手册 [发起和停止巡逻](../index.html#发起和停止巡逻)。
 
 ## 3. 参数参考
 

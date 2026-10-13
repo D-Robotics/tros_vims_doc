@@ -238,6 +238,7 @@ mkdir -p /userdata/rtabmap/
 rm /userdata/rtabmap/office.db 
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
 run_explore=False run_traj_viz=True run_nav=False localization=False \
+run_rviz=True run_foxglove=False \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
@@ -320,6 +321,7 @@ cp -r `ros2 pkg prefix dnn_node_example`/lib/dnn_node_example/config .
 
 YAML_CONFIG_FILE=`ros2 pkg prefix tros_vision_nav --share`/params/params.yaml \
 frontier_search_radius=25.0 frontier_goal_nav_path_dist=50.0 \
+run_rviz=True run_foxglove=False \
 bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
