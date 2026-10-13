@@ -6,7 +6,7 @@ layout: default
 # iRobot Create3底盘配置
 
 本文档介绍采用[iRobot Create3机器人底盘](https://iroboteducation.github.io/create3_docs/)涉及到的配置和安装说明：
-<img src="images/image_001.png" width="800">
+<img src="../images/image_001.png" width="800">
 
 ## 安装双目相机
 
@@ -18,8 +18,8 @@ layout: default
 
 | 说明 | 示意图 |
 | :---: | :---: |
-| USB转网卡连接底盘 | <img src="images/image_010.jpg" width="300"> |
-| RDK X5使用网线连接USB转网卡 | <img src="images/image_011.jpg" width="300"> |
+| USB转网卡连接底盘 | <img src="../images/image_010.jpg" width="300"> |
+| RDK X5使用网线连接USB转网卡 | <img src="../images/image_011.jpg" width="300"> |
 
 ## Create3软件配置
 
@@ -30,7 +30,7 @@ layout: default
 关机
 长按中间按键约5秒钟，直到听到关机声音并且按键上灯熄灭，表示机器已经关机。https://iroboteducation.github.io/create3_docs/hw/face/
 
-<img src="images/image_013.png" width="600">
+<img src="../images/image_013.png" width="600">
 
 重启
 关机后重新开机。
@@ -44,12 +44,12 @@ layout: default
 将RDK作为ntp server，Create3为ntp client，同步RDK和Create3的时间。
 网页端Beta Features 中选择 Edit ntp.conf，将RDK的有线网卡IP地址添加到SBC servers，保存后选择Restart ntpd重启ntp服务：
 
-<img src="images/image_014.png" width="600">
+<img src="../images/image_014.png" width="600">
 
 ## 配置Namespace
 将Namespace设置为/create3：
 
-<img src="images/image_015.png" width="600">
+<img src="../images/image_015.png" width="600">
 
 **软件配置**
 为了降低 iRobot Create3 的CPU负载，在iRobot Create3的对底盘进行如下配置：
@@ -89,13 +89,13 @@ Beta Features 中设置 RMW Profile Override，绑定 eth0 网卡：
 
 iRobot Create3的网页端配置效果如下：
 
-| <img src="images/image_016.png" width="300"> | <img src="images/image_017.png" width="300"> |
+| <img src="../images/image_016.png" width="300"> | <img src="../images/image_017.png" width="300"> |
 | --- | --- |
 
 **配置生效**
 重启底盘（Restart application），使配置生效：
 
-<img src="images/image_018.png" width="600">
+<img src="../images/image_018.png" width="600">
 
 **参考资料**
 
@@ -254,7 +254,7 @@ ros2 topic delay -w 5 /odom
 
 输出如下：
 
-| <img src="images/image_023.png" width="300"> | <img src="images/image_024.png" width="300"> |
+| <img src="../images/image_023.png" width="300"> | <img src="../images/image_024.png" width="300"> |
 | --- | --- |
 
 

@@ -41,7 +41,7 @@ cd `ros2 pkg prefix camera_extrinsic_calibration`/data/apriltag_pdf
 按照下图所示的坐标,在水平地面标记行走路径关键点:p1, p2, p3, p4。保证机器人运动过程左,右,前30cm内没有任何障碍物。
 Apriltag粘贴以及路径标记示意图：
 
-<img src="images/image_034.png" width="600">
+<img src="../images/image_034.png" width="600">
 
 ## 采集数据
 ### 启动双目深度估计和VIO
@@ -124,7 +124,7 @@ currently:      speed 0.14      turn 0.28
 ## 开始标定
 ### 测量外参初始值
 标定算法要求提供初始外参，初始值和真值测量的角度偏差不超过10(°), 平移偏差不超过0.01(m)。
-参考[相机和底盘外参标定（粗标定）](index.html#61-相机和底盘外参标定粗标定)  章节测量初始外参。
+参考[相机和底盘外参标定（粗标定）](../index.html#61-相机和底盘外参标定粗标定)  章节测量初始外参。
 ### 运行标定脚本
 
 ```bash
