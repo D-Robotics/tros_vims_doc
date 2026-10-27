@@ -452,7 +452,7 @@
     </tr>
     <tr>
       <td style="text-align: center">rviz hud</td>
-      <td>将机器人的关键行为和系统状态信息，以overlay的形式在rviz上渲染。</td>
+      <td>将机器人的关键行为和系统状态信息，以overlay的形式在rviz上渲染。需启动时带<code class="language-plaintext highlighter-rouge">run_rviz=True</code>（默认<code class="language-plaintext highlighter-rouge">run_foxglove=True</code>时不启动）；hud信息来源为<code class="language-plaintext highlighter-rouge">/tros_diagnostics</code>话题，Foxglove模式下可订阅该话题查看同等信息。</td>
     </tr>
     <tr>
       <td style="text-align: center">在线数据trigger &amp; recorder</td>
@@ -531,7 +531,7 @@
 
 <p>注3：包含双目数据采集、双目深度估计算法、VIO、视觉语义障碍物识别算法和通用障碍物识别算法，<strong>图像采集频率6fps</strong>，gdc硬件resize。</p>
 
-<p>注4：包含自主探索（explore 15%）、状态监控（tros_stat_monitor 11%）、slam_relocalization_helper（4%）等功能。不包含 websocket、bridge、ros2launch 等工具进程（合计MEM占用约 194MB）。</p>
+<p>注4：包含自主探索（explore 15%）、状态监控（tros_stat_monitor 11%）、slam_relocalization_helper（4%）等功能。不包含 websocket、bridge、ros2launch 等工具进程（合计MEM占用约 194MB）。可视化开关影响板端进程组成：<code class="language-plaintext highlighter-rouge">run_rviz=True</code> 时板端额外运行 rviz2 进程，<code class="language-plaintext highlighter-rouge">run_foxglove=True</code>（默认）时板端运行 foxglove_bridge 进程。</p>
 
 <p>统计命令：</p>
 
@@ -823,7 +823,7 @@ wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/deb/h
 </code></pre></div></div>
 
 <ol>
-  <li>RDK X5上运行如下命令，启动foxglove bridge：</li>
+  <li>RDK X5上运行如下命令，启动foxglove bridge（若已启动solution，foxglove bridge会随栈自动启动，请跳过本步——重复启动会因8765端口被占用而失败）：</li>
 </ol>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
@@ -842,8 +842,9 @@ ros2 run foxglove_bridge foxglove_bridge
 <blockquote>
   <p><strong>提示</strong></p>
   <ul>
-    <li>移动solution支持使用rviz和foxglove进行数据可视化，启动时使用<code class="language-plaintext highlighter-rouge">run_rviz</code>和<code class="language-plaintext highlighter-rouge">run_foxglove</code>参数进行开关。</li>
-    <li>例如启动时<code class="language-plaintext highlighter-rouge">run_rviz=False run_foxglove=True</code>表示使用foxglove进行数据可视化，将会自动启动 foxglove bridge 。<code class="language-plaintext highlighter-rouge">run_rviz=True run_foxglove=False</code>表示使用rviz进行数据可视化。</li>
+    <li>移动solution支持使用rviz和foxglove进行数据可视化，启动时使用<code class="language-plaintext highlighter-rouge">run_rviz</code>和<code class="language-plaintext highlighter-rouge">run_foxglove</code>参数进行开关。<code class="language-plaintext highlighter-rouge">params.yaml</code>中默认<code class="language-plaintext highlighter-rouge">run_rviz=False run_foxglove=True</code>，即默认使用Foxglove并自动启动foxglove bridge。</li>
+    <li>例如启动时<code class="language-plaintext highlighter-rouge">run_rviz=False run_foxglove=True</code>表示使用foxglove进行数据可视化，将会自动启动 foxglove bridge 。<code class="language-plaintext highlighter-rouge">run_rviz=True run_foxglove=False</code>表示使用rviz进行数据可视化（本手册各示例命令均按此方式显式指定）。</li>
+    <li>单独调试rviz显示配置的方法，参考FAQ「只启动rviz」章节。</li>
   </ul>
 
 </blockquote>
@@ -965,7 +966,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash 
-<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_perc</span><span class="o">=</span>False <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_mask_depth</span><span class="o">=</span>False <span class="nv">pcl_process_mode</span><span class="o">=</span>1 <span class="nv">pcl_in_pcl_frame_id</span><span class="o">=</span>camera_link <span class="nv">pcl_out_pcl_frame_id</span><span class="o">=</span>camera_link <span class="nv">pcl_filter_max_x</span><span class="o">=</span>1.0 <span class="nv">pcl_filter_max_y</span><span class="o">=</span>0.5 <span class="nv">pcl_filter_min_y</span><span class="o">=</span><span class="nt">-0</span>.5 <span class="nv">pcl_filter_min_z</span><span class="o">=</span><span class="nt">-1</span>.0 <span class="nv">max_obstacle_height</span><span class="o">=</span>2.0 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
+<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_perc</span><span class="o">=</span>False <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_mask_depth</span><span class="o">=</span>False <span class="nv">pcl_process_mode</span><span class="o">=</span>1 <span class="nv">pcl_in_pcl_frame_id</span><span class="o">=</span>camera_link <span class="nv">pcl_out_pcl_frame_id</span><span class="o">=</span>camera_link <span class="nv">pcl_filter_max_x</span><span class="o">=</span>1.0 <span class="nv">pcl_filter_max_y</span><span class="o">=</span>0.5 <span class="nv">pcl_filter_min_y</span><span class="o">=</span><span class="nt">-0</span>.5 <span class="nv">pcl_filter_min_z</span><span class="o">=</span><span class="nt">-1</span>.0 <span class="nv">max_obstacle_height</span><span class="o">=</span>2.0 <span class="nv">run_rviz</span><span class="o">=</span>True <span class="nv">run_foxglove</span><span class="o">=</span>False bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
 <p>此时PC打开WEB浏览器（chrome/firefox/edge）输入 http://IP:8000（IP为RDK IP地址），能够查看到相机画面。
@@ -1017,7 +1018,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash 
-<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">pcl_en_debug</span><span class="o">=</span>True <span class="nv">run_perc</span><span class="o">=</span>False <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_mask_depth</span><span class="o">=</span>False <span class="nv">pcl_filter_max_y</span><span class="o">=</span>0.5 <span class="nv">pcl_filter_min_y</span><span class="o">=</span><span class="nt">-0</span>.5 bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
+<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">pcl_en_debug</span><span class="o">=</span>True <span class="nv">run_perc</span><span class="o">=</span>False <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_mask_depth</span><span class="o">=</span>False <span class="nv">pcl_filter_max_y</span><span class="o">=</span>0.5 <span class="nv">pcl_filter_min_y</span><span class="o">=</span><span class="nt">-0</span>.5 <span class="nv">run_rviz</span><span class="o">=</span>True <span class="nv">run_foxglove</span><span class="o">=</span>False bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
 <p>终端输出如下log，说明标定正确：</p>
@@ -1065,7 +1066,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash
-<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">rtabmap_Grid_3D</span><span class="o">=</span><span class="s2">"'true'"</span> bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
+<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">rtabmap_Grid_3D</span><span class="o">=</span><span class="s2">"'true'"</span> <span class="nv">run_rviz</span><span class="o">=</span>True <span class="nv">run_foxglove</span><span class="o">=</span>False bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
 <p>RVIZ上打开障碍物点云的渲染，如下图：</p>
@@ -1185,7 +1186,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash
-<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">odom_type</span><span class="o">=</span>vio <span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_pcl2grid</span><span class="o">=</span>False <span class="nv">run_rviz</span><span class="o">=</span>True <span class="nv">run_perc</span><span class="o">=</span>False <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_mask_depth</span><span class="o">=</span>False bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
+<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">odom_type</span><span class="o">=</span>vio <span class="nv">stereonet_pub_web</span><span class="o">=</span>True <span class="nv">run_pcl2grid</span><span class="o">=</span>False <span class="nv">run_rviz</span><span class="o">=</span>True <span class="nv">run_foxglove</span><span class="o">=</span>False <span class="nv">run_perc</span><span class="o">=</span>False <span class="nv">run_slam</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">run_mask_depth</span><span class="o">=</span>False bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
 <h4 id="配置rviz">配置RVIZ</h4>
@@ -1218,8 +1219,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash
 <span class="nb">mkdir</span> <span class="nt">-p</span> /userdata/rtabmap/ 
 <span class="c"># 删除地图文件</span>
-<span class="nb">rm</span> /userdata/rtabmap/office.db<span class="k">*</span> 
-<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
+<span class="nb">rm</span> /userdata/rtabmap/office.db<span class="k">*</span>
+<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">run_rviz</span><span class="o">=</span>True <span class="nv">run_foxglove</span><span class="o">=</span>False bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
 <blockquote>
@@ -1306,7 +1307,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash
-<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
+<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">run_rviz</span><span class="o">=</span>True <span class="nv">run_foxglove</span><span class="o">=</span>False bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 </code></pre></div></div>
 
 <blockquote>
@@ -1345,7 +1346,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 ros2 run tf2_ros static_transform_publisher <span class="nt">--frame-id</span> base_link <span class="nt">--child-frame-id</span> base_footprint <span class="nt">--z</span> <span class="nt">-0</span>.0 &amp;
 
-<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">rtabmap_Grid_3D</span><span class="o">=</span><span class="s2">"'true'"</span> <span class="nv">rtabmap_Grid_MaxObstacleHeight</span><span class="o">=</span><span class="s2">"'0.75'"</span> <span class="nv">run_pcl2grid</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">localization</span><span class="o">=</span>False bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
+<span class="nv">YAML_CONFIG_FILE</span><span class="o">=</span><span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml <span class="nv">rtabmap_Grid_3D</span><span class="o">=</span><span class="s2">"'true'"</span> <span class="nv">rtabmap_Grid_MaxObstacleHeight</span><span class="o">=</span><span class="s2">"'0.75'"</span> <span class="nv">run_pcl2grid</span><span class="o">=</span>False <span class="nv">run_nav</span><span class="o">=</span>False <span class="nv">run_explore</span><span class="o">=</span>False <span class="nv">localization</span><span class="o">=</span>False <span class="nv">run_rviz</span><span class="o">=</span>True <span class="nv">run_foxglove</span><span class="o">=</span>False bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/launch/run_launch.sh
 
 </code></pre></div></div>
 

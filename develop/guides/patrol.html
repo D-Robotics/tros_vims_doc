@@ -188,6 +188,10 @@
       <td>原地旋转扫描盲区（候选点间盲区补扫），旋转结束自动恢复走访；变体 <code class="language-plaintext highlighter-rouge">SPINNING:escape_obstacle</code>（脱困旋转）、<code class="language-plaintext highlighter-rouge">SPINNING:find_frontier</code></td>
     </tr>
     <tr>
+      <td><code class="language-plaintext highlighter-rouge">WAITING_MAIN_LOOP: waited=Ns</code></td>
+      <td>主循环 frontier 探索占用导航控制权，巡逻挂起等待（每 5s 心跳）；等待超 60 秒直接终态 <code class="language-plaintext highlighter-rouge">TIMEOUT:main_loop</code></td>
+    </tr>
+    <tr>
       <td><code class="language-plaintext highlighter-rouge">WAITING_SUBMAP_FLOW: waited=Ns</code></td>
       <td>子图回访/建图（submapLinkFlow）接管控制期间巡逻挂起，每 5s 心跳；flow 结束后自动重选目标继续</td>
     </tr>
@@ -197,7 +201,7 @@
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">TIMEOUT</code></td>
-      <td>时间预算耗尽</td>
+      <td>时间预算耗尽（变体 <code class="language-plaintext highlighter-rouge">TIMEOUT:main_loop</code>：等主循环让控制权超 60 秒，非巡逻预算问题）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">CANCELLED:agent_stop</code></td>
@@ -262,7 +266,95 @@
   </tbody>
 </table>
 
-<h3 id="13-时间预算timeout">1.3 时间预算（timeout）</h3>
+<p>任务状态与成败怎么判（状态话题前缀规则 + 终态成败表 + <code class="language-plaintext highlighter-rouge">get_search_result</code> 收尾）见 1.3。</p>
+
+<h3 id="13-如何判断任务状态">1.3 如何判断任务状态</h3>
+
+<p><strong>怎么做</strong>——发起后三步：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># ① 随时单次读取状态（无需维护订阅，latch 保证必有返回）</span>
+ros2 topic <span class="nb">echo</span> /explore/search_status <span class="nt">--once</span>
+
+<span class="c"># ② 按消息前缀判定（三选一，见下表）</span>
+
+<span class="c"># ③ 结束后按需取结构化结果（可选）</span>
+ros2 service call /explore/get_search_result tros_frontier_exploration/srv/SearchResult
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>消息前缀</th>
+      <th>判定</th>
+      <th>动作</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">PATROL:</code> / <code class="language-plaintext highlighter-rouge">WAITING_</code> / <code class="language-plaintext highlighter-rouge">SPINNING:</code></td>
+      <td>进行中</td>
+      <td>继续等（<code class="language-plaintext highlighter-rouge">t:elapsed/budget</code> 看进度）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">EXHAUSTED</code> / <code class="language-plaintext highlighter-rouge">TIMEOUT</code> / <code class="language-plaintext highlighter-rouge">TRAPPED</code> / <code class="language-plaintext highlighter-rouge">CANCELLED:</code></td>
+      <td>已结束</td>
+      <td>按下表判成败/取消</td>
+    </tr>
+    <tr>
+      <td>其他（<code class="language-plaintext highlighter-rouge">SEARCHING:</code> / <code class="language-plaintext highlighter-rouge">NAVIGATING*</code> / <code class="language-plaintext highlighter-rouge">IDLE</code>）</td>
+      <td>巡逻被其他任务取代</td>
+      <td>视为本次巡逻异常终止，排查调用方</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>终态 → 成败/取消：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>终态</th>
+      <th>判定</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 且 <code class="language-plaintext highlighter-rouge">unvisited:0</code></td>
+      <td>✅ <strong>成功</strong>（候选点全部走访完成）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 且 <code class="language-plaintext highlighter-rouge">unvisited&gt;0</code></td>
+      <td>⚠️ 部分完成（候选中途被剔除，按业务容忍度判）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TIMEOUT</code></td>
+      <td>⚠️ 未完成（预算耗尽，可放大 <code class="language-plaintext highlighter-rouge">timeout</code> 重试；<code class="language-plaintext highlighter-rouge">TIMEOUT:main_loop</code> = 等主循环让权超时，非预算问题）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TRAPPED</code></td>
+      <td>❌ <strong>失败</strong>（被困且脱困无效）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">CANCELLED</code></td>
+      <td>⏹️ <strong>取消</strong>（有人调了 <code class="language-plaintext highlighter-rouge">stop_patrol</code>，主动停止无成败语义）</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>patrol 没有名为 SUCCESS 的状态——成功就是上表判定式（<code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 且 <code class="language-plaintext highlighter-rouge">unvisited:0</code>）；发起响应只代表任务被接受，不代表成败。</p>
+
+<p>两条硬规则：</p>
+
+<ol>
+  <li><strong>只认 <code class="language-plaintext highlighter-rouge">header.stamp</code> 晚于本次发起时刻的消息</strong>（防上一任务残留的旧消息），否则丢弃重读；</li>
+  <li>发起后<strong>预算 + 120 秒</strong>仍无终态 → 判节点异常，抓 explore 日志排查，不要无限等。</li>
+</ol>
+
+<blockquote>
+  <p>备注：<code class="language-plaintext highlighter-rouge">get_search_result</code> 只反映<strong>最近一次</strong>任务且响应无时间戳——判断”结果是不是本次巡逻的”用状态串的 <code class="language-plaintext highlighter-rouge">header.stamp</code>；成功判据 <code class="language-plaintext highlighter-rouge">unvisited</code> 也只在状态串里（service 响应无此字段）；怀疑卡死时连调两次，<code class="language-plaintext highlighter-rouge">reason=running</code> 且 <code class="language-plaintext highlighter-rouge">elapsed_time</code> 在增长即任务活着。</p>
+</blockquote>
+
+<h3 id="14-时间预算timeout">1.4 时间预算（timeout）</h3>
 
 <table>
   <thead>
@@ -283,19 +375,91 @@
   </tbody>
 </table>
 
-<p>预算耗尽发布终态 <code class="language-plaintext highlighter-rouge">TIMEOUT</code>，已走访部分不回滚（统计随终态发布）。</p>
+<p><strong>公式拆解</strong>——<code class="language-plaintext highlighter-rouge">clamp(x, lo, hi)</code> 表示把 x 限制在 [lo, hi] 区间内：x 低于下限取下限、高于上限取上限、区间内取原值。公式由四部分构成：</p>
 
-<h3 id="14-与其他任务的互斥">1.4 与其他任务的互斥</h3>
+<table>
+  <thead>
+    <tr>
+      <th>项</th>
+      <th>值</th>
+      <th>含义</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">30</code></td>
+      <td>基础预算</td>
+      <td>与候选点数无关的固定开销：建池、起点定位、任务收尾等</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">60 × N</code></td>
+      <td>逐点预算</td>
+      <td>每个候选点分配 60 秒走访预算（导航前往 + 到访确认 + 可能的恢复重试）</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">180</code></td>
+      <td>下限</td>
+      <td>预算最少 3 分钟，防止小池被过早掐断</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">900</code></td>
+      <td>上限</td>
+      <td>预算最多 15 分钟，封顶单轮巡逻的最坏时长</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>按 N 的取值分段：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>N（池内候选点数）</th>
+      <th>代入 30+60×N</th>
+      <th>实际预算</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>N ≤ 2</td>
+      <td>90~150 秒</td>
+      <td>触下限 → <strong>180 秒</strong></td>
+    </tr>
+    <tr>
+      <td>3 ≤ N ≤ 14</td>
+      <td>210~870 秒</td>
+      <td>公式原值生效（线性增长）</td>
+    </tr>
+    <tr>
+      <td>N ≥ 15</td>
+      <td>930 秒起</td>
+      <td>触上限 → <strong>900 秒</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>实测对照：候选池 8 点、<code class="language-plaintext highlighter-rouge">timeout</code> 传 0 → 预算 30+60×8=<strong>510 秒</strong>（状态串显示 <code class="language-plaintext highlighter-rouge">t:147/510</code>），与公式一致。</p>
+
+<blockquote>
+  <p><strong>提示</strong> 
+30/60/180/900 为代码内固定常量，不随 <code class="language-plaintext highlighter-rouge">params.yaml</code> 配置。N 的上限即 <code class="language-plaintext highlighter-rouge">free_pool_max_goals</code>（默认 20，对应预算触 900 秒上限）。预算覆盖全程等待——子图回访（<code class="language-plaintext highlighter-rouge">WAITING_SUBMAP_FLOW</code>）与旋转（<code class="language-plaintext highlighter-rouge">SPINNING:*</code>）均计入（见 1.2）。需要更长预算时显式传 <code class="language-plaintext highlighter-rouge">timeout</code>；预算耗尽发布终态 <code class="language-plaintext highlighter-rouge">TIMEOUT</code>，已走访部分不回滚（统计随终态发布）。</p>
+
+</blockquote>
+
+<h3 id="15-与其他任务的互斥">1.5 与其他任务的互斥</h3>
 
 <ul>
   <li><strong>与原地旋转（spin）互斥</strong>：spin 运行中发起巡逻被拒绝（响应消息 <code class="language-plaintext highlighter-rouge">spin running, wait spin_status DONE</code>）。</li>
-  <li><strong>与自主搜索（search）、点导航互斥</strong>：已有任务运行时发起巡逻返回<strong>幂等成功</strong>（<code class="language-plaintext highlighter-rouge">already running</code>），当前任务继续执行——需要按新参数巡逻时，先 <code class="language-plaintext highlighter-rouge">stop_patrol</code> 停止当前任务。</li>
-  <li><code class="language-plaintext highlighter-rouge">stop_patrol</code> 与 <code class="language-plaintext highlighter-rouge">stop_search</code> 共用同一取消通道，停止的都是”当前运行中的任务”。</li>
+  <li><strong>与点导航互斥</strong>：已有任务运行时发起巡逻返回<strong>幂等成功</strong>（<code class="language-plaintext highlighter-rouge">already running</code>），当前任务继续执行——需要按新参数巡逻时，先 <code class="language-plaintext highlighter-rouge">stop_patrol</code> 停止当前任务。</li>
 </ul>
 
 <h2 id="2-接口参考">2. 接口参考</h2>
 
+<p>巡逻对外共 3 个 service（发起/停止/查询）+ 1 个状态话题（<code class="language-plaintext highlighter-rouge">/explore/search_status</code>，见 1.2）+ marker 可视化（见 2.4）。</p>
+
 <h3 id="21-explorestart_patrol">2.1 /explore/start_patrol</h3>
+
+<p>发起一轮自主巡逻：按请求参数圈定候选范围（全图或区域）生成候选池，逐点走访，直至走访完成、预算耗尽或被停止。</p>
 
 <p>类型 <code class="language-plaintext highlighter-rouge">tros_frontier_exploration/srv/SearchGoal</code>：</p>
 
@@ -305,6 +469,7 @@
       <th>字段</th>
       <th>类型</th>
       <th>说明</th>
+      <th>应用场景</th>
     </tr>
   </thead>
   <tbody>
@@ -312,32 +477,44 @@
       <td><code class="language-plaintext highlighter-rouge">target_pose</code></td>
       <td>PoseStamped</td>
       <td>巡逻中心（map 坐标系）。全图巡逻（radius=0）时该坐标不参与选点（按机器人实时位姿就近取点），可填 0,0；区域巡逻时 <code class="language-plaintext highlighter-rouge">pose.position</code> 为圆心</td>
+      <td>全图巡逻：填 0,0 即可（[全屋移动监控]）；区域巡逻：填重点区域中心坐标（如老人房、宠物活动区）（[重点区域看护]）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">search_radius</code></td>
       <td>float64</td>
       <td><code class="language-plaintext highlighter-rouge">0</code>=全图巡逻；<code class="language-plaintext highlighter-rouge">&gt;0</code>=区域巡逻（候选裁剪到中心半径圆盘内，按池生成序走访）；<code class="language-plaintext highlighter-rouge">&lt;0</code> 拒绝，响应消息 <code class="language-plaintext highlighter-rouge">patrol requires search_radius &gt;= 0 (0=whole map, &gt;0=area)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">0</code> → [全屋移动监控]（全区域走访，消除监控死角）；<code class="language-plaintext highlighter-rouge">&gt;0</code> → [重点区域看护]（只走访重点区域，单轮短、可重复发起）；[定时/离家值守] 两种取值均可，由上层按计划选择</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">timeout</code></td>
       <td>float64</td>
-      <td>时间预算（秒），见 1.3</td>
+      <td>时间预算（秒），见 1.4</td>
+      <td><code class="language-plaintext highlighter-rouge">0</code> 自适应适合常规单轮；[定时/离家值守] 中上层按计划控制单轮时长时显式设定；预算小于池规模所需时显式放大（见 5 排查）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">nav_purpose</code></td>
       <td>string</td>
       <td>巡逻不使用（自主搜索定向导航专用），留空</td>
+      <td>无</td>
     </tr>
   </tbody>
 </table>
 
 <p>响应：<code class="language-plaintext highlighter-rouge">success</code> + <code class="language-plaintext highlighter-rouge">message</code>（<code class="language-plaintext highlighter-rouge">search started</code>=已启动；<code class="language-plaintext highlighter-rouge">already running (idempotent, ...)</code>=幂等成功）。</p>
 
+<blockquote>
+  <p>场景名称与主手册 <a href="../index.html#77-自主巡逻">7.7 自主巡逻</a> 场景能力表对应：[全屋移动监控] / [重点区域看护] / [定时/离家值守]。</p>
+</blockquote>
+
 <h3 id="22-explorestop_patrol">2.2 /explore/stop_patrol</h3>
 
-<p>类型 <code class="language-plaintext highlighter-rouge">std_srvs/srv/SetBool</code>，<code class="language-plaintext highlighter-rouge">data</code> 字段无语义（取值任意）。停止后机器人取消当前导航目标、原地停止；未在巡逻时返回 <code class="language-plaintext highlighter-rouge">success=true</code>（message <code class="language-plaintext highlighter-rouge">not running</code>）。</p>
+<p>停止当前运行中的巡逻：机器人取消当前导航目标、原地停车。</p>
+
+<p>类型 <code class="language-plaintext highlighter-rouge">std_srvs/srv/SetBool</code>，<code class="language-plaintext highlighter-rouge">data</code> 字段无语义（取值任意）。未在巡逻时返回 <code class="language-plaintext highlighter-rouge">success=true</code>（message <code class="language-plaintext highlighter-rouge">not running</code>）。</p>
 
 <h3 id="23-exploreget_search_result">2.3 /explore/get_search_result</h3>
+
+<p>查询巡逻任务的结果与进度：<strong>可随时重复调用</strong>——任务进行中返回实时中间值（<code class="language-plaintext highlighter-rouge">reason=running</code> + 当前进度），终态后返回冻结的最终统计；每次调用返回调用时刻的快照，非一次性结果，也不存历史（只反映最近一次任务）。</p>
 
 <p>类型 <code class="language-plaintext highlighter-rouge">tros_frontier_exploration/srv/SearchResult</code>：</p>
 
@@ -353,29 +530,65 @@
     <tr>
       <td><code class="language-plaintext highlighter-rouge">success</code></td>
       <td>bool</td>
-      <td>已有/曾有结果即为 true</td>
+      <td>恒为 true（无判断语义，任务状态看 <code class="language-plaintext highlighter-rouge">reason</code>）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">reason</code></td>
       <td>string</td>
-      <td>任务状态：<code class="language-plaintext highlighter-rouge">running</code>（进行中）/ <code class="language-plaintext highlighter-rouge">exhausted</code> / <code class="language-plaintext highlighter-rouge">timeout</code> 等</td>
+      <td>任务当前状态：<code class="language-plaintext highlighter-rouge">running</code>（进行中）/ <code class="language-plaintext highlighter-rouge">exhausted</code> / <code class="language-plaintext highlighter-rouge">timeout</code> / <code class="language-plaintext highlighter-rouge">cancelled</code> 等</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">goals_completed</code></td>
       <td>int32</td>
-      <td>已处理目标数</td>
+      <td>已处理目标数（进行中为实时值）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">elapsed_time</code></td>
       <td>float64</td>
-      <td>任务用时（秒）</td>
+      <td>任务用时（秒；进行中为实时值，终态后为定值）</td>
     </tr>
   </tbody>
 </table>
 
+<p><strong>与状态话题 <code class="language-plaintext highlighter-rouge">/explore/search_status</code> 的区别与选择</strong>：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th><code class="language-plaintext highlighter-rouge">/explore/search_status</code>（话题）</th>
+      <th><code class="language-plaintext highlighter-rouge">/explore/get_search_result</code>（服务）</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>模型</td>
+      <td>推：状态变化/进度心跳时发布，订阅持续接收</td>
+      <td>拉：调用时返回一次快照</td>
+    </tr>
+    <tr>
+      <td>信息量</td>
+      <td>全：状态机各态、时间进度、终态完整分项统计</td>
+      <td>摘要：4 个结构化字段（状态原因/完成数/用时）</td>
+    </tr>
+    <tr>
+      <td>数据形式</td>
+      <td>字符串（程序消费需解析）</td>
+      <td>结构化字段（程序直接取用）</td>
+    </tr>
+    <tr>
+      <td>适用</td>
+      <td>持续监控、调试、可视化</td>
+      <td>上层应用低频查询结果、不便保持订阅的场景</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>两者可并用：上层监听 <code class="language-plaintext highlighter-rouge">search_status</code> 终态驱动流程，需要结构化数据时再调 <code class="language-plaintext highlighter-rouge">get_search_result</code>。注意 <code class="language-plaintext highlighter-rouge">get_search_result</code> 反映的是<strong>最近一次</strong>任务（新任务启动即覆盖旧值），非历史记录。判定流程见 1.3「如何判断任务状态」。</p>
+
 <h3 id="24-可视化">2.4 可视化</h3>
 
-<p>巡逻候选点与走访结果的 Foxglove marker 通道（颜色/形状/话题）见主手册 <a href="../index.html#foxglove效果展示">Foxglove效果展示</a>。</p>
+<p>巡逻候选点与走访结果的 Foxglove marker 通道（颜色/形状/话题）见主手册 <a href="../index.html#发起和停止巡逻">发起和停止巡逻</a>。</p>
 
 <h2 id="3-参数参考">3. 参数参考</h2>
 
