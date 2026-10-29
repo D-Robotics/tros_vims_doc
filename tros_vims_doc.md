@@ -325,34 +325,42 @@ echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ~/.bashrc
 
 RDK X5 的 aic8800 WiFi 模块默认开启省电模式（信标间隔内休眠），会引入链路延迟抖动，长时间运行还可能触发路由器（AP）转发表异常，导致开发板与局域网内个别设备断连（其余设备仍可互ping）。进行SLAM建图、NFS挂载开发板文件系统等对链路稳定性敏感的操作前，建议关闭。
 
-在RDK X5上执行以下命令。省电标志会被多条路径重新打开，需分层关闭（重新关联/漫游、接口 down/up 均不产生 udev 事件，udev 规则只覆盖开机时的接口注册）：
+WiFi省电分为两层，需分别关闭：`iw dev wlan0 get power_save` 报告的软件省电标志，以及 aic8800 驱动内部省电开关（模块参数 `ps_on`）。软件省电标志会在 NetworkManager 每次建立连接时按其配置被重新设置（RDK OS 全局默认为开启），因此持久化需要同时覆盖开机和联网两个时机。
+
+在RDK X5上执行以下命令：
 
 ```bash
-# 1. 立即关闭软件省电
+# ① 立即关闭软件省电
 iw dev wlan0 set power_save off
 
-# 2. 持久化：NM 连接级（覆盖 NM 自管的关联/重连——NM 每次激活时都会重新下发）
-nmcli connection modify "<WiFi连接名>" 802-11-wireless.powersave 2
-
-# 3. 持久化：驱动内部省电开关（仅模块加载时生效；注意：不控制 `iw` 报告的软件标志）
+# ② 驱动级省电开关（持久化，驱动下次加载即重启后生效）
 printf "# disable aic8800 wifi power saving (stability for NFS-over-WiFi + AP FDB)\noptions aic8800_fdrv ps_on=N\n" > /etc/modprobe.d/aic8800-ps-off.conf
 
-# 4. 持久化：udev 规则（开机接口注册时刻兜底；勿加 TEST——TEST 相对 sysfs 设备目录解析，
-#    TEST=="iw" 检查 /sys/.../net/wlan0/iw 恒不存在，规则永不匹配）
-printf "ACTION==\"add\", SUBSYSTEM==\"net\", KERNEL==\"wlan0\", RUN+=\"/sbin/iw dev wlan0 set power_save off\"\n" > /etc/udev/rules.d/70-wlan0-powersave-off.rules
+# ③ 开机自动关闭软件省电（systemd 服务，每次开机执行一次）
+printf "[Unit]\nDescription=Disable WiFi power saving (link stability for NFS-over-WiFi)\nAfter=network.target\n\n[Service]\nType=oneshot\nExecStart=/sbin/iw dev wlan0 set power_save off\nRemainAfterExit=yes\n\n[Install]\nWantedBy=multi-user.target\n" > /etc/systemd/system/wifi-powersave-off.service
+systemctl daemon-reload && systemctl enable wifi-powersave-off.service
+
+# ④ 若WiFi由 NetworkManager 管理（RDK OS 默认），关闭连接级省电，
+#    否则NM每次建立连接都会按全局配置重新打开省电
+#    （全局配置为 /etc/NetworkManager/conf.d/default-wifi-powersave-on.conf 中 wifi.powersave = 3）
+#    <connection> 为连接名，通过 nmcli device 查询
+nmcli connection modify <connection> 802-11-wireless.powersave 2
 ```
 
-验证当前省电状态（应输出 `Power save: off`）：
+验证当前省电状态（前一条应输出 `Power save: off`，后一条应输出 `N`）：
 
 ```bash
 iw dev wlan0 get power_save
+cat /sys/module/aic8800_fdrv/parameters/ps_on
 ```
 
 > **提示**
-> 1. 若提示找不到 `iw`，确认其路径（RDK X5 上为 `/sbin/iw`）。
-> 2. 关闭省电会增加 WiFi 模块功耗（约零点几瓦），对 X5 供电和散热无影响；使用电池供电的移动场景需自行权衡。
-> 3. 该驱动还提供深度省电参数 `dpsm`（默认已关闭 `N`），无需处理。
-> 4. 残余缺口：wpa_supplicant 自主漫游、手工 `ifconfig wlan0 down/up` 等绕过 NM 的路径可能将标志重新打开；长时间运行前建议复查一次上面的验证命令。
+> 1. 上述配置已在 RDK X5 上实测：重启后软件省电标志自动保持 `Power save: off`，无需手动干预。
+> 2. 已知例外：若通过 `ifconfig wlan0 down/up` 等绕过 NetworkManager 的方式重连WiFi（如外部看门狗触发的弹跳重连），软件省电标志会重新开启，需在该操作之后补执行一次 `iw dev wlan0 set power_save off`。
+> 3. 不建议用 udev 规则实现该持久化：udev 仅在接口注册（开机）时触发，WiFi重新关联不会触发；且 `TEST=="iw"` 这类条件相对设备 sysfs 目录解析，net 设备目录下不存在该文件，会导致整条规则永不匹配。
+> 4. 若提示找不到 `iw`，确认其路径（RDK X5 上为 `/sbin/iw`）。
+> 5. 关闭省电会增加 WiFi 模块功耗（约零点几瓦），对 X5 供电和散热无影响；使用电池供电的移动场景需自行权衡。
+> 6. 该驱动还提供深度省电参数 `dpsm`（默认已关闭 `N`），无需处理。
 
 ### 4.3 安装依赖
 
