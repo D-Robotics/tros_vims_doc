@@ -629,6 +629,10 @@
   </thead>
   <tbody>
     <tr>
+      <td style="text-align: center">V0.0.7</td>
+      <td style="text-align: center">2.5.2</td>
+    </tr>
+    <tr>
       <td style="text-align: center">V0.0.6</td>
       <td style="text-align: center">2.5.2</td>
     </tr>
@@ -647,6 +651,8 @@
 
 <h4 id="配置cpu为性能模式">配置CPU为性能模式</h4>
 
+<p>ViMS 的感知、SLAM 与导航均为计算密集型负载，CPU 若按负载动态调频，高负载阶段会因降频出现算力不足、帧率下降。将调度策略固定为 <code class="language-plaintext highlighter-rouge">performance</code> 使 CPU 始终运行在最高频率，保障建图与导航的实时性；命令写入 <code class="language-plaintext highlighter-rouge">~/.bashrc</code>，每次打开终端自动生效。</p>
+
 <p>终端下执行以下命令：</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s2">"echo performance &gt; /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"</span> <span class="o">&gt;&gt;</span> ~/.bashrc 
@@ -654,6 +660,8 @@
 </code></pre></div></div>
 
 <h4 id="配置ros-domain-id">配置ROS Domain ID</h4>
+
+<p>ROS 2 按 Domain ID 划分通信域：只有 Domain ID 相同的节点才能互相发现与通信。配置后 PC 与开发板处于同一域内正常交互，并与同一场地的其他机器人相互隔离，避免话题串扰。PC 与开发板必须配置相同的 Domain ID（<code class="language-plaintext highlighter-rouge">42</code> 为示例值，取值范围 [0, 101]）。</p>
 
 <p>终端下执行以下命令：</p>
 
@@ -665,6 +673,8 @@
 
 <h4 id="使用cyclonedds">使用cyclonedds</h4>
 
+<p>将 ROS 2 的默认中间件（RMW）指定为 CycloneDDS。通信双方必须使用同一种 DDS 实现才能互相发现——ViMS 在开发板上按 CycloneDDS 验证部署（板端若落到默认 FastRTPS，会出现参数服务响应丢失、组件加载断链等问题），因此 PC 侧需与板端统一为 CycloneDDS。</p>
+
 <p>终端下执行以下命令，将配置命令放在启动脚本中执行，使每个终端生效：</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s2">"export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"</span> <span class="o">&gt;&gt;</span> ~/.bashrc
@@ -672,36 +682,35 @@
 
 <h4 id="关闭开发板wifi省电模式">关闭开发板WiFi省电模式</h4>
 
-<p>RDK X5 的 aic8800 WiFi 模块默认开启省电模式（信标间隔内休眠），会引入链路延迟抖动，长时间运行还可能触发路由器（AP）转发表异常，导致开发板与局域网内个别设备断连（其余设备仍可互ping）。进行SLAM建图、NFS挂载开发板文件系统等对链路稳定性敏感的操作前，建议关闭。</p>
+<p>RDK X5 的 aic8800 WiFi 模块默认开启省电模式，会引入链路延迟抖动，长时间运行还可能触发路由器（AP）转发表异常，导致开发板与局域网内个别设备断连。进行SLAM建图、NFS挂载开发板文件系统等对链路稳定性敏感的操作前，建议关闭（软件省电标志会被 NetworkManager 每次联网重新打开，故需开机、联网两层配置）。</p>
 
-<p>在RDK X5上执行以下命令。省电标志会被多条路径重新打开，需分层关闭（重新关联/漫游、接口 down/up 均不产生 udev 事件，udev 规则只覆盖开机时的接口注册）：</p>
+<p>在RDK X5上执行以下命令：</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 1. 立即关闭软件省电</span>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># ① 立即关闭软件省电</span>
 iw dev wlan0 <span class="nb">set </span>power_save off
 
-<span class="c"># 2. 持久化：NM 连接级（覆盖 NM 自管的关联/重连——NM 每次激活时都会重新下发）</span>
-nmcli connection modify <span class="s2">"&lt;WiFi连接名&gt;"</span> 802-11-wireless.powersave 2
+<span class="c"># ② 驱动级省电开关（重启后仍生效）</span>
+<span class="nb">printf</span> <span class="s2">"options aic8800_fdrv ps_on=N</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;</span> /etc/modprobe.d/aic8800-ps-off.conf
 
-<span class="c"># 3. 持久化：驱动内部省电开关（仅模块加载时生效；注意：不控制 `iw` 报告的软件标志）</span>
-<span class="nb">printf</span> <span class="s2">"# disable aic8800 wifi power saving (stability for NFS-over-WiFi + AP FDB)</span><span class="se">\n</span><span class="s2">options aic8800_fdrv ps_on=N</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;</span> /etc/modprobe.d/aic8800-ps-off.conf
+<span class="c"># ③ 开机自动关闭软件省电</span>
+<span class="nb">printf</span> <span class="s2">"[Unit]</span><span class="se">\n</span><span class="s2">Description=Disable WiFi power saving</span><span class="se">\n</span><span class="s2">After=network.target</span><span class="se">\n\n</span><span class="s2">[Service]</span><span class="se">\n</span><span class="s2">Type=oneshot</span><span class="se">\n</span><span class="s2">ExecStart=/sbin/iw dev wlan0 set power_save off</span><span class="se">\n</span><span class="s2">RemainAfterExit=yes</span><span class="se">\n\n</span><span class="s2">[Install]</span><span class="se">\n</span><span class="s2">WantedBy=multi-user.target</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;</span> /etc/systemd/system/wifi-powersave-off.service
+systemctl daemon-reload <span class="o">&amp;&amp;</span> systemctl <span class="nb">enable </span>wifi-powersave-off.service
 
-<span class="c"># 4. 持久化：udev 规则（开机接口注册时刻兜底；勿加 TEST——TEST 相对 sysfs 设备目录解析，</span>
-<span class="c">#    TEST=="iw" 检查 /sys/.../net/wlan0/iw 恒不存在，规则永不匹配）</span>
-<span class="nb">printf</span> <span class="s2">"ACTION==</span><span class="se">\"</span><span class="s2">add</span><span class="se">\"</span><span class="s2">, SUBSYSTEM==</span><span class="se">\"</span><span class="s2">net</span><span class="se">\"</span><span class="s2">, KERNEL==</span><span class="se">\"</span><span class="s2">wlan0</span><span class="se">\"</span><span class="s2">, RUN+=</span><span class="se">\"</span><span class="s2">/sbin/iw dev wlan0 set power_save off</span><span class="se">\"\n</span><span class="s2">"</span> <span class="o">&gt;</span> /etc/udev/rules.d/70-wlan0-powersave-off.rules
+<span class="c"># ④ NetworkManager 连接级省电（&lt;connection&gt; 为连接名，通过 nmcli device 查询）</span>
+nmcli connection modify &lt;connection&gt; 802-11-wireless.powersave 2
 </code></pre></div></div>
 
-<p>验证当前省电状态（应输出 <code class="language-plaintext highlighter-rouge">Power save: off</code>）：</p>
+<p>验证当前省电状态（前一条应输出 <code class="language-plaintext highlighter-rouge">Power save: off</code>，后一条应输出 <code class="language-plaintext highlighter-rouge">N</code>）：</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>iw dev wlan0 get power_save
+<span class="nb">cat</span> /sys/module/aic8800_fdrv/parameters/ps_on
 </code></pre></div></div>
 
 <blockquote>
   <p><strong>提示</strong></p>
   <ol>
-    <li>若提示找不到 <code class="language-plaintext highlighter-rouge">iw</code>，确认其路径（RDK X5 上为 <code class="language-plaintext highlighter-rouge">/sbin/iw</code>）。</li>
-    <li>关闭省电会增加 WiFi 模块功耗（约零点几瓦），对 X5 供电和散热无影响；使用电池供电的移动场景需自行权衡。</li>
-    <li>该驱动还提供深度省电参数 <code class="language-plaintext highlighter-rouge">dpsm</code>（默认已关闭 <code class="language-plaintext highlighter-rouge">N</code>），无需处理。</li>
-    <li>残余缺口：wpa_supplicant 自主漫游、手工 <code class="language-plaintext highlighter-rouge">ifconfig wlan0 down/up</code> 等绕过 NM 的路径可能将标志重新打开；长时间运行前建议复查一次上面的验证命令。</li>
+    <li>上述配置重启后自动保持，无需重复执行；若曾通过 <code class="language-plaintext highlighter-rouge">ifconfig wlan0 down/up</code> 等绕过 NetworkManager 的方式重连WiFi，需补执行一次 <code class="language-plaintext highlighter-rouge">iw dev wlan0 set power_save off</code>。</li>
+    <li>关闭省电约增加零点几瓦功耗，电池供电的移动场景需自行权衡；<code class="language-plaintext highlighter-rouge">iw</code> 位于 <code class="language-plaintext highlighter-rouge">/sbin/iw</code>。</li>
   </ol>
 </blockquote>
 
@@ -744,16 +753,16 @@ yq <span class="nt">--version</span>
 <span class="nb">cd</span> /userdata/vims
 
 <span class="c"># 1) 先取官方基准校验和（KB 级小文件，不必下整包）</span>
-wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.6.tar.gz.sha256
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.7.tar.gz.sha256
 
 <span class="c"># 2) 下载安装包</span>
-wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.6.tar.gz
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.7.tar.gz
 
-<span class="c"># 3) 校验完整性：输出 "install-vims-v0.0.6.tar.gz: OK" 即通过；FAILED 则删除后重新下载</span>
-<span class="nb">sha256sum</span> <span class="nt">-c</span> install-vims-v0.0.6.tar.gz.sha256
+<span class="c"># 3) 校验完整性：输出 "install-vims-v0.0.7.tar.gz: OK" 即通过；FAILED 则删除后重新下载</span>
+<span class="nb">sha256sum</span> <span class="nt">-c</span> install-vims-v0.0.7.tar.gz.sha256
 
 <span class="c"># 4) 校验通过后再解压（解压到 /userdata/vims/install）</span>
-<span class="nb">tar</span> <span class="nt">-zxvf</span> /userdata/vims/install-vims-v0.0.6.tar.gz <span class="nt">-C</span> /userdata/vims
+<span class="nb">tar</span> <span class="nt">-zxvf</span> /userdata/vims/install-vims-v0.0.7.tar.gz <span class="nt">-C</span> /userdata/vims
 </code></pre></div></div>
 
 <h3 id="45-配置相机">4.5 配置相机</h3>
@@ -851,7 +860,9 @@ ros2 run foxglove_bridge foxglove_bridge
 
 <h2 id="5-基础功能测试">5. 基础功能测试</h2>
 
-<p>测试双目数据采集和深度估计。</p>
+<p>测试双目数据采集、深度估计与双目视野遮挡检查。</p>
+
+<h3 id="51-双目数据采集和深度估计">5.1 双目数据采集和深度估计</h3>
 
 <p>安装完成双目相机后，RDK X5上运行如下命令，启动双目数据采集和深度估计：</p>
 
@@ -900,6 +911,27 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
     </tr>
   </tbody>
 </table>
+
+<h3 id="52-双目视野遮挡检查">5.2 双目视野遮挡检查</h3>
+
+<p>检查相机安装后机器人本体是否遮挡双目视野：若本体进入相机视野，图像边缘会拍摄到机器人本体，影响VIO算法效果。</p>
+
+<p>安装完成双目相机后，RDK X5上运行如下命令，启动双目图像采集与网页显示（仅采集图像，无需启动深度估计）：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+<span class="nb">source</span> /userdata/vims/install/local_setup.bash
+ros2 launch mipi_cam mipi_cam_dual_channel_websocket.launch.py mipi_gdc_enable:<span class="o">=</span>False mipi_image_width:<span class="o">=</span>544 mipi_image_height:<span class="o">=</span>640
+</code></pre></div></div>
+
+<p>启动成功后，PC端打开网页浏览器输入 <code class="language-plaintext highlighter-rouge">http://ip:8000</code>（IP为RDK的WIFI IP地址，例如192.168.1.100），查看左右目拼接图像。</p>
+
+<p><img src="images/web_stereo_raw.png" width="800" /></p>
+
+<p>检查拼接图像的边缘与四角是否出现机器人本体（如底盘、线束、安装结构件）：</p>
+<ul>
+  <li>未出现本体：相机安装无视野遮挡，检查通过；</li>
+  <li>出现本体：调整相机安装位置或角度后重新检查。</li>
+</ul>
 
 <h2 id="6-外参标定">6. 外参标定</h2>
 
@@ -1702,6 +1734,19 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 <p>参考<a href="#71-checklist">Checklist</a>章节检查参数是否全部完成配置后，即可运行<a href="#7-应用示例">应用示例</a>章节示例。</p>
 
 <h2 id="9-版本发布记录">9. 版本发布记录</h2>
+
+<h3 id="版本号007-2026-10-29">版本号：0.0.7 (2026-10-29)</h3>
+
+<p>本版本主要围绕<strong>探索建图增强、VIO 弱纹理定位更稳、rtabmap 长时建图更流畅、新增离线录制/回放工具链</strong>：</p>
+
+<ul>
+  <li><strong>探索更聪明</strong>：选点与评分全面强化（网格分区采样、轨迹标记、质量过滤、安全重访），新增单遍巡检（patrol）模式，搜索状态全程可观测。</li>
+  <li><strong>定位更稳</strong>：VIO 新增视觉退化检测与定轴（fixed-pivot）保护并默认启用，弱纹理场景跑飞更少；启动纹理不足时自动旋转补搜。</li>
+  <li><strong>建图更流畅</strong>：rtabmap 词典索引重建转后台执行、数据库缓存与视觉词保存优化，长时建图不卡顿；修复定位延迟提交死锁、索引切换崩溃等问题。</li>
+  <li><strong>新增离线工具链</strong>：新增 <code class="language-plaintext highlighter-rouge">ViMS_offline</code> 录制/回放工具，bag 回放可重建图并自动导出 2D 栅格图。</li>
+  <li><strong>调试更好用</strong>：默认可视化切换为 Foxglove（旧帧滞后抑制），布局新增巡检控制与搜索状态面板。</li>
+  <li><strong>稳定性修复</strong>：修复建图→定位切换一致性、跨子图探索冻结/模式振荡、跟人死区活锁等。</li>
+</ul>
 
 <h3 id="版本号006-2026-09-30">版本号：0.0.6 (2026-09-30)</h3>
 
