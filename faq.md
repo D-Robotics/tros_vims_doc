@@ -99,7 +99,7 @@ SLAM 3D地图和2D地图之间的关系：3D地图通过卡高度阈值去除地
 | :---: | :---: | :---: |
 | <img src="images/image_052.png" height="200"> | <img src="images/image_053.png" height="200"> | <img src="images/image_054.png" height="200"> |
 
-导航代价地图中膨胀层的说明参考https://wiki.ros.org/costmap_2d/hydro/inflation
+导航代价地图中膨胀层的说明参考[inflation layer](https://wiki.ros.org/costmap_2d/hydro/inflation)。
 ### 4.3 地图信息统计
 运行如下命令，统计VSLAM算法创建的地图的分辨率，未知、free和障碍物区域面积等信息：
 
@@ -191,7 +191,7 @@ ros2 bag record /rosout /map /tros_diagnostics /global_costmap/costmap /local_co
 /tros_dynamic_obstacle_costmap /tros_goal_pose /tf /tf_static /local_costmap/published_footprint \
 /object_point_cloud /StereoNetNode/stereonet_depth/camera_info /global_path /plan_smoothed \
 /received_global_plan /transformed_global_plan /local_plan /cmd_vel /cmd_vel_nav \
-/tros_observing_markers /tf /tf_static /image_jpeg
+/tros_observing_markers /image_jpeg
 ```
 
 如果需要录制深度估计输出的点云，录制时添加/StereoNetNode/stereonet_pointcloud2话题。

@@ -171,7 +171,7 @@ VSLAM支持构建3D地图，可用于机器人定位以及下游导航和操作�
 
 ### 1.6 自主探索
 
-自主探索功能会实时获取机器人状态、空间状态和任务状态信息，通过自主探索环境和管理系统状态，在用户无感的情况下，高效的完成复杂的任务。
+自主探索功能会实时获取机器人状态、空间状态和任务状态信息，通过自主探索环境和管理系统状态，在用户无感的情况下，高效地完成复杂的任务。
 实现开机即用（用户直接和机器人交互，无需预先建好图），越用越聪明。
 
 其核心功能包括：
@@ -680,7 +680,7 @@ RVIZ上，将坐标系设置为base_link/base_footprint，勾选PclObstacle。�
 
 **开始标定**
 
-底盘安装完成后，使用尺子测量底盘最上方和地面之间的高度。例如对于如下图工装，测量出来的底盘高度为0.22m。为了使机器人能够顺利避障高出障碍物，选取0.25m作为底盘高度。
+底盘安装完成后，使用尺子测量底盘最上方和地面之间的高度。例如对于如下图工装，测量出来的底盘高度为0.22m。为了使机器人能够顺利从高于底盘的障碍物下方通过，选取0.25m作为底盘高度。
 
 <img src="images/image_031.jpg" width="400">
 
@@ -1104,13 +1104,13 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 
 - 由于采用VIO作为里程计，底盘只需要电机，无需编码器和IMU。
 - 已完成通过MCU控制自研底盘电机。
-- 已完成基于ROS2 Humble版本的电机驱动功能（例如功能包为myrobot_base）开发。能够使用ROS2的键盘遥控工具（teleop_twist_keyboard功能包），通过键盘发送控制指令来操作机底盘移动。
+- 已完成基于ROS2 Humble版本的电机驱动功能（例如功能包为myrobot_base）开发。能够使用ROS2的键盘遥控工具（teleop_twist_keyboard功能包），通过键盘发送控制指令来操作机器人底盘移动。
 
 ### 8.2 连接硬件
 
 将RDK X5和相机固定到自研底盘上。
 
-使用串口通信线连接MCU控制器和RDK X5。其中RDK X5的串口GND, TX, RX分别对应的6, 8, 10管脚。
+使用串口通信线连接MCU控制器和RDK X5。其中RDK X5的串口GND, TX, RX分别对应6, 8, 10管脚。
 
 <img src="images/image_050.png" width="900">
 
@@ -1263,4 +1263,4 @@ vims_offline replay /userdata/recordings/my_session_<时间戳> \
     --profile rtabmap --rate 1.0 --run-dir /userdata/replay_runs
 ```
 
-详细用法——[查看可用回放 profile 与回放能力profile](guides/vims_offline.html#6-回放能力profile)、[单参数调试覆盖（`--launch-arg`）](guides/vims_offline.html#7-单参数调试覆盖--launch-arg)、回放输出目录说明等——详见 [离线数据录制与回放深度指南](guides/vims_offline.html)。
+详细用法——[查看可用回放 profile 与回放能力profile](guides/vims_offline.html#6-回放能力profile)、[单参数调试覆盖（`--launch-arg`）](guides/vims_offline.html#7-单参数调试覆盖launch-arg)、回放输出目录说明等——详见 [离线数据录制与回放深度指南](guides/vims_offline.html#2-子命令与参数)。
