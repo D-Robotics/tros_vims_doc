@@ -159,7 +159,7 @@
 <ol>
   <li><strong>请求合法性检查</strong>：<code class="language-plaintext highlighter-rouge">search_radius &lt; 0</code> 直接拒绝（定向导航是自主搜索专属）；原地旋转（spin）任务运行中拒绝；已有任务运行中返回幂等成功（不中断当前任务）。</li>
   <li><strong>候选池生成</strong>：地图（包围盒）面积 ≥ <code class="language-plaintext highlighter-rouge">free_pool_map_area_thr</code> 才建池——方格采样全图自由点，经关键帧约束过滤（只保留真实观察过的区域）和 Nav2 路径验证（规划不达的点剔除，仅可视化）。<strong>图过小或池为空 → 直接进入终态 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code></strong>。</li>
-  <li><strong>走访循环</strong>：全图巡逻按”距机器人实时位姿就近”选点，区域巡逻按池生成序；每个候选点导航前往，到访/失败/取消后处理下一个。</li>
+  <li><strong>走访循环</strong>：全图巡逻按”距机器人实时位姿就近”选点，区域巡逻按池生成序；每个候选点导航前往，到访/失败/取消后处理下一个。循环巡逻（<code class="language-plaintext highlighter-rouge">patrol_loop_count</code>）时每遍池尽后重采样候选池并清空灰名单续巡，直至巡完指定遍数或被停止。</li>
   <li><strong>终态</strong>：见 1.2 状态表。</li>
 </ol>
 
@@ -197,7 +197,7 @@
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">EXHAUSTED</code></td>
-      <td>单轮走访完成（全部候选点处理完）；地图过小或无自由点时发起后立即以此终态结束</td>
+      <td>走访会话完成（默认单遍即全部候选点处理完；循环巡逻为全部遍数巡完）；地图过小或无自由点时发起后立即以此终态结束</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">TIMEOUT</code></td>
@@ -375,6 +375,8 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
   </tbody>
 </table>
 
+<p>循环巡逻（<code class="language-plaintext highlighter-rouge">patrol_loop_count</code>，见 2.1）时 <code class="language-plaintext highlighter-rouge">timeout</code> 是<strong>整个循环会话的总预算</strong>：显式 <code class="language-plaintext highlighter-rouge">&gt;0</code> 值原样总包；<code class="language-plaintext highlighter-rouge">0</code> 自适应按遍数放大；<code class="language-plaintext highlighter-rouge">patrol_loop_count &lt; 0</code>（不限次）且自适应预算时无超时上界——一直循环到 <code class="language-plaintext highlighter-rouge">stop_patrol</code>。补巡 cancel 点、回起点只在会话真终态触发（无限循环永不触发）。</p>
+
 <p><strong>公式拆解</strong>——<code class="language-plaintext highlighter-rouge">clamp(x, lo, hi)</code> 表示把 x 限制在 [lo, hi] 区间内：x 低于下限取下限、高于上限取上限、区间内取原值。公式由四部分构成：</p>
 
 <table>
@@ -459,7 +461,7 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
 
 <h3 id="21-explorestart_patrol">2.1 /explore/start_patrol</h3>
 
-<p>发起一轮自主巡逻：按请求参数圈定候选范围（全图或区域）生成候选池，逐点走访，直至走访完成、预算耗尽或被停止。</p>
+<p>发起一次自主巡逻：按请求参数圈定候选范围（全图或区域）生成候选池，逐点走访，直至走访完成、预算耗尽或被停止。默认单遍；<code class="language-plaintext highlighter-rouge">patrol_loop_count</code> 可按遍数循环续巡或不限次循环，<code class="language-plaintext highlighter-rouge">patrol_return_to_start</code> 可在巡完后返回发起起点。</p>
 
 <p>类型 <code class="language-plaintext highlighter-rouge">tros_frontier_exploration/srv/SearchGoal</code>：</p>
 
@@ -496,6 +498,30 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
       <td>string</td>
       <td>巡逻不使用（自主搜索定向导航专用），留空</td>
       <td>无</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">patrol_loop_count</code></td>
+      <td>int64</td>
+      <td>循环遍数（仅 patrol 生效）：<code class="language-plaintext highlighter-rouge">0</code>=单遍（默认，既有行为）；<code class="language-plaintext highlighter-rouge">N&gt;0</code>=总共巡 N 遍，每遍池尽后重采样候选池并清空灰名单续巡；<code class="language-plaintext highlighter-rouge">&lt;0</code>=不限次一直循环到 <code class="language-plaintext highlighter-rouge">stop_patrol</code>。<code class="language-plaintext highlighter-rouge">timeout</code> 为整个循环会话的总预算（见 1.4）；空池早退不循环</td>
+      <td>[重点区域看护] 多轮覆盖；值守式持续巡视传负值，由上层按需停止</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">disable_arrival_spin</code></td>
+      <td>bool</td>
+      <td><code class="language-plaintext highlighter-rouge">true</code>=到点后不原地旋转 180° 扫盲区（缺省 <code class="language-plaintext highlighter-rouge">false</code>=旋转，同时失去该点 yaw 变化的到点存帧触发）</td>
+      <td>走访点朝向已覆盖关注区域、需缩短单点耗时时关闭</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">patrol_skip_cancelled_retry</code></td>
+      <td>bool</td>
+      <td><code class="language-plaintext highlighter-rouge">true</code>=不补巡被 cancel 的候选点（缺省 <code class="language-plaintext highlighter-rouge">false</code>=每遍主池尽后立刻对 cancel 点精确重导航；死点由灰名单跨遍累计 3 犯拉黑止损）</td>
+      <td>被障碍围死的点较多、补巡明显拖长总时长时开启</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">patrol_return_to_start</code></td>
+      <td>bool</td>
+      <td><code class="language-plaintext highlighter-rouge">true</code>=<code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 终态前 best-effort 回到发起起点（完整位姿含朝向）；仅自然巡完触发（<code class="language-plaintext highlighter-rouge">TIMEOUT</code>/停止/<code class="language-plaintext highlighter-rouge">TRAPPED</code>/空池早退不回）；回程失败只告警不改变终态</td>
+      <td>巡逻后需回到出发位（充电桩附近、值守点）</td>
     </tr>
   </tbody>
 </table>
@@ -648,7 +674,8 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
 <h2 id="4-进阶用法">4. 进阶用法</h2>
 
 <ul>
-  <li><strong>多轮巡逻</strong>：本接口为单轮语义，需要再巡一轮时在终态后重新发起。</li>
+  <li><strong>多轮巡逻</strong>：默认单遍；需要连续多轮时优先用 <code class="language-plaintext highlighter-rouge">patrol_loop_count</code>（N 遍或不限次循环，每遍重采样候选池），或仍由上层在终态后重新发起。</li>
+  <li><strong>定点返回</strong>：<code class="language-plaintext highlighter-rouge">patrol_return_to_start=true</code> 在自然巡完（<code class="language-plaintext highlighter-rouge">EXHAUSTED</code>）前 best-effort 回到发起起点，适合巡逻后需回到出发位（充电桩、值守点）的场景；超时/手动停止/被困不触发回起点。</li>
   <li><strong>重点区域看护</strong>：区域巡逻（小半径）池小、单轮快，适合上层按计划高频重复发起。</li>
   <li><strong>上层集成</strong>：巡逻通过 service 发起/停止、进度经话题发布——定时任务、语音助手等上层应用可按计划调用 <code class="language-plaintext highlighter-rouge">start_patrol</code> 并监听 <code class="language-plaintext highlighter-rouge">search_status</code> 终态。巡逻的产出是”走访”行为与状态统计；巡视中的异常发现可结合 solution 已有感知话题，告警推送等由上层应用实现。</li>
 </ul>
