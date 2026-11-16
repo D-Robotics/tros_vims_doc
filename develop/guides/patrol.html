@@ -201,7 +201,7 @@
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">TIMEOUT</code></td>
-      <td>时间预算耗尽（变体 <code class="language-plaintext highlighter-rouge">TIMEOUT:main_loop</code>：等主循环让控制权超 60 秒，非巡逻预算问题）</td>
+      <td>达到设置的巡逻时间后结束；若正在前往某个巡逻点，会先处理完当前点，再结束巡逻，不会立即中断当前导航（详见 1.4）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">CANCELLED:agent_stop</code></td>
@@ -217,7 +217,7 @@
 <p>附加规则：</p>
 
 <ul>
-  <li>进行中与终态消息附带时间进度 <code class="language-plaintext highlighter-rouge">t:elapsed/budget</code>（已用秒 / 预算秒）。<code class="language-plaintext highlighter-rouge">elapsed</code> 略超 <code class="language-plaintext highlighter-rouge">budget</code> 属正常现象（末个目标跨越预算边界时），可作为诊断信号。</li>
+  <li>进行中与终态消息附带时间进度 <code class="language-plaintext highlighter-rouge">t:elapsed/budget</code>（已用秒 / 预算秒）。末个目标跨越预算边界时 <code class="language-plaintext highlighter-rouge">elapsed</code> 可能大于 <code class="language-plaintext highlighter-rouge">budget</code>；超出幅度取决于当前目标剩余导航、结果处理及默认到点旋转时间，不保证只是少量超出。</li>
   <li><code class="language-plaintext highlighter-rouge">WAITING_SUBMAP_FLOW</code> 与 <code class="language-plaintext highlighter-rouge">SPINNING:*</code> 的等待时间<strong>计入</strong>时间预算。</li>
   <li>同一话题同时服务自主搜索（search）：搜索任务会发布 <code class="language-plaintext highlighter-rouge">SEARCHING:FREE:n/N</code>、<code class="language-plaintext highlighter-rouge">NAVIGATING</code>/<code class="language-plaintext highlighter-rouge">NAVIGATED</code>/<code class="language-plaintext highlighter-rouge">NAV_FAILED</code> 等额外状态，本页只列巡逻相关。</li>
 </ul>
@@ -343,11 +343,11 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
 
 <p>patrol 没有名为 SUCCESS 的状态——成功就是上表判定式（<code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 且 <code class="language-plaintext highlighter-rouge">unvisited:0</code>）；发起响应只代表任务被接受，不代表成败。</p>
 
-<p>两条硬规则：</p>
+<p>状态判读规则：</p>
 
 <ol>
   <li><strong>只认 <code class="language-plaintext highlighter-rouge">header.stamp</code> 晚于本次发起时刻的消息</strong>（防上一任务残留的旧消息），否则丢弃重读；</li>
-  <li>发起后<strong>预算 + 120 秒</strong>仍无终态 → 判节点异常，抓 explore 日志排查，不要无限等。</li>
+  <li>发起后超过预算仍未终态时，先确认是否仍在执行末个导航目标或到点旋转；<strong>超过预算 + 120 秒只能作为排查提示，不能单独据此判定节点异常</strong>。结合 <code class="language-plaintext highlighter-rouge">/explore/search_status</code>、当前导航结果与 explore 日志排查，不要无限等待。</li>
 </ol>
 
 <blockquote>
@@ -355,6 +355,8 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
 </blockquote>
 
 <h3 id="14-时间预算timeout">1.4 时间预算（timeout）</h3>
+
+<p><code class="language-plaintext highlighter-rouge">timeout</code> 是<strong>整次巡逻的时间预算</strong>，不是单个巡逻点的导航超时，也不是到点强制停止的定时器。</p>
 
 <table>
   <thead>
@@ -366,87 +368,66 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
   <tbody>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">&gt; 0</code></td>
-      <td>按指定值执行</td>
+      <td>使用指定值（秒）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">&lt;= 0</code></td>
-      <td>按候选池规模自适应：<code class="language-plaintext highlighter-rouge">clamp(30 + 60 × N, 180, 900)</code> 秒（N 为池内候选点数）</td>
+      <td>按候选点数量自动计算，最少 180 秒、最多 900 秒</td>
     </tr>
   </tbody>
 </table>
 
-<p>循环巡逻（<code class="language-plaintext highlighter-rouge">patrol_loop_count</code>，见 2.1）时 <code class="language-plaintext highlighter-rouge">timeout</code> 是<strong>整个循环会话的总预算</strong>：显式 <code class="language-plaintext highlighter-rouge">&gt;0</code> 值原样总包；<code class="language-plaintext highlighter-rouge">0</code> 自适应按遍数放大；<code class="language-plaintext highlighter-rouge">patrol_loop_count &lt; 0</code>（不限次）且自适应预算时无超时上界——一直循环到 <code class="language-plaintext highlighter-rouge">stop_patrol</code>。补巡 cancel 点、回起点只在会话真终态触发（无限循环永不触发）。</p>
+<p><strong>超过时间限制后如何结束</strong></p>
 
-<p><strong>公式拆解</strong>——<code class="language-plaintext highlighter-rouge">clamp(x, lo, hi)</code> 表示把 x 限制在 [lo, hi] 区间内：x 低于下限取下限、高于上限取上限、区间内取原值。公式由四部分构成：</p>
+<p>常规走访时，到达 <code class="language-plaintext highlighter-rouge">timeout</code> 不会立即中断巡逻，而是按以下顺序收尾：</p>
 
-<table>
-  <thead>
-    <tr>
-      <th>项</th>
-      <th>值</th>
-      <th>含义</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">30</code></td>
-      <td>基础预算</td>
-      <td>与候选点数无关的固定开销：建池、起点定位、任务收尾等</td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">60 × N</code></td>
-      <td>逐点预算</td>
-      <td>每个候选点分配 60 秒走访预算（导航前往 + 到访确认 + 可能的恢复重试）</td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">180</code></td>
-      <td>下限</td>
-      <td>预算最少 3 分钟，防止小池被过早掐断</td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">900</code></td>
-      <td>上限</td>
-      <td>预算最多 15 分钟，封顶单轮巡逻的最坏时长</td>
-    </tr>
-  </tbody>
-</table>
+<ol>
+  <li>若正在前往某个巡逻点，继续当前导航，不主动取消；</li>
+  <li>当前点处理完成后，若导航成功且启用默认到点旋转，先完成 180° 旋转；</li>
+  <li>随后发布 <code class="language-plaintext highlighter-rouge">TIMEOUT</code>，结束巡逻，不再前往下一个巡逻点。</li>
+</ol>
 
-<p>按 N 的取值分段：</p>
+<p>因此，实际结束时刻可能晚于 <code class="language-plaintext highlighter-rouge">timeout</code>，状态中的已耗时 <code class="language-plaintext highlighter-rouge">m</code> 也可能大于时间预算 <code class="language-plaintext highlighter-rouge">M</code>，超出幅度取决于当前点剩余导航与旋转时间。若期间手动停止或机器人被困，则以对应终态结束，不一定发布 <code class="language-plaintext highlighter-rouge">TIMEOUT</code>。</p>
+
+<p>子图回访与旋转的耗时也计入预算。<code class="language-plaintext highlighter-rouge">TIMEOUT</code> 不会撤销已完成的走访结果，统计随终态发布。</p>
+
+<p><code class="language-plaintext highlighter-rouge">disable_arrival_spin=true</code> 只能省去到点旋转，不会改变“超时不取消当前导航”的行为。需要立即停止时，调用 <a href="#22-explorestop_patrol"><code class="language-plaintext highlighter-rouge">/explore/stop_patrol</code></a>：取消当前导航并原地停车，终态为 <code class="language-plaintext highlighter-rouge">CANCELLED:agent_stop</code>。</p>
+
+<p><strong>循环巡逻</strong></p>
+
+<p><code class="language-plaintext highlighter-rouge">timeout</code> 限制所有遍数的总时间，不是每一遍单独计时。显式 <code class="language-plaintext highlighter-rouge">timeout &gt; 0</code> 时，预算不随遍数放大；自动预算会随遍数增加。<code class="language-plaintext highlighter-rouge">patrol_loop_count &lt; 0</code>（不限次）且使用自动预算时不设时间上限，一直巡逻到调用 <code class="language-plaintext highlighter-rouge">stop_patrol</code>。</p>
+
+<p><strong>自动预算的计算方式</strong></p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>clamp(30 + 60 × N, 180, 900) 秒
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">N</code> 为候选点数量；基础预算为 30 秒，每个候选点增加 60 秒。<code class="language-plaintext highlighter-rouge">clamp</code> 表示将计算结果限制在 180～900 秒之间：</p>
 
 <table>
   <thead>
     <tr>
-      <th>N（池内候选点数）</th>
-      <th>代入 30+60×N</th>
-      <th>实际预算</th>
+      <th>候选点数量 N</th>
+      <th>自动预算</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>N ≤ 2</td>
-      <td>90~150 秒</td>
-      <td>触下限 → <strong>180 秒</strong></td>
+      <td>180 秒</td>
     </tr>
     <tr>
       <td>3 ≤ N ≤ 14</td>
-      <td>210~870 秒</td>
-      <td>公式原值生效（线性增长）</td>
+      <td><code class="language-plaintext highlighter-rouge">30 + 60 × N</code> 秒</td>
     </tr>
     <tr>
       <td>N ≥ 15</td>
-      <td>930 秒起</td>
-      <td>触上限 → <strong>900 秒</strong></td>
+      <td>900 秒</td>
     </tr>
   </tbody>
 </table>
 
-<p>实测对照：候选池 8 点、<code class="language-plaintext highlighter-rouge">timeout</code> 传 0 → 预算 30+60×8=<strong>510 秒</strong>（状态串显示 <code class="language-plaintext highlighter-rouge">t:147/510</code>），与公式一致。</p>
-
-<blockquote>
-  <p><strong>提示</strong> 
-30/60/180/900 为代码内固定常量，不随 <code class="language-plaintext highlighter-rouge">params.yaml</code> 配置。N 的上限即 <code class="language-plaintext highlighter-rouge">free_pool_max_goals</code>（默认 20，对应预算触 900 秒上限）。预算覆盖全程等待——子图回访（<code class="language-plaintext highlighter-rouge">WAITING_SUBMAP_FLOW</code>）与旋转（<code class="language-plaintext highlighter-rouge">SPINNING:*</code>）均计入（见 1.2）。需要更长预算时显式传 <code class="language-plaintext highlighter-rouge">timeout</code>；预算耗尽发布终态 <code class="language-plaintext highlighter-rouge">TIMEOUT</code>，已走访部分不回滚（统计随终态发布）。</p>
-
-</blockquote>
+<p>例如，8 个候选点的自动预算为 <code class="language-plaintext highlighter-rouge">30 + 60 × 8 = 510</code> 秒。上述 30/60/180/900 为代码内固定值，不随 <code class="language-plaintext highlighter-rouge">params.yaml</code> 配置；<code class="language-plaintext highlighter-rouge">N</code> 的上限由 <code class="language-plaintext highlighter-rouge">free_pool_max_goals</code> 控制（默认 20）。</p>
 
 <h3 id="15-与其他任务的互斥">1.5 与其他任务的互斥</h3>
 
@@ -490,8 +471,8 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
     <tr>
       <td><code class="language-plaintext highlighter-rouge">timeout</code></td>
       <td>float64</td>
-      <td>时间预算（秒），见 1.4</td>
-      <td><code class="language-plaintext highlighter-rouge">0</code> 自适应适合常规单轮；[定时/离家值守] 中上层按计划控制单轮时长时显式设定；预算小于池规模所需时显式放大（见 5 排查）</td>
+      <td>时间预算（秒），软超时语义及生效时机见 1.4</td>
+      <td><code class="language-plaintext highlighter-rouge">0</code> 自适应适合常规单轮；[定时/离家值守] 可显式设定会话预算，但它不会准点中断当前目标；需要按计划立即停止时另行调用 <code class="language-plaintext highlighter-rouge">stop_patrol</code>（见 2.2）。预算小于池规模所需时显式放大（见 5 排查）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">nav_purpose</code></td>
@@ -705,6 +686,11 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
       <td>终态 <code class="language-plaintext highlighter-rouge">TIMEOUT</code> 且 <code class="language-plaintext highlighter-rouge">unvisited &gt; 0</code></td>
       <td>预算小于池规模所需（或等待占用过多预算）</td>
       <td>显式传大 <code class="language-plaintext highlighter-rouge">timeout</code>，或调小 <code class="language-plaintext highlighter-rouge">free_pool_max_goals</code></td>
+    </tr>
+    <tr>
+      <td>超过 <code class="language-plaintext highlighter-rouge">timeout</code> 后仍继续前往当前点</td>
+      <td>软超时不取消当前导航；默认到点旋转也会延后终态，见 1.4</td>
+      <td>等当前点结果处理后确认 <code class="language-plaintext highlighter-rouge">TIMEOUT</code>；需要立即停止时调用 <code class="language-plaintext highlighter-rouge">stop_patrol</code>，不要只依赖 <code class="language-plaintext highlighter-rouge">timeout</code></td>
     </tr>
     <tr>
       <td>响应 <code class="language-plaintext highlighter-rouge">success=true</code> 但机器人不动</td>

@@ -1675,6 +1675,8 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
   <ul>
     <li>巡逻进度：进行中 <code class="language-plaintext highlighter-rouge">PATROL:n/N t:m/M</code>（已走访n个/共N个候选点，已耗时 m 秒，时间限制 M 秒）。</li>
     <li>巡逻结果：正常结束 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code>；时间预算耗尽 <code class="language-plaintext highlighter-rouge">TIMEOUT</code>；手动停止 <code class="language-plaintext highlighter-rouge">CANCELLED</code>。</li>
+    <li><strong>时间限制采用软超时</strong>：若在前往当前点期间超过时间限制，不会立即取消当前导航；当前点结果处理完成后，若启用默认到点旋转，还会先完成旋转，随后发布 <code class="language-plaintext highlighter-rouge">TIMEOUT</code>，不再前往下一个巡逻点。因此状态中的已耗时 m 可能大于时间限制 M，超出幅度取决于当前点剩余导航与旋转时间。</li>
+    <li>需要立即停止时，使用 <code class="language-plaintext highlighter-rouge">StopPatrol</code>：取消当前导航目标并原地停车，不要只依赖时间限制。</li>
     <li>Foxglove中左侧区域地图上会展示走访过程中的marker特写（绿色方块=已到访、红色方块=到访失败、橙色方块=临时取消走访、黄色球形=候选池/待走访）。</li>
   </ul>
 
