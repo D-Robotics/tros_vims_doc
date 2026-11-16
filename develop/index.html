@@ -397,7 +397,7 @@
 
 <h3 id="16-自主探索">1.6 自主探索</h3>
 
-<p>自主探索功能会实时获取机器人状态、空间状态和任务状态信息，通过自主探索环境和管理系统状态，在用户无感的情况下，高效的完成复杂的任务。
+<p>自主探索功能会实时获取机器人状态、空间状态和任务状态信息，通过自主探索环境和管理系统状态，在用户无感的情况下，高效地完成复杂的任务。
 实现开机即用（用户直接和机器人交互，无需预先建好图），越用越聪明。</p>
 
 <p>其核心功能包括：</p>
@@ -1110,7 +1110,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
 
 <p><strong>开始标定</strong></p>
 
-<p>底盘安装完成后，使用尺子测量底盘最上方和地面之间的高度。例如对于如下图工装，测量出来的底盘高度为0.22m。为了使机器人能够顺利避障高出障碍物，选取0.25m作为底盘高度。</p>
+<p>底盘安装完成后，使用尺子测量底盘最上方和地面之间的高度。例如对于如下图工装，测量出来的底盘高度为0.22m。为了使机器人能够顺利从高于底盘的障碍物下方通过，选取0.25m作为底盘高度。</p>
 
 <p><img src="images/image_031.jpg" width="400" /></p>
 
@@ -1696,14 +1696,14 @@ bash <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">-
 <ul>
   <li>由于采用VIO作为里程计，底盘只需要电机，无需编码器和IMU。</li>
   <li>已完成通过MCU控制自研底盘电机。</li>
-  <li>已完成基于ROS2 Humble版本的电机驱动功能（例如功能包为myrobot_base）开发。能够使用ROS2的键盘遥控工具（teleop_twist_keyboard功能包），通过键盘发送控制指令来操作机底盘移动。</li>
+  <li>已完成基于ROS2 Humble版本的电机驱动功能（例如功能包为myrobot_base）开发。能够使用ROS2的键盘遥控工具（teleop_twist_keyboard功能包），通过键盘发送控制指令来操作机器人底盘移动。</li>
 </ul>
 
 <h3 id="82-连接硬件">8.2 连接硬件</h3>
 
 <p>将RDK X5和相机固定到自研底盘上。</p>
 
-<p>使用串口通信线连接MCU控制器和RDK X5。其中RDK X5的串口GND, TX, RX分别对应的6, 8, 10管脚。</p>
+<p>使用串口通信线连接MCU控制器和RDK X5。其中RDK X5的串口GND, TX, RX分别对应6, 8, 10管脚。</p>
 
 <p><img src="images/image_050.png" width="900" /></p>
 
@@ -1857,7 +1857,7 @@ vims_offline replay /userdata/recordings/my_session_&lt;时间戳&gt; <span clas
     <span class="nt">--profile</span> rtabmap <span class="nt">--rate</span> 1.0 <span class="nt">--run-dir</span> /userdata/replay_runs
 </code></pre></div></div>
 
-<p>详细用法——<a href="guides/vims_offline.html#6-回放能力profile">查看可用回放 profile 与回放能力profile</a>、<a href="guides/vims_offline.html#7-单参数调试覆盖--launch-arg">单参数调试覆盖（<code class="language-plaintext highlighter-rouge">--launch-arg</code>）</a>、回放输出目录说明等——详见 <a href="guides/vims_offline.html">离线数据录制与回放深度指南</a>。</p>
+<p>详细用法——<a href="guides/vims_offline.html#6-回放能力profile">查看可用回放 profile 与回放能力profile</a>、<a href="guides/vims_offline.html#7-单参数调试覆盖launch-arg">单参数调试覆盖（<code class="language-plaintext highlighter-rouge">--launch-arg</code>）</a>、回放输出目录说明等——详见 <a href="guides/vims_offline.html#2-子命令与参数">离线数据录制与回放深度指南</a>。</p>
 
 
     </main>

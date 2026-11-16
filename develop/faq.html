@@ -260,7 +260,7 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
   </tbody>
 </table>
 
-<p>导航代价地图中膨胀层的说明参考https://wiki.ros.org/costmap_2d/hydro/inflation</p>
+<p>导航代价地图中膨胀层的说明参考<a href="https://wiki.ros.org/costmap_2d/hydro/inflation">inflation layer</a>。</p>
 <h3 id="43-地图信息统计">4.3 地图信息统计</h3>
 <p>运行如下命令，统计VSLAM算法创建的地图的分辨率，未知、free和障碍物区域面积等信息：</p>
 
@@ -388,7 +388,7 @@ ros2 launch tros_stat_monitor tros_stat_monitor.py
 /tros_dynamic_obstacle_costmap /tros_goal_pose /tf /tf_static /local_costmap/published_footprint <span class="se">\</span>
 /object_point_cloud /StereoNetNode/stereonet_depth/camera_info /global_path /plan_smoothed <span class="se">\</span>
 /received_global_plan /transformed_global_plan /local_plan /cmd_vel /cmd_vel_nav <span class="se">\</span>
-/tros_observing_markers /tf /tf_static /image_jpeg
+/tros_observing_markers /image_jpeg
 </code></pre></div></div>
 
 <p>如果需要录制深度估计输出的点云，录制时添加/StereoNetNode/stereonet_pointcloud2话题。</p>
