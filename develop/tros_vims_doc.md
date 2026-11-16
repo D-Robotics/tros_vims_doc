@@ -457,37 +457,37 @@ Foxglove 是面向机器人开发者的数据平台，帮助开发者在整个�
 
 1. PC 浏览器（chrome/firefox/edge）输入 (https://foxglove.dev/studio) ， 进入 foxglove 官网（除了在浏览器上展示，也可以下载 Foxglove 桌面版）：
 
-<img src="images/foxglove_guide_1.png" width="800">
+   <img src="images/foxglove_guide_1.png" width="800">
 
 2. 首次使用需要注册，可使用谷歌账号或第三方邮箱进行注册：
 
-<img src="images/foxglove_guide_11.png" width="800">
+   <img src="images/foxglove_guide_11.png" width="800">
 
 3. 从RDK上移动solution的安装路径中下载 foxglove layout 配置文件，并参考Foxglove使用文档将配置导入到foxglove studio。
 
-foxglove layout 配置文件在RDK上的位置：
+   foxglove layout 配置文件在RDK上的位置：
 
-```bash
-source /opt/tros/humble/local_setup.bash
-source /userdata/vims/install/local_setup.bash
-ls `ros2 pkg prefix tros_vision_nav --share`/params/vims-foxglove-layout.json
-```
+   ```bash
+   source /opt/tros/humble/local_setup.bash
+   source /userdata/vims/install/local_setup.bash
+   ls `ros2 pkg prefix tros_vision_nav --share`/params/vims-foxglove-layout.json
+   ```
 
-配置导入方法（右上角下拉菜单）：
+   配置导入方法（右上角下拉菜单）：
 
-<img src="images/foxglove_guide_import_layout.png" width="400">
+   <img src="images/foxglove_guide_import_layout.png" width="400">
 
 4. RDK X5上运行如下命令，启动foxglove bridge（若已启动solution，foxglove bridge会随栈自动启动，请跳过本步——重复启动会因8765端口被占用而失败）：
 
-```bash
-source /opt/tros/humble/local_setup.bash
-source /userdata/vims/install/local_setup.bash
-ros2 run foxglove_bridge foxglove_bridge
-```
+   ```bash
+   source /opt/tros/humble/local_setup.bash
+   source /userdata/vims/install/local_setup.bash
+   ros2 run foxglove_bridge foxglove_bridge
+   ```
 
 5. PC端foxglove studio连接RDK（其中192.168.66.191为RDK X5的IP地址，使用时请替换为实际IP地址）：
 
-<img src="images/foxglove-pc-openning.png" width="800">
+   <img src="images/foxglove-pc-openning.png" width="800">
 
 连接成功后，RDK X5运行foxglove bridge的终端会输出`publishing connection graph`日志信息。
 

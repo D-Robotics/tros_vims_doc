@@ -809,46 +809,44 @@ wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/deb/h
 <p>本章节介绍如何配置和使用Foxglove，详细的配置和使用说明请参考 <a href="https://foxglove.dev/">Foxglove 官网</a> 和 <a href="https://docs.foxglove.dev/">官方使用文档</a>。</p>
 
 <ol>
-  <li>PC 浏览器（chrome/firefox/edge）输入 (https://foxglove.dev/studio) ， 进入 foxglove 官网（除了在浏览器上展示，也可以下载 Foxglove 桌面版）：</li>
-</ol>
+  <li>
+    <p>PC 浏览器（chrome/firefox/edge）输入 (https://foxglove.dev/studio) ， 进入 foxglove 官网（除了在浏览器上展示，也可以下载 Foxglove 桌面版）：</p>
 
-<p><img src="images/foxglove_guide_1.png" width="800" /></p>
+    <p><img src="images/foxglove_guide_1.png" width="800" /></p>
+  </li>
+  <li>
+    <p>首次使用需要注册，可使用谷歌账号或第三方邮箱进行注册：</p>
 
-<ol>
-  <li>首次使用需要注册，可使用谷歌账号或第三方邮箱进行注册：</li>
-</ol>
+    <p><img src="images/foxglove_guide_11.png" width="800" /></p>
+  </li>
+  <li>
+    <p>从RDK上移动solution的安装路径中下载 foxglove layout 配置文件，并参考Foxglove使用文档将配置导入到foxglove studio。</p>
 
-<p><img src="images/foxglove_guide_11.png" width="800" /></p>
+    <p>foxglove layout 配置文件在RDK上的位置：</p>
 
-<ol>
-  <li>从RDK上移动solution的安装路径中下载 foxglove layout 配置文件，并参考Foxglove使用文档将配置导入到foxglove studio。</li>
-</ol>
-
-<p>foxglove layout 配置文件在RDK上的位置：</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash
 <span class="nb">ls</span> <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/vims-foxglove-layout.json
-</code></pre></div></div>
+</code></pre></div>    </div>
 
-<p>配置导入方法（右上角下拉菜单）：</p>
+    <p>配置导入方法（右上角下拉菜单）：</p>
 
-<p><img src="images/foxglove_guide_import_layout.png" width="400" /></p>
+    <p><img src="images/foxglove_guide_import_layout.png" width="400" /></p>
+  </li>
+  <li>
+    <p>RDK X5上运行如下命令，启动foxglove bridge（若已启动solution，foxglove bridge会随栈自动启动，请跳过本步——重复启动会因8765端口被占用而失败）：</p>
 
-<ol>
-  <li>RDK X5上运行如下命令，启动foxglove bridge（若已启动solution，foxglove bridge会随栈自动启动，请跳过本步——重复启动会因8765端口被占用而失败）：</li>
-</ol>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">source</span> /opt/tros/humble/local_setup.bash
 <span class="nb">source</span> /userdata/vims/install/local_setup.bash
 ros2 run foxglove_bridge foxglove_bridge
-</code></pre></div></div>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>PC端foxglove studio连接RDK（其中192.168.66.191为RDK X5的IP地址，使用时请替换为实际IP地址）：</p>
 
-<ol>
-  <li>PC端foxglove studio连接RDK（其中192.168.66.191为RDK X5的IP地址，使用时请替换为实际IP地址）：</li>
+    <p><img src="images/foxglove-pc-openning.png" width="800" /></p>
+  </li>
 </ol>
-
-<p><img src="images/foxglove-pc-openning.png" width="800" /></p>
 
 <p>连接成功后，RDK X5运行foxglove bridge的终端会输出<code class="language-plaintext highlighter-rouge">publishing connection graph</code>日志信息。</p>
 
