@@ -181,7 +181,7 @@
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">PATROL:n/N</code></td>
-      <td>巡逻进行中：已处理 n 个 / 共 N 个候选点</td>
+      <td>巡逻进行中：本遍清单已办结 n 个 / 共 N 个去重候选点。办结 = 成功到访或确认失败；等待补巡的取消点未办结（n 暂不计）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">SPINNING:scan_blindspot[:n/N]</code></td>
@@ -197,14 +197,14 @@
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">EXHAUSTED</code></td>
-      <td>走访会话完成（默认单遍即全部候选点处理完；循环巡逻为全部遍数巡完）；地图过小或无自由点时发起后立即以此终态结束</td>
+      <td>走访会话完成（默认单遍即全部候选点处理完；循环巡逻为全部遍数巡完）；启动建池为 0 时也以此终态结束，并附加 <code class="language-plaintext highlighter-rouge">empty_reason</code></td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">TIMEOUT</code></td>
       <td>达到设置的巡逻时间后结束；若正在前往某个巡逻点，会先处理完当前点，再结束巡逻，不会立即中断当前导航（详见 1.4）</td>
     </tr>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">CANCELLED:agent_stop</code></td>
+      <td><code class="language-plaintext highlighter-rouge">CANCELLED:stop_requested</code></td>
       <td>调用 <code class="language-plaintext highlighter-rouge">stop_patrol</code>（或 <code class="language-plaintext highlighter-rouge">stop_search</code>）停止</td>
     </tr>
     <tr>
@@ -218,13 +218,14 @@
 
 <ul>
   <li>进行中与终态消息附带时间进度 <code class="language-plaintext highlighter-rouge">t:elapsed/budget</code>（已用秒 / 预算秒）。末个目标跨越预算边界时 <code class="language-plaintext highlighter-rouge">elapsed</code> 可能大于 <code class="language-plaintext highlighter-rouge">budget</code>；超出幅度取决于当前目标剩余导航、结果处理及默认到点旋转时间，不保证只是少量超出。</li>
+  <li>循环巡逻（<code class="language-plaintext highlighter-rouge">patrol_loop_count ≠ 0</code>）额外附带 <code class="language-plaintext highlighter-rouge">pass:i/M</code>（当前遍 / 总遍数；不限次显示 <code class="language-plaintext highlighter-rouge">pass:i/-</code>）。</li>
   <li><code class="language-plaintext highlighter-rouge">WAITING_SUBMAP_FLOW</code> 与 <code class="language-plaintext highlighter-rouge">SPINNING:*</code> 的等待时间<strong>计入</strong>时间预算。</li>
   <li>同一话题同时服务自主搜索（search）：搜索任务会发布 <code class="language-plaintext highlighter-rouge">SEARCHING:FREE:n/N</code>、<code class="language-plaintext highlighter-rouge">NAVIGATING</code>/<code class="language-plaintext highlighter-rouge">NAVIGATED</code>/<code class="language-plaintext highlighter-rouge">NAV_FAILED</code> 等额外状态，本页只列巡逻相关。</li>
 </ul>
 
-<p><strong>终态统计字段</strong>：终态消息附加走访统计，实测示例：</p>
+<p><strong>终态统计字段</strong>：终态消息附加清单进度与走访统计，实测示例：</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EXHAUSTED t:287/510 ok:6 fail:0 cancel:3 notsent:0 sent:9 pool:8 unvisited:0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EXHAUSTED 8/8 t:287/510 ok:6 fail:0 cancel:3
 </code></pre></div></div>
 
 <table>
@@ -236,32 +237,66 @@
   </thead>
   <tbody>
     <tr>
+      <td><code class="language-plaintext highlighter-rouge">n/N</code></td>
+      <td>清单进度：已办结 n 个 / 本遍清单共 N 个。<code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 时恒 n==N（收尾把未发出点补记办结）；<code class="language-plaintext highlighter-rouge">TIMEOUT</code> / <code class="language-plaintext highlighter-rouge">TRAPPED</code> / <code class="language-plaintext highlighter-rouge">CANCELLED</code> 时 n&lt;N 即未完成量。建池失败的空池终态不带 n/N</td>
+    </tr>
+    <tr>
       <td><code class="language-plaintext highlighter-rouge">ok</code></td>
-      <td>到访成功数</td>
+      <td>到访成功的导航次数（含近点到访）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">fail</code></td>
-      <td>导航真失败数</td>
+      <td>导航真失败次数（含被障碍围死按失败记账的取消）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">cancel</code></td>
-      <td>取消数——含恢复策略（脱困旋转重发、子图回访抢占等）取消后重发的目标，因此<strong>可能大于池规模</strong></td>
+      <td>取消次数——含恢复策略（脱困旋转重发、子图回访抢占等）取消后重发的目标，因此<strong>可能大于清单规模</strong></td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">notsent</code></td>
-      <td>已选中但未发出（导航服务忙）</td>
+      <td>已选中但未发出（导航服务忙）的点数；仅终态且非零时出现</td>
     </tr>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">sent</code></td>
-      <td>发出且得到结果的目标数，恒等式 <code class="language-plaintext highlighter-rouge">ok + fail + cancel == sent</code></td>
+      <td><code class="language-plaintext highlighter-rouge">empty_reason</code></td>
+      <td><strong>仅启动建池为 0 时附加</strong>：空池阶段原因；正常巡完没有此字段</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>口径规则：心跳（<code class="language-plaintext highlighter-rouge">PATROL</code>）与终态字段同序，但 ok/fail/cancel 心跳计<strong>当前遍</strong>、终态计<strong>整个任务</strong>（跨遍累计）。n/N 与 ok/fail/cancel 分工——n/N 按<strong>地点</strong>去重只计最终办结（同点重试只进 1 次 n），ok/fail/cancel 按<strong>导航次数</strong>不去重（同点重试各进 1 次）；成功率看 <code class="language-plaintext highlighter-rouge">ok/(ok+fail+cancel)</code>，剩余量看 <code class="language-plaintext highlighter-rouge">N−n</code>。</p>
+
+<p>启动空池示例：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EXHAUSTED ok:0 fail:0 cancel:0 empty_reason:no_cand
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th><code class="language-plaintext highlighter-rouge">empty_reason</code></th>
+      <th>含义与排查方向</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">map_too_small</code></td>
+      <td>costmap 包围盒面积低于 <code class="language-plaintext highlighter-rouge">free_pool_map_area_thr</code>；先完成建图或检查地图范围</td>
     </tr>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">pool</code></td>
-      <td>候选池总数</td>
+      <td><code class="language-plaintext highlighter-rouge">costmap_unavailable</code></td>
+      <td>costmap 不可用；检查 Nav2 costmap 是否已发布</td>
     </tr>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">unvisited</code></td>
-      <td>未走访数（= 池内仍合格的候选点）</td>
+      <td><code class="language-plaintext highlighter-rouge">no_grids</code></td>
+      <td>没有可采样的机器人可达自由格；检查自由空间、机器人位姿与连通性</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">no_cand</code></td>
+      <td>候选点在路径验证前被面积、关键帧、区域半径或探索范围等条件全部过滤；结合建池日志确认具体过滤项</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">no_path</code></td>
+      <td>候选点均进入 Nav2 路径验证，但全部规划失败；检查起点/目标区域连通性及 Nav2 日志</td>
     </tr>
   </tbody>
 </table>
@@ -319,12 +354,12 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
   </thead>
   <tbody>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 且 <code class="language-plaintext highlighter-rouge">unvisited:0</code></td>
-      <td>✅ <strong>成功</strong>（候选点全部走访完成）</td>
+      <td><code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 且带 <code class="language-plaintext highlighter-rouge">empty_reason</code></td>
+      <td>⚠️ 未执行走访（启动建池为 0，按原因字段排查）</td>
     </tr>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 且 <code class="language-plaintext highlighter-rouge">unvisited&gt;0</code></td>
-      <td>⚠️ 部分完成（候选中途被剔除，按业务容忍度判）</td>
+      <td><code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 且无 <code class="language-plaintext highlighter-rouge">empty_reason</code></td>
+      <td>✅ <strong>成功</strong>（清单全部办结，n==N 恒成立）</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">TIMEOUT</code></td>
@@ -341,7 +376,7 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
   </tbody>
 </table>
 
-<p>patrol 没有名为 SUCCESS 的状态——成功就是上表判定式（<code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 且 <code class="language-plaintext highlighter-rouge">unvisited:0</code>）；发起响应只代表任务被接受，不代表成败。</p>
+<p>patrol 没有名为 SUCCESS 的状态——正常成功判据是 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code> 且没有 <code class="language-plaintext highlighter-rouge">empty_reason</code>（自然巡完时 n==N 恒成立）；发起响应只代表任务被接受，不代表成败。</p>
 
 <p>状态判读规则：</p>
 
@@ -351,7 +386,7 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
 </ol>
 
 <blockquote>
-  <p>备注：<code class="language-plaintext highlighter-rouge">get_search_result</code> 只反映<strong>最近一次</strong>任务且响应无时间戳——判断”结果是不是本次巡逻的”用状态串的 <code class="language-plaintext highlighter-rouge">header.stamp</code>；成功判据 <code class="language-plaintext highlighter-rouge">unvisited</code> 也只在状态串里（service 响应无此字段）；怀疑卡死时连调两次，<code class="language-plaintext highlighter-rouge">reason=running</code> 且 <code class="language-plaintext highlighter-rouge">elapsed_time</code> 在增长即任务活着。</p>
+  <p>备注：<code class="language-plaintext highlighter-rouge">get_search_result</code> 只反映<strong>最近一次</strong>任务且响应无时间戳——判断”结果是不是本次巡逻的”用状态串的 <code class="language-plaintext highlighter-rouge">header.stamp</code>；清单进度 <code class="language-plaintext highlighter-rouge">n/N</code> 也只在状态串里（service 响应无此字段）；怀疑卡死时连调两次，<code class="language-plaintext highlighter-rouge">reason=running</code> 且 <code class="language-plaintext highlighter-rouge">elapsed_time</code> 在增长即任务活着。</p>
 </blockquote>
 
 <h3 id="14-时间预算timeout">1.4 时间预算（timeout）</h3>
@@ -391,7 +426,7 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
 
 <p>子图回访与旋转的耗时也计入预算。<code class="language-plaintext highlighter-rouge">TIMEOUT</code> 不会撤销已完成的走访结果，统计随终态发布。</p>
 
-<p><code class="language-plaintext highlighter-rouge">disable_arrival_spin=true</code> 只能省去到点旋转，不会改变“超时不取消当前导航”的行为。需要立即停止时，调用 <a href="#22-explorestop_patrol"><code class="language-plaintext highlighter-rouge">/explore/stop_patrol</code></a>：取消当前导航并原地停车，终态为 <code class="language-plaintext highlighter-rouge">CANCELLED:agent_stop</code>。</p>
+<p><code class="language-plaintext highlighter-rouge">disable_arrival_spin=true</code> 只能省去到点旋转，不会改变“超时不取消当前导航”的行为。需要立即停止时，调用 <a href="#22-explorestop_patrol"><code class="language-plaintext highlighter-rouge">/explore/stop_patrol</code></a>：取消当前导航并原地停车，终态为 <code class="language-plaintext highlighter-rouge">CANCELLED:stop_requested</code>。</p>
 
 <p><strong>循环巡逻</strong></p>
 
@@ -432,6 +467,7 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
 <h3 id="15-与其他任务的互斥">1.5 与其他任务的互斥</h3>
 
 <ul>
+  <li><strong>与重定位互斥</strong>：重定位中发起巡逻返回 <code class="language-plaintext highlighter-rouge">success=false</code>，响应消息为 <code class="language-plaintext highlighter-rouge">relocating in progress</code>。请求不会排队或启动巡逻，也不会改变现有任务状态；调用方需在重定位结束后重新发起。</li>
   <li><strong>与原地旋转（spin）互斥</strong>：spin 运行中发起巡逻被拒绝（响应消息 <code class="language-plaintext highlighter-rouge">spin running, wait spin_status DONE</code>）。</li>
   <li><strong>与点导航互斥</strong>：已有任务运行时发起巡逻返回<strong>幂等成功</strong>（<code class="language-plaintext highlighter-rouge">already running</code>），当前任务继续执行——需要按新参数巡逻时，先 <code class="language-plaintext highlighter-rouge">stop_patrol</code> 停止当前任务。</li>
 </ul>
@@ -507,7 +543,7 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
   </tbody>
 </table>
 
-<p>响应：<code class="language-plaintext highlighter-rouge">success</code> + <code class="language-plaintext highlighter-rouge">message</code>（<code class="language-plaintext highlighter-rouge">search started</code>=已启动；<code class="language-plaintext highlighter-rouge">already running (idempotent, ...)</code>=幂等成功）。</p>
+<p>响应：<code class="language-plaintext highlighter-rouge">success</code> + <code class="language-plaintext highlighter-rouge">message</code>（<code class="language-plaintext highlighter-rouge">search started</code>=已启动；<code class="language-plaintext highlighter-rouge">already running (idempotent, ...)</code>=幂等成功；重定位中返回 <code class="language-plaintext highlighter-rouge">success=false</code> 和 <code class="language-plaintext highlighter-rouge">relocating in progress</code>，不会启动巡逻，见 1.5）。</p>
 
 <blockquote>
   <p>场景名称与主手册 <a href="../index.html#77-自主巡逻">7.7 自主巡逻</a> 场景能力表对应：[全屋移动监控] / [重点区域看护] / [定时/离家值守]。</p>
@@ -615,7 +651,7 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
       <td><code class="language-plaintext highlighter-rouge">free_pool_map_area_thr</code></td>
       <td>20.0</td>
       <td>m²（包围盒估算）</td>
-      <td>建池门槛：地图面积低于该值不生成候选池，发起巡逻立即 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code></td>
+      <td>建池门槛：地图面积低于该值不生成候选池，发起巡逻立即 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code>，附 <code class="language-plaintext highlighter-rouge">empty_reason:map_too_small</code></td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">free_pool_cell_size</code></td>
@@ -674,17 +710,17 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
   <tbody>
     <tr>
       <td>发起立即 <code class="language-plaintext highlighter-rouge">EXHAUSTED</code></td>
-      <td>地图面积 &lt; <code class="language-plaintext highlighter-rouge">free_pool_map_area_thr</code>，或无自由点可访</td>
-      <td>先按主手册 7.3 完成建图；确认地图范围</td>
+      <td>启动建池为 0，终态中的 <code class="language-plaintext highlighter-rouge">empty_reason</code> 标明空池阶段（见 1.2）</td>
+      <td>按原因检查地图、自由空间、区域半径或 Nav2 路径；<code class="language-plaintext highlighter-rouge">no_cand</code> 需结合建池日志确认具体过滤项</td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">PATROL:n/N</code> 长时间不推进</td>
-      <td>处于 <code class="language-plaintext highlighter-rouge">WAITING_SUBMAP_FLOW</code>（子图回访接管）或 <code class="language-plaintext highlighter-rouge">SPINNING:*</code></td>
+      <td>处于 <code class="language-plaintext highlighter-rouge">WAITING_SUBMAP_FLOW</code>（子图回访接管）或 <code class="language-plaintext highlighter-rouge">SPINNING:*</code>；或取消点在等补巡（未办结不计 n，属正常）</td>
       <td>属正常等待，观察状态串即可；长时间卡住再抓 explore 节点日志</td>
     </tr>
     <tr>
-      <td>终态 <code class="language-plaintext highlighter-rouge">TIMEOUT</code> 且 <code class="language-plaintext highlighter-rouge">unvisited &gt; 0</code></td>
-      <td>预算小于池规模所需（或等待占用过多预算）</td>
+      <td>终态 <code class="language-plaintext highlighter-rouge">TIMEOUT</code> 且 <code class="language-plaintext highlighter-rouge">n &lt; N</code></td>
+      <td>预算小于清单规模所需（或等待占用过多预算）</td>
       <td>显式传大 <code class="language-plaintext highlighter-rouge">timeout</code>，或调小 <code class="language-plaintext highlighter-rouge">free_pool_max_goals</code></td>
     </tr>
     <tr>

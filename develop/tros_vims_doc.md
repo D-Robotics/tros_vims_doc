@@ -1070,7 +1070,7 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 ```
 
 > **注意** 
-巡逻依赖已有地图：需先按[7.3 VSLAM建图](#73-vslam建图)完成建图，且地图面积需大于参数 `free_pool_map_area_thr`（默认20.0 m²）。面积过小或无自由点可访时，发起巡逻会立即结束并发布终态 `EXHAUSTED`。
+巡逻依赖已有地图：需先按[7.3 VSLAM建图](#73-vslam建图)完成建图，且地图面积需大于参数 `free_pool_map_area_thr`（默认20.0 m²）。面积过小或无自由点可访时，发起巡逻会立即结束并发布终态 `EXHAUSTED`，终态中的 `empty_reason` 会标明空池阶段原因。
 >
 
 #### 发起和停止巡逻
@@ -1088,6 +1088,7 @@ bash `ros2 pkg prefix tros_vision_nav --share`/launch/run_launch.sh
 > **提示** 
 > - 巡逻进度：进行中 `PATROL:n/N t:m/M`（已走访n个/共N个候选点，已耗时 m 秒，时间限制 M 秒）。
 > - 巡逻结果：正常结束 `EXHAUSTED`；时间预算耗尽 `TIMEOUT`；手动停止 `CANCELLED`。
+> - 若发起后立即出现 `EXHAUSTED`，看消息里有没有 `empty_reason`：有（如 `EXHAUSTED ok:0 fail:0 cancel:0 empty_reason:no_cand`）说明启动时就没建出候选点、没有真正巡逻，按 `empty_reason` 排查；没有 `empty_reason` 且 n==N 才是正常巡完。原因含义见[自主巡逻深度指南](guides/patrol.html)。
 > - **时间限制采用软超时**：若在前往当前点期间超过时间限制，不会立即取消当前导航；当前点结果处理完成后，若启用默认到点旋转，还会先完成旋转，随后发布 `TIMEOUT`，不再前往下一个巡逻点。因此状态中的已耗时 m 可能大于时间限制 M，超出幅度取决于当前点剩余导航与旋转时间。
 > - 需要立即停止时，使用 `StopPatrol`：取消当前导航目标并原地停车，不要只依赖时间限制。
 > - Foxglove中左侧区域地图上会展示走访过程中的marker特写（绿色方块=已到访、红色方块=到访失败、橙色方块=临时取消走访、黄色球形=候选池/待走访）。
