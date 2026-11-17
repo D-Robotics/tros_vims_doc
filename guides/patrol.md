@@ -25,36 +25,52 @@ layout: default
 | 状态 | 含义 |
 |------|------|
 | `IDLE` | 空闲（无任务） |
-| `PATROL:n/N` | 巡逻进行中：已处理 n 个 / 共 N 个候选点 |
+| `PATROL:n/N` | 巡逻进行中：本遍清单已办结 n 个 / 共 N 个去重候选点。办结 = 成功到访或确认失败；等待补巡的取消点未办结（n 暂不计） |
 | `SPINNING:scan_blindspot[:n/N]` | 原地旋转扫描盲区（候选点间盲区补扫），旋转结束自动恢复走访；变体 `SPINNING:escape_obstacle`（脱困旋转）、`SPINNING:find_frontier` |
 | `WAITING_MAIN_LOOP: waited=Ns` | 主循环 frontier 探索占用导航控制权，巡逻挂起等待（每 5s 心跳）；等待超 60 秒直接终态 `TIMEOUT:main_loop` |
 | `WAITING_SUBMAP_FLOW: waited=Ns` | 子图回访/建图（submapLinkFlow）接管控制期间巡逻挂起，每 5s 心跳；flow 结束后自动重选目标继续 |
-| `EXHAUSTED` | 走访会话完成（默认单遍即全部候选点处理完；循环巡逻为全部遍数巡完）；地图过小或无自由点时发起后立即以此终态结束 |
+| `EXHAUSTED` | 走访会话完成（默认单遍即全部候选点处理完；循环巡逻为全部遍数巡完）；启动建池为 0 时也以此终态结束，并附加 `empty_reason` |
 | `TIMEOUT` | 达到设置的巡逻时间后结束；若正在前往某个巡逻点，会先处理完当前点，再结束巡逻，不会立即中断当前导航（详见 1.4） |
-| `CANCELLED:agent_stop` | 调用 `stop_patrol`（或 `stop_search`）停止 |
+| `CANCELLED:stop_requested` | 调用 `stop_patrol`（或 `stop_search`）停止 |
 | `TRAPPED` | 机器人被困，恢复策略无效 |
 
 附加规则：
 
 - 进行中与终态消息附带时间进度 `t:elapsed/budget`（已用秒 / 预算秒）。末个目标跨越预算边界时 `elapsed` 可能大于 `budget`；超出幅度取决于当前目标剩余导航、结果处理及默认到点旋转时间，不保证只是少量超出。
+- 循环巡逻（`patrol_loop_count ≠ 0`）额外附带 `pass:i/M`（当前遍 / 总遍数；不限次显示 `pass:i/-`）。
 - `WAITING_SUBMAP_FLOW` 与 `SPINNING:*` 的等待时间**计入**时间预算。
 - 同一话题同时服务自主搜索（search）：搜索任务会发布 `SEARCHING:FREE:n/N`、`NAVIGATING`/`NAVIGATED`/`NAV_FAILED` 等额外状态，本页只列巡逻相关。
 
-**终态统计字段**：终态消息附加走访统计，实测示例：
+**终态统计字段**：终态消息附加清单进度与走访统计，实测示例：
 
 ```
-EXHAUSTED t:287/510 ok:6 fail:0 cancel:3 notsent:0 sent:9 pool:8 unvisited:0
+EXHAUSTED 8/8 t:287/510 ok:6 fail:0 cancel:3
 ```
 
 | 字段 | 含义 |
 |------|------|
-| `ok` | 到访成功数 |
-| `fail` | 导航真失败数 |
-| `cancel` | 取消数——含恢复策略（脱困旋转重发、子图回访抢占等）取消后重发的目标，因此**可能大于池规模** |
-| `notsent` | 已选中但未发出（导航服务忙） |
-| `sent` | 发出且得到结果的目标数，恒等式 `ok + fail + cancel == sent` |
-| `pool` | 候选池总数 |
-| `unvisited` | 未走访数（= 池内仍合格的候选点） |
+| `n/N` | 清单进度：已办结 n 个 / 本遍清单共 N 个。`EXHAUSTED` 时恒 n==N（收尾把未发出点补记办结）；`TIMEOUT` / `TRAPPED` / `CANCELLED` 时 n<N 即未完成量。建池失败的空池终态不带 n/N |
+| `ok` | 到访成功的导航次数（含近点到访） |
+| `fail` | 导航真失败次数（含被障碍围死按失败记账的取消） |
+| `cancel` | 取消次数——含恢复策略（脱困旋转重发、子图回访抢占等）取消后重发的目标，因此**可能大于清单规模** |
+| `notsent` | 已选中但未发出（导航服务忙）的点数；仅终态且非零时出现 |
+| `empty_reason` | **仅启动建池为 0 时附加**：空池阶段原因；正常巡完没有此字段 |
+
+口径规则：心跳（`PATROL`）与终态字段同序，但 ok/fail/cancel 心跳计**当前遍**、终态计**整个任务**（跨遍累计）。n/N 与 ok/fail/cancel 分工——n/N 按**地点**去重只计最终办结（同点重试只进 1 次 n），ok/fail/cancel 按**导航次数**不去重（同点重试各进 1 次）；成功率看 `ok/(ok+fail+cancel)`，剩余量看 `N−n`。
+
+启动空池示例：
+
+```text
+EXHAUSTED ok:0 fail:0 cancel:0 empty_reason:no_cand
+```
+
+| `empty_reason` | 含义与排查方向 |
+|------|------|
+| `map_too_small` | costmap 包围盒面积低于 `free_pool_map_area_thr`；先完成建图或检查地图范围 |
+| `costmap_unavailable` | costmap 不可用；检查 Nav2 costmap 是否已发布 |
+| `no_grids` | 没有可采样的机器人可达自由格；检查自由空间、机器人位姿与连通性 |
+| `no_cand` | 候选点在路径验证前被面积、关键帧、区域半径或探索范围等条件全部过滤；结合建池日志确认具体过滤项 |
+| `no_path` | 候选点均进入 Nav2 路径验证，但全部规划失败；检查起点/目标区域连通性及 Nav2 日志 |
 
 任务状态与成败怎么判（状态话题前缀规则 + 终态成败表 + `get_search_result` 收尾）见 1.3。
 
@@ -82,20 +98,20 @@ ros2 service call /explore/get_search_result tros_frontier_exploration/srv/Searc
 
 | 终态 | 判定 |
 |------|------|
-| `EXHAUSTED` 且 `unvisited:0` | ✅ **成功**（候选点全部走访完成） |
-| `EXHAUSTED` 且 `unvisited>0` | ⚠️ 部分完成（候选中途被剔除，按业务容忍度判） |
+| `EXHAUSTED` 且带 `empty_reason` | ⚠️ 未执行走访（启动建池为 0，按原因字段排查） |
+| `EXHAUSTED` 且无 `empty_reason` | ✅ **成功**（清单全部办结，n==N 恒成立） |
 | `TIMEOUT` | ⚠️ 未完成（预算耗尽，可放大 `timeout` 重试；`TIMEOUT:main_loop` = 等主循环让权超时，非预算问题） |
 | `TRAPPED` | ❌ **失败**（被困且脱困无效） |
 | `CANCELLED` | ⏹️ **取消**（有人调了 `stop_patrol`，主动停止无成败语义） |
 
-patrol 没有名为 SUCCESS 的状态——成功就是上表判定式（`EXHAUSTED` 且 `unvisited:0`）；发起响应只代表任务被接受，不代表成败。
+patrol 没有名为 SUCCESS 的状态——正常成功判据是 `EXHAUSTED` 且没有 `empty_reason`（自然巡完时 n==N 恒成立）；发起响应只代表任务被接受，不代表成败。
 
 状态判读规则：
 
 1. **只认 `header.stamp` 晚于本次发起时刻的消息**（防上一任务残留的旧消息），否则丢弃重读；
 2. 发起后超过预算仍未终态时，先确认是否仍在执行末个导航目标或到点旋转；**超过预算 + 120 秒只能作为排查提示，不能单独据此判定节点异常**。结合 `/explore/search_status`、当前导航结果与 explore 日志排查，不要无限等待。
 
-> 备注：`get_search_result` 只反映**最近一次**任务且响应无时间戳——判断"结果是不是本次巡逻的"用状态串的 `header.stamp`；成功判据 `unvisited` 也只在状态串里（service 响应无此字段）；怀疑卡死时连调两次，`reason=running` 且 `elapsed_time` 在增长即任务活着。
+> 备注：`get_search_result` 只反映**最近一次**任务且响应无时间戳——判断"结果是不是本次巡逻的"用状态串的 `header.stamp`；清单进度 `n/N` 也只在状态串里（service 响应无此字段）；怀疑卡死时连调两次，`reason=running` 且 `elapsed_time` 在增长即任务活着。
 
 ### 1.4 时间预算（timeout）
 
@@ -118,7 +134,7 @@ patrol 没有名为 SUCCESS 的状态——成功就是上表判定式（`EXHAUS
 
 子图回访与旋转的耗时也计入预算。`TIMEOUT` 不会撤销已完成的走访结果，统计随终态发布。
 
-`disable_arrival_spin=true` 只能省去到点旋转，不会改变“超时不取消当前导航”的行为。需要立即停止时，调用 [`/explore/stop_patrol`](#22-explorestop_patrol)：取消当前导航并原地停车，终态为 `CANCELLED:agent_stop`。
+`disable_arrival_spin=true` 只能省去到点旋转，不会改变“超时不取消当前导航”的行为。需要立即停止时，调用 [`/explore/stop_patrol`](#22-explorestop_patrol)：取消当前导航并原地停车，终态为 `CANCELLED:stop_requested`。
 
 **循环巡逻**
 
@@ -142,6 +158,7 @@ clamp(30 + 60 × N, 180, 900) 秒
 
 ### 1.5 与其他任务的互斥
 
+- **与重定位互斥**：重定位中发起巡逻返回 `success=false`，响应消息为 `relocating in progress`。请求不会排队或启动巡逻，也不会改变现有任务状态；调用方需在重定位结束后重新发起。
 - **与原地旋转（spin）互斥**：spin 运行中发起巡逻被拒绝（响应消息 `spin running, wait spin_status DONE`）。
 - **与点导航互斥**：已有任务运行时发起巡逻返回**幂等成功**（`already running`），当前任务继续执行——需要按新参数巡逻时，先 `stop_patrol` 停止当前任务。
 
@@ -166,7 +183,7 @@ clamp(30 + 60 × N, 180, 900) 秒
 | `patrol_skip_cancelled_retry` | bool | `true`=不补巡被 cancel 的候选点（缺省 `false`=每遍主池尽后立刻对 cancel 点精确重导航；死点由灰名单跨遍累计 3 犯拉黑止损） | 被障碍围死的点较多、补巡明显拖长总时长时开启 |
 | `patrol_return_to_start` | bool | `true`=`EXHAUSTED` 终态前 best-effort 回到发起起点（完整位姿含朝向）；仅自然巡完触发（`TIMEOUT`/停止/`TRAPPED`/空池早退不回）；回程失败只告警不改变终态 | 巡逻后需回到出发位（充电桩附近、值守点） |
 
-响应：`success` + `message`（`search started`=已启动；`already running (idempotent, ...)`=幂等成功）。
+响应：`success` + `message`（`search started`=已启动；`already running (idempotent, ...)`=幂等成功；重定位中返回 `success=false` 和 `relocating in progress`，不会启动巡逻，见 1.5）。
 
 > 场景名称与主手册 [7.7 自主巡逻](../index.html#77-自主巡逻) 场景能力表对应：[全屋移动监控] / [重点区域看护] / [定时/离家值守]。
 
@@ -210,7 +227,7 @@ clamp(30 + 60 × N, 180, 900) 秒
 
 | 参数 | 默认值 | 单位/口径 | 说明 |
 |------|-------|----------|------|
-| `free_pool_map_area_thr` | 20.0 | m²（包围盒估算） | 建池门槛：地图面积低于该值不生成候选池，发起巡逻立即 `EXHAUSTED` |
+| `free_pool_map_area_thr` | 20.0 | m²（包围盒估算） | 建池门槛：地图面积低于该值不生成候选池，发起巡逻立即 `EXHAUSTED`，附 `empty_reason:map_too_small` |
 | `free_pool_cell_size` | 3.0 | m | 采样方格边长（控制巡逻点密度）：每方格取最大 free 连通域质心作为候选 |
 | `free_pool_max_goals` | 20 | 个 | 候选池上限：超限按最远点采样（FPS，保证截断后均匀覆盖全图）截取，直接限制单轮巡逻点数与时长 |
 | `free_pool_min_area_ratio` | 2.0 | 系数 | 候选盘最小连通 free 面积 = ratio × π × robot_radius²，过滤碎小 free 区域 |
@@ -230,9 +247,9 @@ clamp(30 + 60 × N, 180, 900) 秒
 
 | 现象 | 可能原因 | 处置 |
 |------|---------|------|
-| 发起立即 `EXHAUSTED` | 地图面积 < `free_pool_map_area_thr`，或无自由点可访 | 先按主手册 7.3 完成建图；确认地图范围 |
-| `PATROL:n/N` 长时间不推进 | 处于 `WAITING_SUBMAP_FLOW`（子图回访接管）或 `SPINNING:*` | 属正常等待，观察状态串即可；长时间卡住再抓 explore 节点日志 |
-| 终态 `TIMEOUT` 且 `unvisited > 0` | 预算小于池规模所需（或等待占用过多预算） | 显式传大 `timeout`，或调小 `free_pool_max_goals` |
+| 发起立即 `EXHAUSTED` | 启动建池为 0，终态中的 `empty_reason` 标明空池阶段（见 1.2） | 按原因检查地图、自由空间、区域半径或 Nav2 路径；`no_cand` 需结合建池日志确认具体过滤项 |
+| `PATROL:n/N` 长时间不推进 | 处于 `WAITING_SUBMAP_FLOW`（子图回访接管）或 `SPINNING:*`；或取消点在等补巡（未办结不计 n，属正常） | 属正常等待，观察状态串即可；长时间卡住再抓 explore 节点日志 |
+| 终态 `TIMEOUT` 且 `n < N` | 预算小于清单规模所需（或等待占用过多预算） | 显式传大 `timeout`，或调小 `free_pool_max_goals` |
 | 超过 `timeout` 后仍继续前往当前点 | 软超时不取消当前导航；默认到点旋转也会延后终态，见 1.4 | 等当前点结果处理后确认 `TIMEOUT`；需要立即停止时调用 `stop_patrol`，不要只依赖 `timeout` |
 | 响应 `success=true` 但机器人不动 | 幂等成功——已有任务在运行 | 先 `stop_patrol`，再按新参数发起 |
 | 候选点明显偏少 | 关键帧约束过滤（`free_pool_kf_radius`）或 Nav2 路径验证剔除 | 新建图区域先让机器人驶过；必要时临时调小/禁用 `free_pool_kf_radius` 观察 |
