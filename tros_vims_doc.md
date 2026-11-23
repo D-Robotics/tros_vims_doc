@@ -92,7 +92,7 @@ flowchart TD
 
 ### 1.2 双目深度估计
 
-地瓜自研的采用GRU架构的双目深度估计算法，输入为双目图像数据，输出为左视图对应的视差图、深度图和点云，具有较好的数据泛化性和较高的推理效率。算法详细介绍：[双目深度算法](https://developer.d-robotics.cc/tros_doc/boxs/spatial/hobot_stereonet)。
+地瓜自研的采用GRU架构的双目深度估计算法，输入为双目图像数据，输出为左视图对应的视差图、深度图和点云，具有较好的数据泛化性和较高的推理效率。算法详细介绍：[双目深度算法](https://developer.d-robotics.cc/tros_doc/boxs/spatial/hobot_stereonet?v=3.5.0&p=RDK+X5)。
 
 | 双目左图和视差图（室内） | 双目左图和视差图（室外） | 点云 |
 | :---: | :---: | :---: |
@@ -425,7 +425,7 @@ sudo dpkg -i hobot-kernel-headers_3.0.4-20260514041655_arm64.deb hobot-boot_3.1.
 
 #### 连接硬件
 
-参考[4.2. 硬件连接](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5)。
+参考[4.2. 硬件连接](https://developer.d-robotics.cc/tros_doc/boxs/spatial/stereo_imu_cam?v=3.5.0&p=RDK+X5#42-%E7%A1%AC%E4%BB%B6%E8%BF%9E%E6%8E%A5)。
 
 #### 配置软件
 
@@ -518,7 +518,7 @@ ros2 launch hobot_stereonet stereonet_model_web_visual_component_v2.4_int16_unce
 | :---: | :---: |
 | <img src="images/image_019.png" height="200"> | <img src="images/image_020.png" height="200"> |
 
-如果启动失败，请参考[双目深度算法使用手册](https://developer.d-robotics.cc/tros_doc/boxs/spatial/hobot_stereonet)排查问题。
+如果启动失败，请参考[双目深度算法使用手册](https://developer.d-robotics.cc/tros_doc/boxs/spatial/hobot_stereonet?v=3.5.0&p=RDK+X5)排查问题。
 
 > **如何验证双目相机的左右目是否连接正确** 
 当相机的左右目接反时，程序能够正常运行，但是会导致深度估计错误。
