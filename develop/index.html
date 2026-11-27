@@ -753,16 +753,16 @@ yq <span class="nt">--version</span>
 <span class="nb">cd</span> /userdata/vims
 
 <span class="c"># 1) 先取官方基准校验和（KB 级小文件，不必下整包）</span>
-wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.7.tar.gz.sha256
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.7rc1.tar.gz.sha256
 
 <span class="c"># 2) 下载安装包</span>
-wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.7.tar.gz
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.7rc1.tar.gz
 
-<span class="c"># 3) 校验完整性：输出 "install-vims-v0.0.7.tar.gz: OK" 即通过；FAILED 则删除后重新下载</span>
-<span class="nb">sha256sum</span> <span class="nt">-c</span> install-vims-v0.0.7.tar.gz.sha256
+<span class="c"># 3) 校验完整性：输出 "install-vims-v0.0.7rc1.tar.gz: OK" 即通过；FAILED 则删除后重新下载</span>
+<span class="nb">sha256sum</span> <span class="nt">-c</span> install-vims-v0.0.7rc1.tar.gz.sha256
 
 <span class="c"># 4) 校验通过后再解压（解压到 /userdata/vims/install）</span>
-<span class="nb">tar</span> <span class="nt">-zxvf</span> /userdata/vims/install-vims-v0.0.7.tar.gz <span class="nt">-C</span> /userdata/vims
+<span class="nb">tar</span> <span class="nt">-zxvf</span> /userdata/vims/install-vims-v0.0.7rc1.tar.gz <span class="nt">-C</span> /userdata/vims
 </code></pre></div></div>
 
 <h3 id="45-配置相机">4.5 配置相机</h3>
