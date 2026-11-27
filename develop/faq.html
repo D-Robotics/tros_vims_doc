@@ -213,6 +213,17 @@ vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--s
   </ul>
 </blockquote>
 
+<h3 id="15-手柄遥控">1.5 手柄遥控</h3>
+
+<p>ViMS 支持通过 USB 手柄遥控底盘，依赖的功能包（<code class="language-plaintext highlighter-rouge">ros-humble-joy-linux</code>、<code class="language-plaintext highlighter-rouge">ros-humble-teleop-twist-joy</code>）已包含在使用手册「4.3 安装依赖」的安装命令中。该功能默认关闭，不带手柄时无需任何操作；需要手柄遥控时开启开关（二选一），然后正常启动：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 方式一：环境变量（对当次启动生效）</span>
+<span class="nv">enable_joy_teleop</span><span class="o">=</span>True bash /userdata/vims/install/share/tros_vision_nav/launch/run_launch.sh
+
+<span class="c"># 方式二：编辑配置文件，将 robot.enable_joy_teleop 改为 true</span>
+vi <span class="sb">`</span>ros2 pkg prefix tros_vision_nav <span class="nt">--share</span><span class="sb">`</span>/params/params.yaml
+</code></pre></div></div>
+
 <h2 id="2-使用originbot轮式里程计">2. 使用OriginBot轮式里程计</h2>
 
 <p>地瓜机器人对OriginBot的MCU程序进行了重构和优化，包括数据采集频率、轮速采集计算周期、硬件同步数据触发、时间同步等功能，使最终EKF融合出的odom更准。</p>
