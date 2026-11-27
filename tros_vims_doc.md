@@ -398,16 +398,16 @@ mkdir /userdata/rtabmap
 cd /userdata/vims
 
 # 1) 先取官方基准校验和（KB 级小文件，不必下整包）
-wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.7.tar.gz.sha256
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.7rc1.tar.gz.sha256
 
 # 2) 下载安装包
-wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.7.tar.gz
+wget https://archive.d-robotics.cc/TogetheROS/files/vision_mobile_solution/install-vims-v0.0.7rc1.tar.gz
 
-# 3) 校验完整性：输出 "install-vims-v0.0.7.tar.gz: OK" 即通过；FAILED 则删除后重新下载
-sha256sum -c install-vims-v0.0.7.tar.gz.sha256
+# 3) 校验完整性：输出 "install-vims-v0.0.7rc1.tar.gz: OK" 即通过；FAILED 则删除后重新下载
+sha256sum -c install-vims-v0.0.7rc1.tar.gz.sha256
 
 # 4) 校验通过后再解压（解压到 /userdata/vims/install）
-tar -zxvf /userdata/vims/install-vims-v0.0.7.tar.gz -C /userdata/vims
+tar -zxvf /userdata/vims/install-vims-v0.0.7rc1.tar.gz -C /userdata/vims
 ```
 
 ### 4.5 配置相机
