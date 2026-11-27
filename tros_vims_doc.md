@@ -369,7 +369,7 @@ cat /sys/module/aic8800_fdrv/parameters/ps_on
 ```bash
 apt update 
 apt upgrade -y 
-apt install ros-dev-tools ros-humble-cyclonedds* ros-humble-rmw-cyclonedds* ros-humble-rviz* ros-humble-rtabmap* ros-humble-octomap-rviz-plugins ros-humble-teleop-twist-keyboard ros-humble-nav* ros-humble-robot-localization ros-humble-foxglove-bridge -y  
+apt install ros-dev-tools ros-humble-cyclonedds* ros-humble-rmw-cyclonedds* ros-humble-rviz* ros-humble-rtabmap* ros-humble-octomap-rviz-plugins ros-humble-teleop-twist-keyboard ros-humble-nav* ros-humble-robot-localization ros-humble-foxglove-bridge ros-humble-joy-linux ros-humble-teleop-twist-joy -y
 ```
 
 > **提示** 

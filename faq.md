@@ -66,6 +66,18 @@ vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
 > - 只有当里程计类型为vio时，SLAM建图才支持3D运动模式。如果里程计类型为wheel，禁止打开SLAM建图的3D运动模式。
 > - 目前仅70mm基线（带IMU）相机支持vio。
 
+### 1.5 手柄遥控
+
+ViMS 支持通过 USB 手柄遥控底盘，依赖的功能包（`ros-humble-joy-linux`、`ros-humble-teleop-twist-joy`）已包含在使用手册「4.3 安装依赖」的安装命令中。该功能默认关闭，不带手柄时无需任何操作；需要手柄遥控时开启开关（二选一），然后正常启动：
+
+```bash
+# 方式一：环境变量（对当次启动生效）
+enable_joy_teleop=True bash /userdata/vims/install/share/tros_vision_nav/launch/run_launch.sh
+
+# 方式二：编辑配置文件，将 robot.enable_joy_teleop 改为 true
+vi `ros2 pkg prefix tros_vision_nav --share`/params/params.yaml
+```
+
 ## 2. 使用OriginBot轮式里程计
 
 地瓜机器人对OriginBot的MCU程序进行了重构和优化，包括数据采集频率、轮速采集计算周期、硬件同步数据触发、时间同步等功能，使最终EKF融合出的odom更准。
